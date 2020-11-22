@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Demo</title>
+    <style>
+        .SpritesDemo{
+            background-image: url("./SpritesMap.png");
+            background-size: 1000% 1000%;
+            background-position:0 0;
+            width: 100px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    sm.renderSprites($(".SpritesDemo")[0],1,2,2,2);
+    <div class="SpritesDemo" id="SpritesDemo1"></div>
+    sm.renderSprites($(".SpritesDemo")[1],4,0,3,4);
+    <div class="SpritesDemo" id="SpritesDemo2"></div>
+    <div class="SpritesDemo" id="SpritesADemo"></div>
+
+    <canvas id="canvasDemo" width="500" height="500"></canvas>
+
+    <script src="./Basics.js"></script>
+    <script src="./visual.js"></script>
+    <script type="text/javascript">
+        // // Sprites 精灵图像 (css)
+        // var $=function(str){return document.querySelectorAll(str);}
+        // var sm=new Sprites(10,10);  //Sprites 和 background 关联
+        // sm.renderSprites($(".SpritesDemo")[0],1,2,2,2);
+        // sm.renderSprites($(".SpritesDemo")[1],4,0,3,4);
+        // var sma=new Sprites_Animation(sm,0,24);
+        // sma.callstep=function(){
+        //     console.log(1);
+        // }
+        // sma.i=2;
+        // sma.callback=function(){
+        //     if((--sma.i)>=0)
+        //     sma.go($(".SpritesDemo")[sma.i],2,2,10,9,1,1,0,0,0,0,1);
+        // }
+        // sma.go($(".SpritesDemo")[2],2,2,10,9,1,1,0,0,0,0,1);
+
+
+        // canvasTGT
+        var canvas=document.getElementById("canvasDemo"),ctx=canvas.getContext("2d");
+
+        // var ctgt1=new CanvasRectTGT(0,0,100,100);
+        // ctgt1.gridx=100;
+        // ctgt1.gridy=100;
+        // ctgt1.fillStyle="#f00";
+        // ctgt1.rotate=45*deg;
+        // ctgt1.render(ctx);
+        // ctgt1.regEvent(canvas,"click",function(e){
+        //     console.log("this is tgt1",e);
+        // });
+
+        // var ctgt2=new CanvasArcTGT(200,200,50,-60*deg,180*deg);
+        // ctgt2.lineWidth=10;
+        // ctgt2.fillStyle="#0f0";
+        // ctgt2.gridy=200;
+        // ctgt2.render(ctx);
+        // ctgt2.regEvent(canvas,"click",function(e){
+        //     console.log("this is tgt2",e);
+        // });
+
+        // var ctgt3data=new Polygon();
+        // ctgt3data.pushNode(new Vector2(233,321));
+        // ctgt3data.pushNode(new Vector2(321,233));
+        // ctgt3data.pushNode(new Vector2(200,100));
+        // ctgt3data.seal();
+        // var ctgt3=new CanvasPolygonTGT(ctgt3data);
+        // ctgt3.fillStyle="#00f";
+        // ctgt3.gridx=200;
+        // ctgt3.render(ctx);
+        // ctgt3.regEvent(canvas,"click",function(e){
+        //     console.log("this is tgt3",e);
+        // });
+
+        // var d = ctgt2.toPolygon(8);
+        // d.gridx=100;
+        // d.render(ctx);
+        // d.regEvent(canvas,"mousedown",function(e){
+        //     console.log("this is tgt2's Polygon",e);
+        // });
+
+
+
+        // const element = document.getElementById('SpritesADemo'); 
+        // let start;
+
+        // function step(timestamp) {
+        // if (start === undefined)
+        //     start = timestamp;
+        // const elapsed = timestamp - start;
+
+        // //这里使用`Math.min()`确保元素刚好停在200px的位置。
+        // element.style.transform = 'translateX(' + Math.min(0.1 * elapsed, 200) + 'px)';
+
+        // if (elapsed < 2000) { // 在两秒后停止动画
+        //     window.requestAnimationFrame(step);
+        // }
+        // }
+
+        // window.requestAnimationFrame(step);
+    </script>
+    
+</body>
+</html>
