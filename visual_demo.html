@@ -26,11 +26,11 @@
     <script src="./Basics.js"></script>
     <script src="./visual.js"></script>
     <script type="text/javascript">
-        // // Sprites 精灵图像 (css)
-        // var $=function(str){return document.querySelectorAll(str);}
-        // var sm=new Sprites(10,10);  //Sprites 和 background 关联
-        // sm.renderSprites($(".SpritesDemo")[0],1,2,2,2);
-        // sm.renderSprites($(".SpritesDemo")[1],4,0,3,4);
+        // Sprites 精灵图像 (css)
+        var $=function(str){return document.querySelectorAll(str);}
+        var sm=new Sprites(10,10,"./SpritesMap.png");
+        sm.renderSprites($(".SpritesDemo")[0],1,2,2,2);
+        sm.renderSprites($(".SpritesDemo")[1],4,0,3,4);
         // var sma=new Sprites_Animation(sm,0,24);
         // sma.callstep=function(){
         //     console.log(1);
@@ -45,6 +45,8 @@
 
         // canvasTGT
         var canvas=document.getElementById("canvasDemo"),ctx=canvas.getContext("2d");
+        sm.img.onload=function(){sm.renderSprites(ctx,0,0,2,1,100,100,100,100);}
+
 
         // var ctgt1=new CanvasRectTGT(0,0,100,100);
         // ctgt1.gridx=100;
