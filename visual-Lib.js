@@ -268,7 +268,7 @@ var ctrlV2={
     /**
      * 向量乘以矩阵
      * @param {Vector2} v 
-     * @param {Matrix2x2} m 
+     * @param {Matrix2x3} m 
      * @return {Vector2} 返回一个新的向量
      */
     linearMapping   :function(v,m){
@@ -279,33 +279,115 @@ var ctrlV2={
     }
 }
 /**
- * 2*3矩阵
- * @param {Number} m11  矩阵的参数
- * @param {Number} m12  矩阵的参数
- * @param {Number} m21  矩阵的参数
- * @param {Number} m22  矩阵的参数
+ * 2*2矩阵
+ * @param {Number} a  矩阵的参数 m11
+ * @param {Number} b  矩阵的参数 m12
+ * @param {Number} c  矩阵的参数 m21
+ * @param {Number} d  矩阵的参数 m22
  */
-function Matrix2x2(m11,m12,m21,m22){
-    this.m11=m11;
-    this.m12=m12;
-    this.m21=m21;
-    this.m22=m22;
+function Matrix2x2(a,b,c,d){
+    this.a=a||0;
+    this.b=b||0;
+    this.c=c||0;
+    this.d=d||0;
 }
-Matrix2x2.prototype.constructor=Matrix2x2;
+Matrix2x2.prototype={
+    constructor:Matrix2x2,
+    copy:function(){
+        return new this.constructor(this.a,this.b,this.c,this.d);
+    },
+    
+    multiplication:function(m2){
+        this.a=this.a*m2.a+this.b*m2.c;
+        this.b=this.a*m2.b+this.b*m2.d;
+        this.c=this.c*m2.a+this.d*m2.c;
+        this.d=this.c*m2.b+this.d*m2.d;
+    },
 
-var ctrlM2={
-    /**创建旋转矩阵 
-     * @param {Number} angle 旋转角(rad)
-    */
-    rotate:function(angle){
-        var rtn = new Matrix2x2(
-            Math.cos(angle),Math.sin(angle),
-            0,0
+}
+/**
+ * 向量相乘的结果
+ * @param {Matrix2x2} m1 左(前)矩阵
+ * @param {Matrix2x2} m2 右(后)矩阵
+ */
+Matrix2x2.product=function(m1,m2){
+    return new Matrix2x2(
+        m1.a*m2.a+m1.b*m2.c , m1.a*m2.b+m1.b*m2.d,
+        m1.c*m2.a+m1.d*m2.c , m1.c*m2.b+m1.d*m2.d
         );
-        rtn.m21=rtn.m12*-1;
-        rtn.m22=rtn.m11;
+}
+Matrix2x2.create={
+    /**
+     * @param {Number} theta 顺时针 旋转角弧度
+     */
+    rotate:function(theta){
+        var s=Math.sin(theta),
+            c=Math.cos(theta);
+        return new Matrix2x2(c,s,-s,c);
+    },
+    /**
+     * @param {Number} x x 轴方向上的缩放系数
+     * @param {Number} y y 轴方向上的缩放系数
+     */
+    scale:function(x,y){
+        return new Matrix2x2(x,0,0,y);
+    },
+    
+    /**
+     * @param {Number} axis 方向轴 0:x 非零:y
+     * @param {Number} k 切变系数
+     */
+    shear:function(axis,k){
+        if(axis){
+            // y轴
+            return new Matrix2x2(1,0,k,1);
+        }
+        else{
+            // x轴
+            return new Matrix2x2(1,k,0,1);
+        }
+    },
+    zero:function(){
+        return new Matrix2x2();
+    }
+}
+
+/**
+ * 2*3矩阵
+ * @param {Number} a  矩阵的参数 m11
+ * @param {Number} b  矩阵的参数 m12
+ * @param {Number} c  矩阵的参数 m21
+ * @param {Number} d  矩阵的参数 m22
+ * @param {Number} e  平移量x
+ * @param {Number} f  平移量y
+ */
+function Matrix2x3(a,b,c,d,e,f){
+    this.a=a||0;    //m11
+    this.b=b||0;    //m12
+    this.c=c||0;    //m21
+    this.d=d||0;    //m22
+    this.e=e||0;    //tx
+    this.f=f||0;    //ty
+}
+inheritClass(Matrix2x2,Matrix2x3);
+Matrix2x3.prototype={
+    constructor:Matrix2x3,
+    copy:function(){
+        return new this.constructor(this.a,this.b,this.c,this.d,this.e,this.f);
+    },
+    /**
+     * @param {Number} x x轴偏移量
+     * @param {Number} y y轴偏移量
+     */
+    translate:function(x,y){
+        var rtn = this.copy();
+        rtn.e+=x;
+        rtn.f+=y;
         return rtn;
     }
+}
+function createMMatrix2x3(){
+    return new Matrix2x3(1,0,0,1,0,0);
 }
 
 /** */
@@ -404,7 +486,7 @@ Polygon.prototype.linearMapping.addOverload([Vector2],function(v){
     }
 });
 /**用一个矩阵变换 */
-Polygon.prototype.linearMapping.addOverload([Matrix2x2],function(m){
+Polygon.prototype.linearMapping.addOverload([Matrix2x3],function(m){
     var i=this.nodes.length;
     for(--i;i>=0;--i){
         this.nodes[i]=ctrlV2.linearMapping(this.nodes[i],m);
