@@ -96,7 +96,7 @@ function Sprites(_SpritesX, _SpritesY, imgUrl) {
     this.img = new Image();
     this.img.src = imgUrl;
 }
-Sprites.Matrix = document.createElementNS('http://www.w3.org/2000/svg', "svg").createSVGMatrix();
+Sprites.Matrix = new Matrix2x2T();
 Sprites.prototype = {
     constructor: Sprites,
     /**
@@ -146,9 +146,7 @@ Sprites.prototype = {
         scaleY = (this.img.height) / (dh * this.SpritesY*sh),
         translateX=dw-scaleX*dw*sx,
         translateY=dh-scaleY*dh*sy;
-// svg矩阵不够完善，不能在指定轴向上缩放，待修改
-// svg矩阵的内容 abcd分别为22变换方阵的参数，ef控制平移 
-        tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY));
+        tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY).rotate(45*deg));
         ctx.fillStyle = tempPattern;
         ctx.fillRect(dx, dy, dw, dh);
     },
