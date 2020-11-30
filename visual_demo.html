@@ -24,8 +24,8 @@
     <canvas id="canvasDemo" width="500" height="500"></canvas>
 
     <script src="../Basics.js"></script>
-    <script src="./visual.js"></script>
     <script src="./visual-Lib.js"></script>
+    <script src="./visual.js"></script>
     <script type="text/javascript">
         // Sprites 精灵图像 (css)
         var $=function(str){return document.querySelectorAll(str);}
@@ -69,19 +69,24 @@
         // });
 
         var ctgt3data=new Polygon();
-        ctgt3data.pushNode(new Vector2(233,321));
-        ctgt3data.pushNode(new Vector2(321,233));
-        ctgt3data.pushNode(new Vector2(200,100));
+        ctgt3data.pushNode(new Vector2(0,0));
+        ctgt3data.pushNode(new Vector2(100,0));
+        ctgt3data.pushNode(new Vector2(0,100));
         ctgt3data.seal();
         var ctgt3=new CanvasPolygonTGT(ctgt3data);
         ctgt3.fillStyle="#00f";
-        ctgt3.gridx=200;
         ctgt3.render(ctx);
         ctgt3.regEvent(canvas,"click",function(e){
             console.log("this is tgt3",e);
         });
 
-        var ctgt4data=ctrl;
+        var ctgt4data=ctrlPolygon.linearMapping(ctgt3data,Sprites.Matrix.scale(1,1).rotate(45*deg).translate(100,0));
+        var ctgt4=new CanvasPolygonTGT(ctgt4data);
+        ctgt4.fillStyle="#f0f";
+        ctgt4.render(ctx);
+        ctgt4.regEvent(canvas,"click",function(e){
+            console.log("this is tgt4",e);
+        });
 
         // var d = ctgt2.toPolygon(8);
         // d.gridx=100;

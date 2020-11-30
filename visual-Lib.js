@@ -267,55 +267,44 @@ var ctrlV2={
      */
     op      :function(v1,v2){return v1.x*v2.y-v1.y*v2.x;},
     /**
-     * 向量乘以矩阵
-     * @param {Vector2} v 
-     * @param {Matrix2x2T} m 
-     * @return {Vector2} 返回一个新的向量
-     */
-    linearMapping   :function(v,m){
-        var x,y;
-        x=v.x*m.m11+v.y*m.m21;
-        y=v.x*m.m12+v.y*m.m22;
-        return new Vector2(x,y);
-    },
-    /**
      * 矩阵和向量的乘法, 根据实参的顺序重载后乘对象
      * (v,m)行向量后乘矩阵
      * (m,v)矩阵后乘列向量
-     * @param {Matrix2x2T} m 矩阵
+     * 如果使用 Matrix2x2T 矩阵, 平移参数变换之后才会进行计算
+     * @param {Matrix2x2} m 矩阵
      * @param {Vector2} v 向量
      * @returns {Vector2} 返回一个向量
      */
-    transformation:function(m,v){
+    linearMapping:function(m,v){
     }
 }
 
-ctrlV2.transformation=createOlFnc();
+ctrlV2.linearMapping=createOlFnc();
 /**
  * 行向量后乘矩阵
  */
-ctrlV2.transformation.addOverload(ctrlV2.transformation,[Vector2,Matrix2x2],function(v,m){
+ctrlV2.linearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
     var rtn = new Vector2(
         v.x*m.a+v.y*m.c,
         v.x*m.b+v.y*m.d
     )
     if(m.constructor==Matrix2x2T){
         rtn.x+=m.e;
-        rtn.f+=m.f;
+        rtn.y+=m.f;
     }
     return rtn;
 },"行向量后乘矩阵");
 /**
  * 矩阵后乘列向量
  */
-ctrlV2.transformation.addOverload(ctrlV2.transformation,[Matrix2x2,Vector2],function(m,v){
+ctrlV2.linearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
     var rtn = new Vector2(
         v.x*m.a+v.y*m.b,
         v.x*m.c+v.y*m.d
     );
     if(m.constructor==Matrix2x2T){
         rtn.x+=m.e;
-        rtn.f+=m.f;
+        rtn.y+=m.f;
     }
     return rtn;
 },"矩阵后乘列向量");
@@ -589,23 +578,6 @@ Polygon.prototype={
         return this.nodes[0].x==this.nodes[l].x&&this.nodes[0].y==this.nodes[l].y;
     }
 }
-
-Polygon.prototype.linearMapping=createOlFnc();
-/**用一个向量变换 把所有点与参数相加*/
-Polygon.prototype.linearMapping.addOverload([Vector2],function(v){
-    var i=this.nodes.length;
-    for(--i;i>=0;--i){
-        this.nodes[i]=ctrlV2.sum(this.nodes[i],v);
-    }
-});
-/**用一个矩阵变换 */
-Polygon.prototype.linearMapping.addOverload([Matrix2x2T],function(m){
-    var i=this.nodes.length;
-    for(--i;i>=0;--i){
-        this.nodes[i]=ctrlV2.linearMapping(this.nodes[i],m);
-    }
-});
-
 var ctrlPolygon={
     /** 
      * 创建矩形
@@ -671,22 +643,22 @@ var ctrlPolygon={
      * @param {Polygon} p 多边形
      * @returns {Polygon} 返回一个新的多边形
      */
-    transformation:function(p,m){}
+    linearMapping:function(p,m){}
 }
-ctrlPolygon.transformation=createOlFnc();
-ctrlPolygon.transformation.addOverload([Polygon,Matrix2x2],function(p,m){
+ctrlPolygon.linearMapping=createOlFnc();
+ctrlPolygon.linearMapping.addOverload([Polygon,Matrix2x2],function(p,m){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
-        rtn.pushNode(ctrlV2.transformation(p.nodes[i],m));
+        rtn.pushNode(ctrlV2.linearMapping(p.nodes[i],m));
     }
     return rtn;
 });
-ctrlPolygon.transformation.addOverload([Matrix2x2,Polygon],function(m,p){
+ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
-        rtn.pushNode(ctrlV2.transformation(m,p.nodes[i]));
+        rtn.pushNode(ctrlV2.linearMapping(m,p.nodes[i]));
     }
     return rtn;
 });
