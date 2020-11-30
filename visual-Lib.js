@@ -133,16 +133,17 @@ Sprites_Animation.prototype={
     },
     /**
      * 运行动画
+     * @param {HTMLElement} _element 目标元素
      * @param {Number} X1   起点的X坐标
      * @param {Number} Y1   起点的Y坐标
      * @param {Number} X2   终点的X坐标
      * @param {Number} Y2   终点的Y坐标
      * @param {Number} SX   当前图像在整张图像中X占据多少格子,同时也是动画的步长
      * @param {Number} SY   当前图像在整张图像中Y占据多少格子,同时也是动画的步长
-     * @param {*} _unXL     左侧的空省
-     * @param {*} _unYT     上方的空省
-     * @param {*} _unXR     右侧的空省
-     * @param {*} _unYB     下方的空省
+     * @param {Number} _unXL     左侧的空省
+     * @param {Number} _unYT     上方的空省
+     * @param {Number} _unXR     右侧的空省
+     * @param {Number} _unYB     下方的空省
      */
     go:function(_element,X1,Y1,X2,Y2,_SX,_SY,_unXL,_unYT,_unXR,_unYB,_count){
         var thisAnimation=this,
@@ -276,8 +277,49 @@ var ctrlV2={
         x=v.x*m.m11+v.y*m.m21;
         y=v.x*m.m12+v.y*m.m22;
         return new Vector2(x,y);
+    },
+    /**
+     * 矩阵和向量的乘法, 根据实参的顺序重载后乘对象
+     * (v,m)行向量后乘矩阵
+     * (m,v)矩阵后乘列向量
+     * @param {Matrix2x2T} m 矩阵
+     * @param {Vector2} v 向量
+     * @returns {Vector2} 返回一个向量
+     */
+    transformation:function(m,v){
     }
 }
+
+ctrlV2.transformation=createOlFnc();
+/**
+ * 行向量后乘矩阵
+ */
+ctrlV2.transformation.addOverload(ctrlV2.transformation,[Vector2,Matrix2x2],function(v,m){
+    var rtn = new Vector2(
+        v.x*m.a+v.y*m.c,
+        v.x*m.b+v.y*m.d
+    )
+    if(m.constructor==Matrix2x2T){
+        rtn.x+=m.e;
+        rtn.f+=m.f;
+    }
+    return rtn;
+},"行向量后乘矩阵");
+/**
+ * 矩阵后乘列向量
+ */
+ctrlV2.transformation.addOverload(ctrlV2.transformation,[Matrix2x2,Vector2],function(m,v){
+    var rtn = new Vector2(
+        v.x*m.a+v.y*m.b,
+        v.x*m.c+v.y*m.d
+    );
+    if(m.constructor==Matrix2x2T){
+        rtn.x+=m.e;
+        rtn.f+=m.f;
+    }
+    return rtn;
+},"矩阵后乘列向量");
+
 /**
  * 2*2矩阵
  * @param {Number} a  矩阵的参数 m11
@@ -457,7 +499,7 @@ Matrix2x2T.prototype.shear=function(axis,k){
     )
 }
 
-function createMMatrix2x2T(){
+function createMatrix2x2T(){
     return new Matrix2x2T(1,0,0,1,0,0);
 }
 
@@ -500,7 +542,7 @@ Polygon.prototype={
     }
     ,
     /**追加节点
-     * @param {Vector2} v       要插入的节点
+     * @param {Vector2} v       要追加的节点
      */
     pushNode:function(v){
         this.nodes.push(v.copy());
@@ -619,8 +661,35 @@ var ctrlPolygon={
         }
         rtn.reMinMax();
         return rtn;
-    }
+    },
+    
+    /**
+     * 矩阵和多边形内部所有向量变换, 根据实参的顺序重载后乘对象
+     * (p,m)行向量后乘矩阵
+     * (m,p)矩阵后乘列向量
+     * @param {Matrix2x2T} m 矩阵
+     * @param {Polygon} p 多边形
+     * @returns {Polygon} 返回一个新的多边形
+     */
+    transformation:function(p,m){}
 }
+ctrlPolygon.transformation=createOlFnc();
+ctrlPolygon.transformation.addOverload([Polygon,Matrix2x2],function(p,m){
+    var i=0,
+        rtn=new Polygon();
+    for(;i<p.nodes.length;++i){
+        rtn.pushNode(ctrlV2.transformation(p.nodes[i],m));
+    }
+    return rtn;
+});
+ctrlPolygon.transformation.addOverload([Matrix2x2,Polygon],function(m,p){
+    var i=0,
+        rtn=new Polygon();
+    for(;i<p.nodes.length;++i){
+        rtn.pushNode(ctrlV2.transformation(m,p.nodes[i]));
+    }
+    return rtn;
+});
 
 /** 判断两条线段是否相交
  * @param {Vector2} l1op    线段1的起点
