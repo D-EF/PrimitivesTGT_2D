@@ -527,7 +527,6 @@ Polygon.prototype={
      * 刷新 最大xy 最小xy
      */
     reMinMax:function(){
-        // 
         this.max.x=this.nodes[0].x;
         this.max.y=this.nodes[0].y;
         this.min.x=this.nodes[0].x;
@@ -538,10 +537,6 @@ Polygon.prototype={
                  if(this.nodes[i].y>this.max.y||this.max.y==undefined)this.max.y=this.nodes[i].y;
             else if(this.nodes[i].y<this.min.y||this.min.y==undefined)this.min.y=this.nodes[i].y;
         }
-        this.wordMax=ctrlV2.linearMapping(this.max,this.transformMatrix);
-        this.wordMin=ctrlV2.linearMapping(this.min,this.transformMatrix);
-        
-
     }
     ,
     /**追加节点
@@ -549,12 +544,15 @@ Polygon.prototype={
      */
     pushNode:function(v){
         this.nodes.push(v.copy());
-             if(v.x>this.max.x||this.max.x==undefined){
-                this.max.x=v.x;
-             }
-        else if(v.x<this.min.x||this.min.x==undefined)this.min.x=v.x;
-             if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
-        else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
+        if(this.nodes.length>1){
+                if(v.x>this.max.x||this.max.x==undefined)this.max.x=v.x;
+            else if(v.x<this.min.x||this.min.x==undefined)this.min.x=v.x;
+                if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
+            else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
+        }
+        else{
+            this.reMinMax()
+        }
     },
     /**插入节点
      * @param {Number} index    要插入的节点的下标
@@ -562,25 +560,32 @@ Polygon.prototype={
      */
     insert:function(index,v){
         this.nodes.splice(index,0,v);
-             if(v.x>this.max.x||this.max.x==undefined)this.max.x=v.x;
-        else if(v.y<this.min.x||this.min.x==undefined)this.min.x=v.x;
-             if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
-        else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
+        if(this.nodes.length>1){
+                 if(v.x>this.max.x||this.max.x==undefined)this.max.x=v.x;
+            else if(v.y<this.min.x||this.min.x==undefined)this.min.x=v.x;
+                 if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
+            else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
+        }else{
+            this.reMinMax();
+        }
     },
     /**移除节点
      * @param {Number} index 要删除的节点的下标
      */
     remove:function(index){
+        var tflag;
+        if(
+            this.nodes[index].x==this.max.x||this.nodes[index].y==this.min.x||
+            this.nodes[index].x==this.max.y||this.nodes[index].y==this.min.y
+            ){
+                tflag=1;
+            }
         this.nodes.splice(index,1);
-        this.reMinMax();
+        if(tflag)this.reMinMax();
     },
     /**移除所有节点 */
     removeAll:function(){
         this.nodes=[];
-        this.min.x=0;
-        this.min.y=0;
-        this.max.x=0;
-        this.max.y=0;
     },
     /** 闭合路径 */
     seal:function(){
@@ -592,6 +597,35 @@ Polygon.prototype={
     isClosed:function(){
         var l=this.nodes.length-1;
         return this.nodes[0].x==this.nodes[l].x&&this.nodes[0].y==this.nodes[l].y;
+    },
+    /**
+     * 使用局部坐标系判断某点是否在内部, 
+     * 也可以使用向量作为实参
+     * @param {Number} x 局部坐标系中的坐标
+     * @param {Number} y 局部坐标系中的坐标
+     */
+    isInside:function(x,y){
+        // 如果图形不是密封的, 直接返回否
+        if(!this.isClosed()) return false;
+
+        var i,j,rtn=false,temp=0;
+        i=this.nodes.length-1;
+        if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;
+        for(;i>0;--i){
+            j=i-1;
+            if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;//如果正好在顶点上直接算在内部
+            else if(
+                ((this.nodes[i].y>=y)!=(this.nodes[j].y>=y))&&(
+                    x>((temp=this.nodes[j].y-this.nodes[i].y)?
+                        (((this.nodes[j].x-this.nodes[i].x)*(y-this.nodes[i].y))/(temp)+this.nodes[i].x):
+                        (this.nodes[i].x)
+                    )
+                )
+            ){
+                rtn=!rtn;
+            }
+        }
+        return rtn;
     }
 }
 var ctrlPolygon={
@@ -679,12 +713,37 @@ ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
     return rtn;
 });
 
-/** 判断两条线段是否相交
+/** 判断两条线段是否相交, 仅供 getImpactCount 使用 当线段和顶点相撞时有两种结果
  * @param {Vector2} l1op    线段1的起点
  * @param {Vector2} l1ed    线段1的终点
  * @param {Vector2} l2op    线段2的起点
  * @param {Vector2} l2ed    线段2的终点
- * @return {Number} 返回 1 表示相交, 2 表示一点撞在另一条直线上, 0 表示没有相交
+ * @return {Number} 返回 1 表示相交, 0 表示没有相交
+ */
+function getIntersectFlag_toImpactCount(l1op,l1ed,l2op,l2ed){
+    var temp1=ctrlV2.dif(l1ed,l1op),
+        t1o=ctrlV2.dif(l1ed,l2op),
+        t1e=ctrlV2.dif(l1ed,l2ed);
+    var temp2=ctrlV2.dif(l2ed,l2op),
+        t2o=ctrlV2.dif(l2ed,l1op),
+        t2e=ctrlV2.dif(l2ed,l1ed);
+    var f11=ctrlV2.op(temp1,t1o) || 1,
+        f12=ctrlV2.op(temp1,t1e);
+    var f21=ctrlV2.op(temp2,t2o),
+        f22=ctrlV2.op(temp2,t2e) || 1;
+    
+    if((f11>0)==(f12<0)&&(f22>0)==(f21<0)){
+        return 1;
+    }
+    return 0;
+}
+
+/** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
+ * @param {Vector2} l1op    线段1的起点
+ * @param {Vector2} l1ed    线段1的终点
+ * @param {Vector2} l2op    线段2的起点
+ * @param {Vector2} l2ed    线段2的终点
+ * @return {Number} 返回 1 表示相交, 0 表示没有相交, -1表示有一点在线上
  */
 function getIntersectFlag(l1op,l1ed,l2op,l2ed){
     var temp1=ctrlV2.dif(l1ed,l1op),
@@ -697,11 +756,13 @@ function getIntersectFlag(l1op,l1ed,l2op,l2ed){
         f12=ctrlV2.op(temp1,t1e);
     var f21=ctrlV2.op(temp2,t2o),
         f22=ctrlV2.op(temp2,t2e);
-    if(!(f11&&f12&&f21&&f22)){
-        return 1
-    }
+    
     if((f11>0)==(f12<0)&&(f22>0)==(f21<0)){
-        return 2;
+        if(f11&&f12&&f21&&f22){
+            // 一点正好在另一条线上
+            return -1
+        }
+        return 1;
     }
     return 0;
 }
@@ -717,7 +778,7 @@ function getImpactCount(_polygon1,_polygon2){
     var f=0;
     for(--i;i>=0&&!f;--i){
         for(j=vl2.length-2;j>=0;--j){
-            f+=getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1])/2;
+            f+=getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
         }
     }
     return f;
@@ -946,14 +1007,7 @@ CanvasPolygonTGT.prototype.isInside=function(_x,_y){
         y=tv.y
     }
     if(this.data.minX>x||this.data.maxX<x||this.data.minY>y||this.data.maxY<y) return false;
-    tempProxy=this.data.isClosed()?this.data:this.data.copy();
-    tempProxy.seal();
-    var t1op=new Vector2(this.data.wordMin.x-100,this.data.wordMin.y-100);
-    var t1ed=new Vector2(x,y);
-    var tempPolygon=new Polygon();
-    tempPolygon.pushNode(t1op);
-    tempPolygon.pushNode(t1ed);
-    if(getImpactCount(tempPolygon,tempProxy)%2){
+    if(this.data.isInside(x,y)){
         return true;
     }
     return false;
