@@ -46,7 +46,7 @@
 
         // canvasTGT
         var canvas=document.getElementById("canvasDemo"),ctx=canvas.getContext("2d");
-        sm.img.onload=function(){sm.renderSprites(ctx,0,0,2,1,100,100,100,100);}
+        sm.img.onload=function(){sm.renderSprites(ctx,0,0,2,1,300,100,100,100);}
 
 
         // var ctgt1=new CanvasRectTGT(0,0,100,100);
@@ -69,10 +69,10 @@
         // });
 
         var ctgt3data=new Polygon();
-        ctgt3data.pushNode(new Vector2(100,0));
-        ctgt3data.pushNode(new Vector2(0,0));
-        ctgt3data.pushNode(new Vector2(0,100));
         ctgt3data.pushNode(new Vector2(100,100));
+        ctgt3data.pushNode(new Vector2(200,100));
+        ctgt3data.pushNode(new Vector2(200,200));
+        ctgt3data.pushNode(new Vector2(100,200));
         ctgt3data.seal();
         var ctgt3=new CanvasPolygonTGT(ctgt3data);
         ctgt3.fillStyle="#00f";
@@ -81,7 +81,7 @@
             console.log("this is tgt3",e);
         });
 
-        var ctgt4data=ctrlPolygon.linearMapping(ctgt3data,Sprites.Matrix.scale(1,1).rotate(45*deg).translate(100,0));
+        var ctgt4data=ctrlPolygon.linearMapping(ctgt3data,Sprites.Matrix.rotate(45*deg).translate(100,0));
         var ctgt4=new CanvasPolygonTGT(ctgt4data);
         ctgt4.fillStyle="#f0f";
         ctgt4.render(ctx);

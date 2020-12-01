@@ -608,21 +608,26 @@ Polygon.prototype={
         // 如果图形不是密封的, 直接返回否
         if(!this.isClosed()) return false;
 
-        var i,j,rtn=false,temp=0;
+        var i,j,rtn=false,temp=0,tempK;
         i=this.nodes.length-1;
         if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;
         for(;i>0;--i){
             j=i-1;
             if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;//如果正好在顶点上直接算在内部
-            else if(
-                ((this.nodes[i].y>=y)!=(this.nodes[j].y>=y))&&(
-                    x>((temp=this.nodes[j].y-this.nodes[i].y)?
+            else if((this.nodes[i].y>=y)!=(this.nodes[j].y>=y)){
+                // 点的 y 坐标 在范围内
+                tempK=((temp=this.nodes[j].y-this.nodes[i].y)?
                         (((this.nodes[j].x-this.nodes[i].x)*(y-this.nodes[i].y))/(temp)+this.nodes[i].x):
                         (this.nodes[i].x)
-                    )
-                )
-            ){
-                rtn=!rtn;
+                    );
+                if(x==tempK){
+                    // 斜率相等, 点在边线上 直接算内部
+                    return true;
+                }
+                else if(x>tempK){
+                    // 射线穿过
+                    rtn=!rtn;
+                }
             }
         }
         return rtn;
@@ -713,37 +718,12 @@ ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
     return rtn;
 });
 
-/** 判断两条线段是否相交, 仅供 getImpactCount 使用 当线段和顶点相撞时有两种结果
- * @param {Vector2} l1op    线段1的起点
- * @param {Vector2} l1ed    线段1的终点
- * @param {Vector2} l2op    线段2的起点
- * @param {Vector2} l2ed    线段2的终点
- * @return {Number} 返回 1 表示相交, 0 表示没有相交
- */
-function getIntersectFlag_toImpactCount(l1op,l1ed,l2op,l2ed){
-    var temp1=ctrlV2.dif(l1ed,l1op),
-        t1o=ctrlV2.dif(l1ed,l2op),
-        t1e=ctrlV2.dif(l1ed,l2ed);
-    var temp2=ctrlV2.dif(l2ed,l2op),
-        t2o=ctrlV2.dif(l2ed,l1op),
-        t2e=ctrlV2.dif(l2ed,l1ed);
-    var f11=ctrlV2.op(temp1,t1o) || 1,
-        f12=ctrlV2.op(temp1,t1e);
-    var f21=ctrlV2.op(temp2,t2o),
-        f22=ctrlV2.op(temp2,t2e) || 1;
-    
-    if((f11>0)==(f12<0)&&(f22>0)==(f21<0)){
-        return 1;
-    }
-    return 0;
-}
-
 /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
  * @param {Vector2} l1op    线段1的起点
  * @param {Vector2} l1ed    线段1的终点
  * @param {Vector2} l2op    线段2的起点
  * @param {Vector2} l2ed    线段2的终点
- * @return {Number} 返回 1 表示相交, 0 表示没有相交, -1表示有一点在线上
+ * @return {Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上
  */
 function getIntersectFlag(l1op,l1ed,l2op,l2ed){
     var temp1=ctrlV2.dif(l1ed,l1op),
@@ -756,12 +736,25 @@ function getIntersectFlag(l1op,l1ed,l2op,l2ed){
         f12=ctrlV2.op(temp1,t1e);
     var f21=ctrlV2.op(temp2,t2o),
         f22=ctrlV2.op(temp2,t2e);
+    // fx   x是线段号码 (1 or 2)
+    // fx1 是起点撞到另一条线, fx2 是终点撞到另一条线
     
-    if((f11>0)==(f12<0)&&(f22>0)==(f21<0)){
-        if(f11&&f12&&f21&&f22){
-            // 一点正好在另一条线上
-            return -1
-        }
+    switch(0){
+        case f11:
+            return 2;
+        break;
+        case f12:
+            return -1;
+        break;
+        case f21:
+            return -1;
+        break;
+        case f22:
+            return 2;
+        break;
+    }
+    
+    if((f11>0)!=(f12>0)&&(f22>0)!=(f21>0)){
         return 1;
     }
     return 0;
