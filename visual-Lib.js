@@ -271,11 +271,11 @@ var ctrlV2={
      * (v,m)行向量后乘矩阵
      * (m,v)矩阵后乘列向量
      * 如果使用 Matrix2x2T 矩阵, 平移参数变换之后才会进行计算
-     * @param {Matrix2x2} m 矩阵
      * @param {Vector2} v 向量
+     * @param {Matrix2x2} m 矩阵
      * @returns {Vector2} 返回一个向量
      */
-    linearMapping:function(m,v){
+    linearMapping:function(v,m){
     }
 }
 
@@ -488,6 +488,9 @@ Matrix2x2T.prototype.shear=function(axis,k){
     )
 }
 
+/**
+ * 创建一个新的2x2t矩阵
+ */
 function createMatrix2x2T(){
     return new Matrix2x2T(1,0,0,1,0,0);
 }
@@ -496,10 +499,11 @@ function createMatrix2x2T(){
 function Polygon(){
     // 存放 Vector2 的列表 
     this.nodes=[];
-    this.minX;
-    this.minY;
-    this.maxX;
-    this.maxY;
+
+    this.transformMatrix=new Matrix2x2T();
+
+    this.min    =new Vector2;
+    this.max    =new Vector2;
 }
 Polygon.prototype={
     constructor:Polygon,
@@ -508,26 +512,36 @@ Polygon.prototype={
      */
     copy:function(){
         var ret=new Polygon();
+        ret.nodes=[];
+        ret.min=this.min.copy();
+        ret.max=this.max.copy();
+        ret.transformMatrix=this.transformMatrix.copy();
         var l=this.nodes.length,i=0;
         for(;i<l;++i){
             ret.pushNode(this.nodes[i]);
         }
-        ret.minX=this.minX;
-        ret.minY=this.minY;
-        ret.maxX=this.maxX;
-        ret.maxY=this.maxY;
+
         return ret;
     },
     /**
      * 刷新 最大xy 最小xy
      */
     reMinMax:function(){
+        // 
+        this.max.x=this.nodes[0].x;
+        this.max.y=this.nodes[0].y;
+        this.min.x=this.nodes[0].x;
+        this.min.y=this.nodes[0].y;
         for(var i=this.nodes.length-1;i>=0;--i){
-                 if(this.nodes[i].x>this.maxX||this.maxX==undefined)this.maxX=this.nodes[i].x;
-            else if(this.nodes[i].y<this.minX||this.minX==undefined)this.minX=this.nodes[i].x;
-                 if(this.nodes[i].y>this.maxY||this.maxY==undefined)this.maxY=this.nodes[i].y;
-            else if(this.nodes[i].y<this.minY||this.minY==undefined)this.minY=this.nodes[i].y;
+                 if(this.nodes[i].x>this.max.x||this.max.x==undefined)this.max.x=this.nodes[i].x;
+            else if(this.nodes[i].y<this.min.x||this.min.x==undefined)this.min.x=this.nodes[i].x;
+                 if(this.nodes[i].y>this.max.y||this.max.y==undefined)this.max.y=this.nodes[i].y;
+            else if(this.nodes[i].y<this.min.y||this.min.y==undefined)this.min.y=this.nodes[i].y;
         }
+        this.wordMax=ctrlV2.linearMapping(this.max,this.transformMatrix);
+        this.wordMin=ctrlV2.linearMapping(this.min,this.transformMatrix);
+        
+
     }
     ,
     /**追加节点
@@ -535,10 +549,12 @@ Polygon.prototype={
      */
     pushNode:function(v){
         this.nodes.push(v.copy());
-             if(v.x>this.maxX||this.maxX==undefined)this.maxX=v.x;
-        else if(v.x<this.minX||this.minX==undefined)this.minX=v.x;
-             if(v.y>this.maxY||this.maxY==undefined)this.maxY=v.y;
-        else if(v.y<this.minY||this.minY==undefined)this.minY=v.y;
+             if(v.x>this.max.x||this.max.x==undefined){
+                this.max.x=v.x;
+             }
+        else if(v.x<this.min.x||this.min.x==undefined)this.min.x=v.x;
+             if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
+        else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
     },
     /**插入节点
      * @param {Number} index    要插入的节点的下标
@@ -546,10 +562,10 @@ Polygon.prototype={
      */
     insert:function(index,v){
         this.nodes.splice(index,0,v);
-             if(v.x>this.maxX||this.maxX==undefined)this.maxX=v.x;
-        else if(v.y<this.minX||this.minX==undefined)this.minX=v.x;
-             if(v.y>this.maxY||this.maxY==undefined)this.maxY=v.y;
-        else if(v.y<this.minY||this.minY==undefined)this.minY=v.y;
+             if(v.x>this.max.x||this.max.x==undefined)this.max.x=v.x;
+        else if(v.y<this.min.x||this.min.x==undefined)this.min.x=v.x;
+             if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
+        else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
     },
     /**移除节点
      * @param {Number} index 要删除的节点的下标
@@ -561,10 +577,10 @@ Polygon.prototype={
     /**移除所有节点 */
     removeAll:function(){
         this.nodes=[];
-        this.minX=0;
-        this.minY=0;
-        this.maxX=0;
-        this.maxY=0;
+        this.min.x=0;
+        this.min.y=0;
+        this.max.x=0;
+        this.max.y=0;
     },
     /** 闭合路径 */
     seal:function(){
@@ -668,7 +684,7 @@ ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
  * @param {Vector2} l1ed    线段1的终点
  * @param {Vector2} l2op    线段2的起点
  * @param {Vector2} l2ed    线段2的终点
- * @return {Boolean}
+ * @return {Number} 返回 1 表示相交, 2 表示一点撞在另一条直线上, 0 表示没有相交
  */
 function getIntersectFlag(l1op,l1ed,l2op,l2ed){
     var temp1=ctrlV2.dif(l1ed,l1op),
@@ -681,10 +697,13 @@ function getIntersectFlag(l1op,l1ed,l2op,l2ed){
         f12=ctrlV2.op(temp1,t1e);
     var f21=ctrlV2.op(temp2,t2o),
         f22=ctrlV2.op(temp2,t2e);
-    if((f11>0)==(f12<0)&&(f22>0)==(f21<0)){
-        return true;
+    if(!(f11&&f12&&f21&&f22)){
+        return 1
     }
-    return false;
+    if((f11>0)==(f12<0)&&(f22>0)==(f21<0)){
+        return 2;
+    }
+    return 0;
 }
 /** 获取两个多边形的相交次数
  * @param   {Polygon}   _polygon1
@@ -698,7 +717,7 @@ function getImpactCount(_polygon1,_polygon2){
     var f=0;
     for(--i;i>=0&&!f;--i){
         for(j=vl2.length-2;j>=0;--j){
-            if(getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))++f;
+            f+=getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1])/2;
         }
     }
     return f;
@@ -706,7 +725,7 @@ function getImpactCount(_polygon1,_polygon2){
 /** 获取两个多边形是否相交
  * @param   {Polygon}   _polygon1
  * @param   {Polygon}   _polygon2
- * @return  {Number}    相交的次数
+ * @return  {Boolean}   是否相交
  */
 function getImpactFlag(_polygon1,_polygon2){
     if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return false;
@@ -916,8 +935,6 @@ function CanvasPolygonTGT(_polygon){
     CanvasTGT.call(this);
     this.data=_polygon;
     this.data.reMinMax();
-    this.minX=-2048;
-    this.minY=-2048;
 }
 inheritClass(CanvasTGT,CanvasPolygonTGT);
 CanvasPolygonTGT.prototype.constructor=CanvasPolygonTGT;
@@ -931,7 +948,7 @@ CanvasPolygonTGT.prototype.isInside=function(_x,_y){
     if(this.data.minX>x||this.data.maxX<x||this.data.minY>y||this.data.maxY<y) return false;
     tempProxy=this.data.isClosed()?this.data:this.data.copy();
     tempProxy.seal();
-    var t1op=new Vector2(this.minX,this.minY);
+    var t1op=new Vector2(this.data.wordMin.x-100,this.data.wordMin.y-100);
     var t1ed=new Vector2(x,y);
     var tempPolygon=new Polygon();
     tempPolygon.pushNode(t1op);
