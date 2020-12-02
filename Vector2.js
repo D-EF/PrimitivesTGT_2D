@@ -106,8 +106,7 @@ class Vector2{
      * @return {Number}
      */
     static op(v1,v2){return v1.x*v2.y-v1.y*v2.x;}
-}
-var ctrlV2={
+    
     /**
      * 矩阵和向量的乘法, 根据实参的顺序重载后乘对象
      * (v,m)行向量后乘矩阵
@@ -117,15 +116,15 @@ var ctrlV2={
      * @param {Matrix2x2} m 矩阵
      * @returns {Vector2} 返回一个向量
      */
-    linearMapping:function(v,m){
+    static linearMapping(v,m){
     }
 }
 
-ctrlV2.linearMapping=createOlFnc();
+Vector2.linearMapping=createOlFnc();
 /**
  * 行向量后乘矩阵
  */
-ctrlV2.linearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
+Vector2.linearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
     var rtn = new Vector2(
         v.x*m.a+v.y*m.c,
         v.x*m.b+v.y*m.d
@@ -139,7 +138,7 @@ ctrlV2.linearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
 /**
  * 矩阵后乘列向量
  */
-ctrlV2.linearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
+Vector2.linearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
     var rtn = new Vector2(
         v.x*m.a+v.y*m.b,
         v.x*m.c+v.y*m.d

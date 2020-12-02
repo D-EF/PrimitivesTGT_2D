@@ -48,10 +48,10 @@ Polygon.prototype={
         this.min.x=this.nodes[0].x;
         this.min.y=this.nodes[0].y;
         for(var i=this.nodes.length-1;i>=0;--i){
-                 if(this.nodes[i].x>this.max.x||this.max.x==undefined)this.max.x=this.nodes[i].x;
-            else if(this.nodes[i].y<this.min.x||this.min.x==undefined)this.min.x=this.nodes[i].x;
-                 if(this.nodes[i].y>this.max.y||this.max.y==undefined)this.max.y=this.nodes[i].y;
-            else if(this.nodes[i].y<this.min.y||this.min.y==undefined)this.min.y=this.nodes[i].y;
+                 if(this.nodes[i].x>this.max.x)this.max.x=this.nodes[i].x;
+            else if(this.nodes[i].x<this.min.x)this.min.x=this.nodes[i].x;
+                 if(this.nodes[i].y>this.max.y)this.max.y=this.nodes[i].y;
+            else if(this.nodes[i].y<this.min.y)this.min.y=this.nodes[i].y;
         }
     }
     ,
@@ -61,13 +61,21 @@ Polygon.prototype={
     pushNode:function(v){
         this.nodes.push(v.copy());
         if(this.nodes.length>1){
-                if(v.x>this.max.x||this.max.x==undefined)this.max.x=v.x;
-            else if(v.x<this.min.x||this.min.x==undefined)this.min.x=v.x;
-                if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
-            else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
+            if(v.x>this.max.x){
+                this.max.x=v.x;
+            }
+            else if(v.x<this.min.x){
+                this.min.x=v.x;
+            }
+            if(v.y>this.max.y){
+                this.max.y=v.y;
+            }
+            else if(v.y<this.min.y){
+                this.min.y=v.y;
+            }
         }
         else{
-            this.reMinMax()
+            this.reMinMax();
         }
     },
     /**
@@ -86,10 +94,10 @@ Polygon.prototype={
     insert:function(index,v){
         this.nodes.splice(index,0,v);
         if(this.nodes.length>1){
-                 if(v.x>this.max.x||this.max.x==undefined)this.max.x=v.x;
-            else if(v.y<this.min.x||this.min.x==undefined)this.min.x=v.x;
-                 if(v.y>this.max.y||this.max.y==undefined)this.max.y=v.y;
-            else if(v.y<this.min.y||this.min.y==undefined)this.min.y=v.y;
+                 if(v.x>this.max.x)this.max.x=v.x;
+            else if(v.y<this.min.x)this.min.x=v.x;
+                 if(v.y>this.max.y)this.max.y=v.y;
+            else if(v.y<this.min.y)this.min.y=v.y;
         }else{
             this.reMinMax();
         }
@@ -206,12 +214,11 @@ var ctrlPolygon={
         }
         for(i=accuracy-1;i>=0;--i){
             tempAngle=endAngle-i*stepLong;
-            rtn.nodes.push(new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
+            rtn.pushNode(new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
         }
         if(cyclesflag){
             rtn.seal();
         }
-        rtn.reMinMax();
         return rtn;
     },
     
@@ -230,7 +237,7 @@ ctrlPolygon.linearMapping.addOverload([Polygon,Matrix2x2],function(p,m){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
-        rtn.pushNode(ctrlV2.linearMapping(p.nodes[i],m));
+        rtn.pushNode(Vector2.linearMapping(p.nodes[i],m));
     }
     return rtn;
 });
@@ -238,7 +245,7 @@ ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
-        rtn.pushNode(ctrlV2.linearMapping(m,p.nodes[i]));
+        rtn.pushNode(Vector2.linearMapping(m,p.nodes[i]));
     }
     return rtn;
 });
@@ -251,32 +258,33 @@ ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
  * @return {Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上
  */
 function getIntersectFlag(l1op,l1ed,l2op,l2ed){
-    var temp1=ctrlV2.dif(l1ed,l1op),
-        t1o=ctrlV2.dif(l1ed,l2op),
-        t1e=ctrlV2.dif(l1ed,l2ed);
-    var temp2=ctrlV2.dif(l2ed,l2op),
-        t2o=ctrlV2.dif(l2ed,l1op),
-        t2e=ctrlV2.dif(l2ed,l1ed);
-    var f11=ctrlV2.op(temp1,t1o),
-        f12=ctrlV2.op(temp1,t1e);
-    var f21=ctrlV2.op(temp2,t2o),
-        f22=ctrlV2.op(temp2,t2e);
+    var temp1=Vector2.dif(l1ed,l1op),
+        t1o=Vector2.dif(l1ed,l2op),
+        t1e=Vector2.dif(l1ed,l2ed);
+    var temp2=Vector2.dif(l2ed,l2op),
+        t2o=Vector2.dif(l2ed,l1op),
+        t2e=Vector2.dif(l2ed,l1ed);
+    var f11=Vector2.op(temp1,t1o),
+        f12=Vector2.op(temp1,t1e);
+    var f21=Vector2.op(temp2,t2o),
+        f22=Vector2.op(temp2,t2e);
     // fx   x是线段号码 (1 or 2)
-    // fx1 是起点撞到另一条线, fx2 是终点撞到另一条线
+    // fx1 是起点的 flag, fx2 是终点的 flag
     
-    switch(0){
-        case f11:
-            return 2;
-        break;
-        case f12:
-            return -1;
-        break;
-        case f21:
-            return -1;
-        break;
-        case f22:
-            return 2;
-        break;
+    if((f11==0)&&((f22>0)!=(f21>0))){
+        // l1 起点在 l2 上
+        return 2;
+    }
+    else if((f12==0)&&((f22>0)!=(f21>0))){
+        // l1 终点在 l2 上
+        return -1;
+    }else if((f21==0)&&((f11>0)!=(f12>0))){
+        // l2 起点在 l1 上
+        return -1;
+    }
+    else if((f22==0)&&((f11>0)!=(f12>0))){
+        // l2 终点在 l1 上
+        return 2;
     }
     
     if((f11>0)!=(f12>0)&&(f22>0)!=(f21>0)){
@@ -294,9 +302,10 @@ function getImpactCount(_polygon1,_polygon2){
     var vl1=_polygon1.nodes,vl2=_polygon2.nodes;
     var i=vl1.length-1,j;
     var f=0;
-    for(--i;i>=0&&!f;--i){
+    for(--i;i>=0;--i){
         for(j=vl2.length-2;j>=0;--j){
             f+=getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
+            console.log(getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]));
         }
     }
     return f;
@@ -310,7 +319,7 @@ function getImpactFlag(_polygon1,_polygon2){
     if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return false;
     var vl1=_polygon1.nodes,vl2=_polygon2.nodes;
     var i=vl1.length-1,j;
-    for(--i;i>=0&&!f;--i){
+    for(--i;i>=0;--i){
         for(j=vl2.length-2;j>=0;--j){
             if(getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))return true;
         }

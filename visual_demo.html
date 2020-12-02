@@ -24,12 +24,12 @@
     <canvas id="canvasDemo" width="500" height="500"></canvas>
 
     <script src="../Basics.js"></script>
-    <script src="./visual-Lib.js"></script>
     <script src="./Matrix2x2_mod.js"></script>
     <script src="./Vector2.js"></script>
     <script src="./Polygon.js"></script>
     <script src="./visual.js"></script>
     <script src="./canvasTGT.js"></script>
+    <script src="./Sprites.js"></script>
     <script type="text/javascript">
         // Sprites 精灵图像 (css)
         var $=function(str){return document.querySelectorAll(str);}
@@ -73,10 +73,10 @@
         // });
 
         var ctgt3data=new Polygon();
+        ctgt3data.pushNode(new Vector2(0,0));
+        ctgt3data.pushNode(new Vector2(0,100));
         ctgt3data.pushNode(new Vector2(100,100));
-        ctgt3data.pushNode(new Vector2(200,100));
-        ctgt3data.pushNode(new Vector2(200,200));
-        ctgt3data.pushNode(new Vector2(100,200));
+        ctgt3data.pushNode(new Vector2(100,0));
         ctgt3data.seal();
         var ctgt3=new CanvasPolygonTGT(ctgt3data);
         ctgt3.fillStyle="#00f";
@@ -85,7 +85,7 @@
             console.log("this is tgt3",e);
         });
 
-        var ctgt4data=ctrlPolygon.linearMapping(ctgt3data,Sprites.Matrix.rotate(45*deg).translate(100,0));
+        var ctgt4data=ctrlPolygon.linearMapping(ctgt3data,Sprites.Matrix.rotate(45*deg).translate(200,200));
         var ctgt4=new CanvasPolygonTGT(ctgt4data);
         ctgt4.fillStyle="#f0f";
         ctgt4.render(ctx);
@@ -93,6 +93,14 @@
             console.log("this is tgt4",e);
         });
 
+        var ctgt5data=new Polygon([new Vector2(100,200),new Vector2(1000,200)]);
+        var ctgt5=new CanvasPolygonTGT(ctgt5data);
+        ctgt5.render(ctx);
+
+        var ctgt6data=new Polygon([new Vector2(200,200),new Vector2(200,300)]);
+        var ctgt6=new CanvasPolygonTGT(ctgt6data);
+        ctgt6.render(ctx);
+        
         // var d = ctgt2.toPolygon(8);
         // d.gridx=100;
         // d.render(ctx);
