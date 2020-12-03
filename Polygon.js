@@ -8,25 +8,21 @@
 /** 多边形
  * @param {Array<Vector2>} nodes 装着顶点的数组
  */
-function Polygon(nodes){
-    // 存放 Vector2 的列表 
-    this.nodes=[];
+class Polygon{
+    constructor(nodes){
+        // 存放 Vector2 的列表 
+        this.nodes=[];
 
-    this.transformMatrix=new Matrix2x2T();
+        this.transformMatrix=new Matrix2x2T();
 
-    this.min    =new Vector2;
-    this.max    =new Vector2;
-    
-    if(nodes&&nodes.constructor==Array){
-        this.pushNodes(nodes);
+        this.min    =new Vector2;
+        this.max    =new Vector2;
+
+        if(nodes&&nodes.constructor==Array){
+            this.pushNodes(nodes);
+        }
     }
-}
-Polygon.prototype={
-    constructor:Polygon,
-    /**拷贝自身
-     * @return {Polygon}
-     */
-    copy:function(){
+    copy(){
         var ret=new Polygon();
         ret.nodes=[];
         ret.min=this.min.copy();
@@ -38,11 +34,11 @@ Polygon.prototype={
         }
 
         return ret;
-    },
+    }
     /**
      * 刷新 最大xy 最小xy
      */
-    reMinMax:function(){
+    reMinMax(){
         this.max.x=this.nodes[0].x;
         this.max.y=this.nodes[0].y;
         this.min.x=this.nodes[0].x;
@@ -54,11 +50,11 @@ Polygon.prototype={
             else if(this.nodes[i].y<this.min.y)this.min.y=this.nodes[i].y;
         }
     }
-    ,
+    
     /**追加顶点
      * @param {Vector2} v       要追加的顶点
      */
-    pushNode:function(v){
+    pushNode(v){
         this.nodes.push(v.copy());
         if(this.nodes.length>1){
             if(v.x>this.max.x){
@@ -77,21 +73,21 @@ Polygon.prototype={
         else{
             this.reMinMax();
         }
-    },
+    }
     /**
-     * 
+     * 加入一组数组
      * @param {Array <Vector2>} nodes 装着顶点的数组
      */
-    pushNodes:function(nodes){
+    pushNodes(nodes){
         for(var i=0;i<nodes.length;++i){
             this.pushNode(nodes[i]);
         }
-    },
+    }
     /**插入顶点
      * @param {Number} index    要插入的顶点的下标
      * @param {Vector2} v       要插入的顶点
      */
-    insert:function(index,v){
+    insert(index,v){
         this.nodes.splice(index,0,v);
         if(this.nodes.length>1){
                  if(v.x>this.max.x)this.max.x=v.x;
@@ -101,11 +97,11 @@ Polygon.prototype={
         }else{
             this.reMinMax();
         }
-    },
+    }
     /**移除顶点
      * @param {Number} index 要删除的顶点的下标
      */
-    remove:function(index){
+    remove(index){
         var tflag;
         if(
             this.nodes[index].x==this.max.x||this.nodes[index].y==this.min.x||
@@ -115,29 +111,29 @@ Polygon.prototype={
             }
         this.nodes.splice(index,1);
         if(tflag)this.reMinMax();
-    },
+    }
     /**移除所有顶点 */
-    removeAll:function(){
+    removeAll(){
         this.nodes=[];
-    },
+    }
     /** 闭合路径 */
-    seal:function(){
+    seal(){
         if(!this.isClosed()){
             this.nodes.push(this.nodes[0].copy());
         }
-    },
+    }
     /** 是否密封 */
-    isClosed:function(){
+    isClosed(){
         var l=this.nodes.length-1;
         return this.nodes[0].x==this.nodes[l].x&&this.nodes[0].y==this.nodes[l].y;
-    },
+    }
     /**
      * 使用局部坐标系判断某点是否在内部, 
      * 也可以使用向量作为实参
      * @param {Number} x 局部坐标系中的坐标
      * @param {Number} y 局部坐标系中的坐标
      */
-    isInside:function(x,y){
+    isInside(x,y){
         // 如果图形不是密封的, 直接返回否
         if(!this.isClosed()) return false;
 
@@ -165,12 +161,11 @@ Polygon.prototype={
         }
         return rtn;
     }
-}
-var ctrlPolygon={
+    
     /** 
      * 创建矩形
      */
-    rect:function(x,y,width,height){
+    static rect(x,y,width,height){
         var ret=new Polygon();
         ret.pushNode(new Vector2(x,y));
         ret.pushNode(new Vector2(x+width,y));
@@ -178,7 +173,7 @@ var ctrlPolygon={
         ret.pushNode(new Vector2(x,y+height));
         ret.seal();
         return ret;
-    },
+    }
     /**
      * 把弧形转换成多边形, 如果弧度的 绝对值 大于 2π 将作为圆形而不是弧形
      * @param {Number} r                半径
@@ -187,7 +182,7 @@ var ctrlPolygon={
      * @param {Number} endAngle         结束的弧度(rad)
      * @param {Boolean} anticlockwise   逆时针或顺时针
      */
-    arc:function(r,_startAngle,_endAngle,_accuracy,anticlockwise){
+    static arc(r,_startAngle,_endAngle,_accuracy,anticlockwise){
         var rtn=new Polygon();
         var accuracy=_accuracy>=3?_accuracy:3,
             startAngle,endAngle,cyclesflag,
@@ -220,7 +215,85 @@ var ctrlPolygon={
             rtn.seal();
         }
         return rtn;
-    },
+    }
+    
+    /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
+     * @param {Vector2} l1op    线段1的起点
+     * @param {Vector2} l1ed    线段1的终点
+     * @param {Vector2} l2op    线段2的起点
+     * @param {Vector2} l2ed    线段2的终点
+     * @return {Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上; 
+     */
+    static getIntersectFlag(l1op,l1ed,l2op,l2ed){
+        var temp1=Vector2.dif(l1ed,l1op),
+            t1o=Vector2.dif(l1ed,l2op),
+            t1e=Vector2.dif(l1ed,l2ed);
+        var temp2=Vector2.dif(l2ed,l2op),
+            t2o=Vector2.dif(l2ed,l1op),
+            t2e=Vector2.dif(l2ed,l1ed);
+        // fx   x是线段号码 (1 or 2)
+        // fx1 是起点的 flag, fx2 是终点的 flag
+        var f11=Vector2.op(temp1,t1o),
+            f12=Vector2.op(temp1,t1e);
+        var f21=Vector2.op(temp2,t2o),
+            f22=Vector2.op(temp2,t2e);
+        
+        if((f11==0)&&((f22>0)!=(f21>0))){
+            // l1 起点在 l2 上
+            return 2;
+        }
+        else if((f12==0)&&((f22>0)!=(f21>0))){
+            // l1 终点在 l2 上
+            return -1;
+        }else if((f21==0)&&((f11>0)!=(f12>0))){
+            // l2 起点在 l1 上
+            return -1;
+        }
+        else if((f22==0)&&((f11>0)!=(f12>0))){
+            // l2 终点在 l1 上
+            return 2;
+        }
+        
+        if((f11>0)!=(f12>0)&&(f22>0)!=(f21>0)){
+            // 两线段相交
+            return 1;
+        }
+        return 0;
+    }
+    /** 获取两个多边形的相交次数
+     * @param   {Polygon}   _polygon1
+     * @param   {Polygon}   _polygon2
+     * @return  {Number}    相交的次数
+     */
+    static getImpactCount(_polygon1,_polygon2){
+        // TODO: 当两个多边形的角碰到角的时候，会出现两次计算，会比预算结果多1
+        if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return 0;
+        var vl1=_polygon1.nodes,vl2=_polygon2.nodes;
+        var i=vl1.length-1,j;
+        var f=0;
+        for(--i;i>=0;--i){
+            for(j=vl2.length-2;j>=0;--j){
+                f+=Polygon.getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
+            }
+        }
+        return f;
+    }
+    /** 获取两个多边形是否相交
+     * @param   {Polygon}   _polygon1
+     * @param   {Polygon}   _polygon2
+     * @return  {Boolean}   是否相交
+     */
+    static getImpactFlag(_polygon1,_polygon2){
+        if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return false;
+        var vl1=_polygon1.nodes,vl2=_polygon2.nodes;
+        var i=vl1.length-1,j;
+        for(--i;i>=0;--i){
+            for(j=vl2.length-2;j>=0;--j){
+                if(Polygon.getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))return true;
+            }
+        }
+        return false;
+    }
     
     /**
      * 矩阵和多边形内部所有向量变换, 根据实参的顺序重载后乘对象
@@ -230,10 +303,10 @@ var ctrlPolygon={
      * @param {Polygon} p 多边形
      * @returns {Polygon} 返回一个新的多边形
      */
-    linearMapping:function(p,m){}
+    static linearMapping(p,m){}
 }
-ctrlPolygon.linearMapping=createOlFnc();
-ctrlPolygon.linearMapping.addOverload([Polygon,Matrix2x2],function(p,m){
+Polygon.linearMapping=createOlFnc();
+Polygon.linearMapping.addOverload([Polygon,Matrix2x2],function(p,m){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
@@ -241,7 +314,7 @@ ctrlPolygon.linearMapping.addOverload([Polygon,Matrix2x2],function(p,m){
     }
     return rtn;
 });
-ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
+Polygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
@@ -249,80 +322,3 @@ ctrlPolygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
     }
     return rtn;
 });
-
-/** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
- * @param {Vector2} l1op    线段1的起点
- * @param {Vector2} l1ed    线段1的终点
- * @param {Vector2} l2op    线段2的起点
- * @param {Vector2} l2ed    线段2的终点
- * @return {Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上
- */
-function getIntersectFlag(l1op,l1ed,l2op,l2ed){
-    var temp1=Vector2.dif(l1ed,l1op),
-        t1o=Vector2.dif(l1ed,l2op),
-        t1e=Vector2.dif(l1ed,l2ed);
-    var temp2=Vector2.dif(l2ed,l2op),
-        t2o=Vector2.dif(l2ed,l1op),
-        t2e=Vector2.dif(l2ed,l1ed);
-    var f11=Vector2.op(temp1,t1o),
-        f12=Vector2.op(temp1,t1e);
-    var f21=Vector2.op(temp2,t2o),
-        f22=Vector2.op(temp2,t2e);
-    // fx   x是线段号码 (1 or 2)
-    // fx1 是起点的 flag, fx2 是终点的 flag
-    
-    if((f11==0)&&((f22>0)!=(f21>0))){
-        // l1 起点在 l2 上
-        return 2;
-    }
-    else if((f12==0)&&((f22>0)!=(f21>0))){
-        // l1 终点在 l2 上
-        return -1;
-    }else if((f21==0)&&((f11>0)!=(f12>0))){
-        // l2 起点在 l1 上
-        return -1;
-    }
-    else if((f22==0)&&((f11>0)!=(f12>0))){
-        // l2 终点在 l1 上
-        return 2;
-    }
-    
-    if((f11>0)!=(f12>0)&&(f22>0)!=(f21>0)){
-        return 1;
-    }
-    return 0;
-}
-/** 获取两个多边形的相交次数
- * @param   {Polygon}   _polygon1
- * @param   {Polygon}   _polygon2
- * @return  {Number}    相交的次数
- */
-function getImpactCount(_polygon1,_polygon2){
-    if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return 0;
-    var vl1=_polygon1.nodes,vl2=_polygon2.nodes;
-    var i=vl1.length-1,j;
-    var f=0;
-    for(--i;i>=0;--i){
-        for(j=vl2.length-2;j>=0;--j){
-            f+=getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
-            console.log(getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]));
-        }
-    }
-    return f;
-}
-/** 获取两个多边形是否相交
- * @param   {Polygon}   _polygon1
- * @param   {Polygon}   _polygon2
- * @return  {Boolean}   是否相交
- */
-function getImpactFlag(_polygon1,_polygon2){
-    if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return false;
-    var vl1=_polygon1.nodes,vl2=_polygon2.nodes;
-    var i=vl1.length-1,j;
-    for(--i;i>=0;--i){
-        for(j=vl2.length-2;j>=0;--j){
-            if(getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))return true;
-        }
-    }
-    return false;
-}
