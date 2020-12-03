@@ -301,24 +301,29 @@ class Polygon{
      * (m,p)矩阵后乘列向量
      * @param {Matrix2x2T} m 矩阵
      * @param {Polygon} p 多边形
+     * @param {Boolean} translate_befroeOrAfter 先平移或后平移; 默认后平移
      * @returns {Polygon} 返回一个新的多边形
      */
-    static linearMapping(p,m){}
+    static linearMapping(p,m,translate_befroeOrAfter=false){
+        return Polygon.EX_linearMapping(p,m,!!translate_befroeOrAfter);
+    }
+    static EX_linearMapping(p,m,translate_befroeOrAfter){}
+
 }
-Polygon.linearMapping=createOlFnc();
-Polygon.linearMapping.addOverload([Polygon,Matrix2x2],function(p,m){
+Polygon.EX_linearMapping=createOlFnc();
+Polygon.EX_linearMapping.addOverload([Polygon,Matrix2x2,Boolean],function(p,m,f){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
-        rtn.pushNode(Vector2.linearMapping(p.nodes[i],m));
+        rtn.pushNode(Vector2.linearMapping(p.nodes[i],m,f));
     }
     return rtn;
 });
-Polygon.linearMapping.addOverload([Matrix2x2,Polygon],function(m,p){
+Polygon.EX_linearMapping.addOverload([Matrix2x2,Polygon,Boolean],function(m,p,f){
     var i=0,
         rtn=new Polygon();
     for(;i<p.nodes.length;++i){
-        rtn.pushNode(Vector2.linearMapping(m,p.nodes[i]));
+        rtn.pushNode(Vector2.linearMapping(m,p.nodes[i],f));
     }
     return rtn;
 });

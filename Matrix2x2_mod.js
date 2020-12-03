@@ -66,85 +66,45 @@ class Matrix2x2{
             m1.c*m2.a+m1.d*m2.c , m1.c*m2.b+m1.d*m2.d
             );
     }
-}
-/**
- * 创建矩阵
- */
-Matrix2x2.create={
     /**
-     * @param {Number} theta 顺时针 旋转角弧度
+     * 创建矩阵
      */
-    rotate:function(theta){
-        var s=Math.sin(theta),
-            c=Math.cos(theta);
-        return new Matrix2x2(c,s,-s,c);
-    },
-    /**
-     * @param {Number} x x 轴方向上的缩放系数
-     * @param {Number} y y 轴方向上的缩放系数
-     */
-    scale:function(x,y){
-        return new Matrix2x2(x,0,0,y);
-    },
-    
-    /**
-     * @param {Number} axis 方向轴 0:x 非零:y
-     * @param {Number} k 切变系数
-     */
-    shear:function(axis,k){
-        if(axis){
-            // y轴
-            return new Matrix2x2(1,0,k,1);
-        }
-        else{
-            // x轴
-            return new Matrix2x2(1,k,0,1);
-        }
-    },
-    identity:function(){
-        return new Matrix2x2(1,0,0,1);
-    }
-}
-
-/**
- * 2*2矩阵 + 平移
- * @param {Number} a  矩阵的参数 m11
- * @param {Number} b  矩阵的参数 m12
- * @param {Number} c  矩阵的参数 m21
- * @param {Number} d  矩阵的参数 m22
- * @param {Number} e  平移量x
- * @param {Number} f  平移量y
- */
-class Matrix2x2T extends Matrix2x2{
-    constructor(a,b,c,d,e,f){
-        super(a,b,c,d);
-        this.e=e||0;    //tx
-        this.f=f||0;    //ty
-    }
-    copy(){
-        return new Matrix2x2T(this.a,this.b,this.c,this.d,this.e,this.f);
-    }
+    static create={
+        /**
+         * @param {Number} theta 顺时针 旋转角弧度
+         */
+        rotate:function(theta){
+            var s=Math.sin(theta),
+                c=Math.cos(theta);
+            return new Matrix2x2(c,s,-s,c);
+        },
+        /**
+         * @param {Number} x x 轴方向上的缩放系数
+         * @param {Number} y y 轴方向上的缩放系数
+         */
+        scale:function(x,y){
+            return new Matrix2x2(x,0,0,y);
+        },
         
-    /**
-     * 再平移
-     * @param {Number} x x轴偏移量
-     * @param {Number} y y轴偏移量
-     */
-    translate(x,y){
-        var rtn = this.copy();
-        rtn.e+=x;
-        rtn.f+=y;
-        return rtn;
+        /**
+         * @param {Number} axis 方向轴 0:x 非零:y
+         * @param {Number} k 切变系数
+         */
+        shear:function(axis,k){
+            if(axis){
+                // y轴
+                return new Matrix2x2(1,0,k,1);
+            }
+            else{
+                // x轴
+                return new Matrix2x2(1,k,0,1);
+            }
+        },
+        identity:function(){
+            return new Matrix2x2(1,0,0,1);
+        }
     }
-    /**
-     * 归零平移
-     */
-    translateZero(){
-        var rtn = this.copy();
-        rtn.e=0;
-        rtn.f=0;
-        return rtn;
-    }
+    
     /**
      * 缩放
      * @param {Number} x x 轴方向上的缩放系
@@ -173,6 +133,56 @@ class Matrix2x2T extends Matrix2x2{
         return this.multiplication(
             Matrix2x2.create.shear(axis,k)
         )
+    }
+}
+
+/**
+ * 2*2矩阵 + 平移
+ * @param {Number} a  矩阵的参数 m11
+ * @param {Number} b  矩阵的参数 m12
+ * @param {Number} c  矩阵的参数 m21
+ * @param {Number} d  矩阵的参数 m22
+ * @param {Number} e  平移量x
+ * @param {Number} f  平移量y
+ */
+class Matrix2x2T extends Matrix2x2{
+    constructor(a,b,c,d,e,f){
+        super(a,b,c,d);
+        this.e=e||0;    //tx
+        this.f=f||0;    //ty
+    }
+    copy(){
+        return new Matrix2x2T(this.a,this.b,this.c,this.d,this.e,this.f);
+    }
+    /**
+     * 设置 translate 值
+     * @param {Number} x 
+     * @param {Number} y 
+     */
+    setTranslate(x,y){
+        this.e=x;
+        this.f=y;
+        return this;
+    }
+    /**
+     * 再平移
+     * @param {Number} x x轴偏移量
+     * @param {Number} y y轴偏移量
+     */
+    translate(x,y){
+        var rtn = this.copy();
+        rtn.e+=x;
+        rtn.f+=y;
+        return rtn;
+    }
+    /**
+     * 归零平移
+     */
+    translateZero(){
+        var rtn = this.copy();
+        rtn.e=0;
+        rtn.f=0;
+        return rtn;
     }
 
 }

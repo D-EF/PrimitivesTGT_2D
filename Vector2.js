@@ -11,6 +11,10 @@
  * @param {Number}  y
  */
 class Vector2{
+    /**
+     * @param {Number}  x
+     * @param {Number}  y
+     */
     constructor(x,y){
         this.x=x||0;
         this.y=y||0;
@@ -108,44 +112,93 @@ class Vector2{
     static op(v1,v2){return v1.x*v2.y-v1.y*v2.x;}
     
     /**
-     * 矩阵和向量的乘法, 根据实参的顺序重载后乘对象
+     * 线性变换(矩阵和向量的乘法), 根据实参的顺序重载后乘对象
      * (v,m)行向量后乘矩阵
      * (m,v)矩阵后乘列向量
-     * 如果使用 Matrix2x2T 矩阵, 平移参数变换之后才会进行计算
      * @param {Vector2} v 向量
      * @param {Matrix2x2} m 矩阵
      * @returns {Vector2} 返回一个向量
      */
-    static linearMapping(v,m){
+    static baseLinearMapping(v,m){
+    }
+    /**
+     * 先进行2x2变换 再平移
+     * @param {Vector2} v 
+     * @param {Matrix2x2T} m 
+     * @returns {Vector2} 返回一个向量
+     */
+    static afterTranslate_linearMapping(v,m){
+        var rtnv=Vector2.baseLinearMapping(v,m),
+            tm=(arguments[0].constructor==Vector2)?arguments[1]:arguments[0];
+        rtnv.x+=tm.e;
+        rtnv.y+=tm.f;
+        return rtnv;
+    }
+    /**
+     * 先平移 再 进行2x2变换, 根据实参的顺序重载后乘对象
+     * @param {Vector2} v 
+     * @param {Matrix2x2T} m 
+     * @returns {Vector2} 返回一个向量
+     */
+    static beforeTranslate_linearMapping(v,m){
+        var tv,tm,rtn;
+        if(arguments[0].constructor==Vector2){
+            tv=arguments[0];
+            tm=arguments[1];
+            if(tm.constructor==Matrix2x2T){
+                tv.x+=tm.e;
+                tv.y+=tm.f;
+            }
+            rtn=Vector2.baseLinearMapping(tv,tm);
+        }
+        else{
+            tm=arguments[0];
+            tv=arguments[1];
+            if(tm.constructor==Matrix2x2T){
+                tv.x+=tm.e;
+                tv.y+=tm.f;
+            }
+            rtn=Vector2.baseLinearMapping(tm,tv);
+        }
+        
+        return rtn;
+    }
+    /**
+     * 线性变换(矩阵和向量的乘法), 根据实参的顺序重载后乘对象
+     * (v,m)行向量后乘矩阵
+     * (m,v)矩阵后乘列向量
+     * @param {Vector2} v 向量
+     * @param {Matrix2x2} m 矩阵
+     * @param {Boolean} translate_befroeOrAfter 先平移或后平移; 默认后平移
+     * @returns {Vector2} 返回一个向量
+     */
+    static linearMapping(v,m,translate_befroeOrAfter=false){
+        if(translate_befroeOrAfter){
+            return Vector2.beforeTranslate_linearMapping(v,m)
+        }else{
+            return Vector2.afterTranslate_linearMapping(v,m)
+        }
     }
 }
 
-Vector2.linearMapping=createOlFnc();
+Vector2.baseLinearMapping=createOlFnc();
 /**
  * 行向量后乘矩阵
  */
-Vector2.linearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
+Vector2.baseLinearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
     var rtn = new Vector2(
         v.x*m.a+v.y*m.c,
         v.x*m.b+v.y*m.d
     )
-    if(m.constructor==Matrix2x2T){
-        rtn.x+=m.e;
-        rtn.y+=m.f;
-    }
     return rtn;
 },"行向量后乘矩阵");
 /**
  * 矩阵后乘列向量
  */
-Vector2.linearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
+Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
     var rtn = new Vector2(
         v.x*m.a+v.y*m.b,
         v.x*m.c+v.y*m.d
     );
-    if(m.constructor==Matrix2x2T){
-        rtn.x+=m.e;
-        rtn.y+=m.f;
-    }
     return rtn;
 },"矩阵后乘列向量");

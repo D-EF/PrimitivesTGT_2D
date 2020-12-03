@@ -11,9 +11,7 @@ class CanvasTGT{
         this.fillStyle="#fff";
         this.strokeStyle="#000";
         this.lineWidth=1;
-        this.gridx=0;       //图形的全局坐标x
-        this.gridy=0;       //图形的全局坐标y
-        this.rotate=0;      //图形的全局旋转(rad)
+        this.transformMatrix=new Matrix2x2T();
     }
     /**
      * 拷贝函数
@@ -43,6 +41,7 @@ class CanvasTGT{
      * @param {Number} y    坐标
     */
     isInside(x,y){
+        // 在派生类中实现
         return 0;
     }
     /** 
@@ -67,6 +66,9 @@ class CanvasTGT{
     }
     /**
      * 注册事件
+     * @param {Element} element     触发事件的html元素 , 一般是挂到canvas上
+     * @param {String} type         事件的类型 Event.type 
+     * @param {Function} listener   事件触发的函数
      */
     regEvent(element,type,listener){
         if(!this[type+"Event"]){
@@ -109,7 +111,9 @@ class CanvasTGT{
         return rtn;
     }
     /**用 data 获取多边形代理对象 */
-    getPolygonProxy(_accuracy){}
+    getPolygonProxy(_accuracy){
+        // 在派生类中实现
+    }
 
     /**
      * 根据鼠标xy触发内部tgt事件
@@ -152,7 +156,6 @@ class CanvasRectTGT extends CanvasTGT{
     getPolygonProxy(){
         return Polygon.rect(this.data.x,this.data.y,this.data.width,this.data.height);
     }
-    
 }
 
 class CanvasArcTGT extends CanvasTGT{
