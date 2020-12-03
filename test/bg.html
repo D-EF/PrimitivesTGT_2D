@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>background test</title>
+    <style>
+        .SpritesDemo{
+            background-image: url("../SpritesMap.png");
+            display:inline-block;
+            background-size: 1000% 1000%;
+            background-position:-100% -500%;
+            width: 100px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <script type="text/javascript">
+        var d=[];
+        var init=-100;
+        for(var i=0;i<100;++i){
+            var newS=document.createElement("div");
+            newS.className="SpritesDemo";
+            newS.style.backgroundPosition=`${i%10*init}% ${parseInt(i/10)%10*init}%`;
+            d.push(newS);
+            document.body.appendChild(newS);
+        }
+    </script>
+</body>
+</html>

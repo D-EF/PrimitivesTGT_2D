@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>canvas1 test</title>
+</head>
+<body>
+    <script type="text/javascript" src="../../Basics.js"></script>
+    <script type="text/javascript" src="../Matrix2x2_mod.js"></script>
+    <script type="text/javascript" src="../Sprites.js"></script>
+    <script type="text/javascript">
+        var sm=new Sprites(10,10,"../SpritesMap.png");
+        
+        sm.img.onload=function(){
+            var newS=document.createElement("canvas"),x=0,y=0,ctx=newS.getContext("2d");
+            newS.width=1000;
+            newS.height=1000;
+            document.body.appendChild(newS);
+            for(i=0;i<100;++i){
+                x=i%10;
+                y=parseInt(i/10)%10;
+                sm.renderSprites(ctx,x,y,1,1,x*100,y*100,100,100);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -56,12 +56,12 @@ Sprites.prototype = {
      * @param {Number} dh    图像绘制高度
      */
     renderCanvasSprites: function (ctx, sx, sy, sw, sh, dx, dy, dw, dh) {
-        var tempPattern = ctx.createPattern(this.img,"repeat");
+        var tempPattern = ctx.createPattern(this.img,"repeat"),
         scaleX = (this.img.width) / (dw * this.SpritesX*sw),
         scaleY = (this.img.height) / (dh * this.SpritesY*sh),
-        translateX=dw-scaleX*dw*sx,
-        translateY=dh-scaleY*dh*sy;
-        tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY).rotate(45*deg));
+        translateX=dx-scaleX*dw*sx,
+        translateY=dy-scaleY*dh*sy;
+        tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY));
         ctx.fillStyle = tempPattern;
         ctx.fillRect(dx, dy, dw, dh);
     },
