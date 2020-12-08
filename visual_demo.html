@@ -50,70 +50,22 @@
 
         // canvasTGT
         var canvas=document.getElementById("canvasDemo"),ctx=canvas.getContext("2d");
-        sm.img.onload=function(){sm.renderSprites(ctx,0,0,2,1,300,100,100,100);}
-
-
-        // var ctgt1=new CanvasRectTGT(0,0,100,100);
-        // ctgt1.gridx=100;
-        // ctgt1.gridy=100;
-        // ctgt1.fillStyle="#f00";
-        // ctgt1.rotate=45*deg;
-        // ctgt1.render(ctx);
-        // ctgt1.regEvent(canvas,"click",function(e){
-        //     console.log("this is tgt1",e);
-        // });
-
-        // var ctgt2=new CanvasArcTGT(200,200,50,-60*deg,180*deg);
-        // ctgt2.lineWidth=10;
-        // ctgt2.fillStyle="#0f0";
-        // ctgt2.gridy=200;
-        // ctgt2.render(ctx);
-        // ctgt2.regEvent(canvas,"click",function(e){
-        //     console.log("this is tgt2",e);
-        // });
-
-        var ctgt3data=new Polygon();
-        ctgt3data.pushNode(new Vector2(0,0));
-        ctgt3data.pushNode(new Vector2(0,100));
-        ctgt3data.pushNode(new Vector2(100,100));
-        ctgt3data.pushNode(new Vector2(100,0));
-        ctgt3data.seal();
-        var ctgt3=new CanvasPolygonTGT(ctgt3data);
-        ctgt3.fillStyle="#00f";
-        ctgt3.render(ctx);
-        ctgt3.regEvent(canvas,"click",function(e){
-            console.log("this is tgt3",e);
-        });
-
-        var ctgt4data=Polygon.linearMapping(ctgt3data,Sprites.Matrix.rotate(45*deg).translate(200,200));
-        var ctgt4=new CanvasPolygonTGT(ctgt4data);
-        ctgt4.fillStyle="#f0f";
-        ctgt4.render(ctx);
-        ctgt4.regEvent(canvas,"click",function(e){
-            console.log("this is tgt4",e);
-        });
-
-        var ctgt5data=new Polygon([new Vector2(100,200),new Vector2(1000,200)]);
-        var ctgt5=new CanvasPolygonTGT(ctgt5data);
-        ctgt5.render(ctx);
-
-        var ctgt6data=new Polygon([new Vector2(250,300),new Vector2(200,200),new Vector2(150,300)]);
-        var ctgt6=new CanvasPolygonTGT(ctgt6data);
-        ctgt6.fillStyle="#0002";
-        ctgt6.render(ctx);
-        var ctgt7data=new Polygon([new Vector2(200,300),new Vector2(200,200)]);
-        var ctgt7=new CanvasPolygonTGT(ctgt7data);
-        ctgt7.fillStyle="#0002";
-        ctgt7.render(ctx);
+        var tgt1=new CanvasRectTGT(-50,-50,100,100);
+            tgt1.setTransformMatrix(createMatrix2x2T().rotate(45*deg).translate(200,200));
+            tgt1.regEvent(canvas,"click",function(e){
+                console.log(this);
+            })
+        sm.img.onload=function(){sm.renderSprites(ctx,0,0,2,1,300,100,100,100);
+            tgt1.fillStyle=sm.createPattern(2,9,1,1,tgt1.data.x,tgt1.data.y,tgt1.data.width,tgt1.data.height);
+            tgt1.render(ctx);
+        }
         
-        // var d = ctgt2.toPolygon(8);
-        // d.gridx=100;
-        // d.render(ctx);
-        // d.regEvent(canvas,"mousedown",function(e){
-        //     console.log("this is tgt2's Polygon",e);
-        // });
-
-
+        var tgt2=new CanvasRectTGT(0,0,50,50);
+        tgt2.fillStyle="#0f0";
+        tgt2.render(ctx);
+        tgt2.regEvent(canvas,"click",function(e){
+            console.log(this);
+        })
 
         // const element = document.getElementById('SpritesADemo'); 
         // let start;

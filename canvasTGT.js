@@ -11,7 +11,16 @@ class CanvasTGT{
         this.fillStyle="#fff";
         this.strokeStyle="#000";
         this.lineWidth=1;
-        this.transformMatrix=new Matrix2x2T();
+        this.transformMatrix=createMatrix2x2T();
+        this.temp_worldToLocalM=createMatrix2x2T();
+    }
+    /**
+     * 设置变换矩阵
+     * @param {Matrix2x2T} m 
+     */
+    setTransformMatrix(m){
+        this.transformMatrix=m.copy();
+        this.temp_worldToLocalM=m.inverse();
     }
     /**
      * 拷贝函数
@@ -43,8 +52,9 @@ class CanvasTGT{
      * @param {Number} y 重载1的参数 局部坐标y
      * @param {Vector2} v  重载2的参数 局部坐标向量
      */
-    localToWorld (x,y){}
-    // 重载函数 , 在class定义的外面实现
+    localToWorld (x,y){
+        // 重载函数 , 在class定义的外面实现
+    }
     /**
      * 将世界坐标系变换到局部坐标系
      * @method localToWorld 拥有两个重载
@@ -52,7 +62,9 @@ class CanvasTGT{
      * @param {Number} y 重载1的参数 世界坐标y
      * @param {Vector2} v  重载2的参数 世界坐标向量
      */
-    worldToLocal (x,y){}
+    worldToLocal (x,y){
+        // 在class定义的外面, 实现重载
+    }
     /** 
      * 判断某一点是否在目标内部
      * @param {Number} x    坐标
@@ -122,9 +134,7 @@ class CanvasTGT{
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
-        rtn.gridx       =this.gridx;
-        rtn.gridy       =this.gridy;
-        rtn.rotate      =this.rotate;
+        rtn.setTransformMatrix(this.transformMatrix);
         return rtn;
     }
     /**用 data 获取多边形代理对象 */
@@ -157,12 +167,27 @@ CanvasTGT.prototype.localToWorld.addOverload([Vector2],function(v){
 // 世界坐标 to 局部坐标
 CanvasTGT.prototype.worldToLocal=createOlFnc();
 CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function(x,y){
-    var tm=this.transformMatrix.inverse();
-    Vector2.beforeTranslate_linearMapping(new Vector2(x,y),tm);
+    var tm;
+    if(this.temp_worldToLocalM){
+        tm=this.temp_worldToLocalM;
+    }
+    else{
+        tm=this.transformMatrix.inverse();
+        this.temp_worldToLocalM=tm;
+    }
+    return Vector2.beforeTranslate_linearMapping(new Vector2(x,y),tm);
 });
 CanvasTGT.prototype.worldToLocal.addOverload([Vector2],function(v){
-    var tm=this.transformMatrix.inverse();
-    Vector2.beforeTranslate_linearMapping(v,tm);
+    var tm;
+    // todo : 怎么判断当前的变换矩阵的逆是否过期
+    if(this.temp_worldToLocalM&&(this.temp_worldToLocalM)){
+        tm=this.temp_worldToLocalM;
+    }
+    else{
+        tm=this.transformMatrix.inverse();
+        this.temp_worldToLocalM=tm;
+    }
+    return Vector2.beforeTranslate_linearMapping(v,tm);
 });
 
 /** 矩形
@@ -177,9 +202,7 @@ class CanvasRectTGT extends CanvasTGT{
         this.data={x:x,y:y,width:width,height:height};
     }
     isInside(_x,_y){;
-        var m=ctrlM2.rotate(-1*this.rotate);
-        var v=new Vector2(_x-this.gridx,_y-this.gridy);
-        v=ctrlV2.linearMapping(v,m);
+        var v=this.worldToLocal(_x,_y);
     
         if(v.x>this.data.x&&v.x<this.data.x+this.data.width&&v.y>this.data.y&&v.y<this.data.y+this.data.height)return true;
         return false;
@@ -194,12 +217,13 @@ class CanvasRectTGT extends CanvasTGT{
 
 class CanvasArcTGT extends CanvasTGT{
     constructor(cx,cy,r,startAngle,endAngle,anticlockwise){
+        super();
         this.data={cx:cx,cy:cy,r:r,startAngle:startAngle,endAngle:endAngle,anticlockwise:anticlockwise};
     }
     isInside(_x,_y){
-        var x=_x-this.gridx-this.data.cx,y=_y-this.gridy-this.data.cy,r=this.data.r+this.lineWidth*0.5;
-        var v = ctrlV2.linearMapping(new Vector2(x,y),ctrlM2.rotate(-1*this.rotate));
-        x=v.x,y=v.y;
+        var r=this.data.r+this.lineWidth*0.5;
+        var v=this.worldToLocal(_x-this.data.cx,_y-this.data.cy);
+        var x=v.x,y=v.y;
         if(r<x||-1*r>x||r<y||-1*r>y) return false;
         var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
         var tr=Math.sqrt(x*x+y*y);
@@ -209,11 +233,13 @@ class CanvasArcTGT extends CanvasTGT{
                 return true;//圆形
             }
             else{
+                // 弧线的两端点
                 var l1op=new Vector2(Math.cos(this.data.startAngle)*r,Math.sin(this.data.startAngle)*r);
                 var l1ed=new Vector2(Math.cos(this.data.endAngle)*r,Math.sin(this.data.endAngle)*r);
-                var l2op=new Vector2();
+                // 圆心和实参的坐标
+                var l2op=new Vector2(0,0);
                 var l2ed=new Vector2(x,y);
-                var ISF=getIntersectFlag(l1op,l1ed,l2op,l2ed);
+                var ISF=Polygon.getIntersectFlag(l1op,l1ed,l2op,l2ed);  //相交情况
                 if(arcA>Math.PI){
                     // 大于半圆
                     return !ISF;
@@ -224,6 +250,7 @@ class CanvasArcTGT extends CanvasTGT{
                 }
             }
         }
+        // 不在半径内直接判定为外
         return false;
     }
     createCanvasPath(){
@@ -246,17 +273,10 @@ class CanvasPolygonTGT extends CanvasTGT{
         this.data.reMinMax();
     }
     isInside(_x,_y){
-        var x=_x-this.gridx,y=_y-this.gridy,tempProxy;
-        if(this.rotate){
-            var tv=ctorV2.linearMapping(new Vector2(x,y),ctrlM2.rotate(-1*this.rotate));
-            x=tv.x;
-            y=tv.y
-        }
-        if(this.data.minX>x||this.data.maxX<x||this.data.minY>y||this.data.maxY<y) return false;
-        if(this.data.isInside(x,y)){
-            return true;
-        }
-        return false;
+        var tv=this.worldToLocal(_x,_y);
+        var x=tv.x,y=tv.y;
+        if(this.data.min.x>x||this.data.max.x<x||this.data.min.y>y||this.data.max.y<y) return false;
+        return this.data.isInside(x,y);
     }
     createCanvasPath(){
         var i=this.data.nodes.length-1,

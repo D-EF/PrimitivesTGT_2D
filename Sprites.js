@@ -12,6 +12,7 @@ function Sprites(_SpritesX, _SpritesY, imgUrl) {
     this.img.src = imgUrl;
 }
 Sprites.Matrix = new Matrix2x2T();
+Sprites.nullCtx=document.createElement("canvas").getContext("2d");
 Sprites.prototype = {
     constructor: Sprites,
     /**
@@ -21,6 +22,26 @@ Sprites.prototype = {
     SpritesClipSize: function (flagElement) {
         //return (flagElement.offsetHeight > flagElement.offsetWidth ? flagElement.offsetWidth : flagElement.offsetHeight);
         return { height: flagElement.offsetHeight, width: flagElement.offsetWidth };
+    },
+    /**
+     * 
+     * @param {*} tgt 上下文, 可以是 Element 或者 CanvasRenderingContext2D
+     * @param {*} sx  当前的X坐标(单位: 格)
+     * @param {*} sy  当前的Y坐标(单位: 格)
+     * @param {*} sw  当前图像在整张图像中X占据多少格子
+     * @param {*} sh  当前图像在整张图像中Y占据多少格子
+     * @param {*} dx  图像绘制位置X  仅供canvas使用
+     * @param {*} dy  图像绘制位置Y  仅供canvas使用
+     * @param {*} dw  图像绘制宽度   仅供canvas使用
+     * @param {*} dh  图像绘制高度   仅供canvas使用
+     */
+    renderSprites: function (tgt, sx, sy, sw, sh, dx, dy, dw, dh) {
+        if (tgt instanceof Element) {
+            this.renderCssbgSprites.apply(this, arguments);
+        }
+        else if (tgt instanceof CanvasRenderingContext2D) {
+            this.renderCanvasSprites.apply(this, arguments);
+        }
     },
     /** 把精灵图像应用到 css 的 background 属性上
      * @param {Number} X    当前的X坐标(单位: 格)
@@ -44,6 +65,28 @@ Sprites.prototype = {
             _element.style.backgroundPosition = positionTGT;
         }
     },
+    /**
+     * 创建用于绘制 canvas 的 canvasPattern
+     * @param {Number} sx    当前的X坐标(单位: 格)
+     * @param {Number} sy    当前的Y坐标(单位: 格)
+     * @param {Number} sw    当前图像在整张图像中X占据多少格子
+     * @param {Number} sh    当前图像在整张图像中Y占据多少格子
+     * @param {Number} dx    图像绘制位置X
+     * @param {Number} dy    图像绘制位置Y
+     * @param {Number} dw    图像绘制宽度
+     * @param {Number} dh    图像绘制高度
+     * @return {CanvasPattern}
+     */
+    createPattern:function(sx, sy, sw, sh, dx, dy, dw, dh){
+        var tempPattern =Sprites.nullCtx.createPattern(this.img,"repeat"),
+        scaleX = (this.img.width) / (dw * this.SpritesX*sw),
+        scaleY = (this.img.height) / (dh * this.SpritesY*sh),
+        translateX=dx-scaleX*dw*sx,
+        translateY=dy-scaleY*dh*sy;
+        tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY));
+        return tempPattern;
+    },
+
     /** 把精灵图像应用到 canvas 上
      * @param {CanvasRenderingContext2D} ctx 当前画布的上下文
      * @param {Number} sx    当前的X坐标(单位: 格)
@@ -56,34 +99,8 @@ Sprites.prototype = {
      * @param {Number} dh    图像绘制高度
      */
     renderCanvasSprites: function (ctx, sx, sy, sw, sh, dx, dy, dw, dh) {
-        var tempPattern = ctx.createPattern(this.img,"repeat"),
-        scaleX = (this.img.width) / (dw * this.SpritesX*sw),
-        scaleY = (this.img.height) / (dh * this.SpritesY*sh),
-        translateX=dx-scaleX*dw*sx,
-        translateY=dy-scaleY*dh*sy;
-        tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY));
-        ctx.fillStyle = tempPattern;
+        ctx.fillStyle = this.createPattern( sx, sy, sw, sh, dx, dy, dw, dh);
         ctx.fillRect(dx, dy, dw, dh);
-    },
-    /**
-     * 
-     * @param {*} tgt 上下文, 可以是 Element 或者 CanvasRenderingContext2D
-     * @param {*} sx  当前的X坐标(单位: 格)
-     * @param {*} sy  当前的Y坐标(单位: 格)
-     * @param {*} sw  当前图像在整张图像中X占据多少格子
-     * @param {*} sh  当前图像在整张图像中Y占据多少格子
-     * @param {*} dx  图像绘制位置X  仅供canvas使用
-     * @param {*} dy  图像绘制位置Y  仅供canvas使用
-     * @param {*} dw  图像绘制宽度   仅供canvas使用
-     * @param {*} dh  图像绘制高度   仅供canvas使用
-     */
-    renderSprites: function (tgt, sx, sy, sw, sh, dx, dy, dw, dh) {
-        if (tgt instanceof Element) {
-            this.renderCssbgSprites.apply(this, arguments);
-        }
-        else if (tgt instanceof CanvasRenderingContext2D) {
-            this.renderCanvasSprites.apply(this, arguments);
-        }
     }
 }
 

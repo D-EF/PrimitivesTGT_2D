@@ -171,8 +171,8 @@ class Matrix2x2T extends Matrix2x2{
         var temp=Matrix2x2.prototype.inverse.call(this);
         if(temp){
             temp=Matrix2x2T.prototype.copy.call(temp);
-            temp.e=-temp.e;
-            temp.f=-temp.f;
+            temp.e=-1*this.e;
+            temp.f=-1*this.f;
             return temp;
         }
         else{
@@ -211,7 +211,6 @@ class Matrix2x2T extends Matrix2x2{
         rtn.f=0;
         return rtn;
     }
-
 }
 /**
  * 创建一个新的2x2t矩阵
