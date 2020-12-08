@@ -34,6 +34,17 @@ class Matrix2x2{
         return rtn;
     }
     /**
+     * 转置矩阵
+     */
+    transposed(){
+        var rtn=this.copy();
+        rtn.a=this.a;
+        rtn.b=this.c;
+        rtn.c=this.b;
+        rtn.d=this.d
+        return rtn;
+    }
+    /**
      * 矩阵的行列式
      * @return {Number} 行列式
      */
@@ -42,6 +53,7 @@ class Matrix2x2{
     }
     /**
      * 矩阵的逆
+     * @returns {Matrix2x2} 返回一个矩阵
      */
     inverse(){
         var m=this,
@@ -154,6 +166,21 @@ class Matrix2x2T extends Matrix2x2{
     copy(){
         return new Matrix2x2T(this.a,this.b,this.c,this.d,this.e,this.f);
     }
+
+    inverse(){
+        var temp=Matrix2x2.prototype.inverse.call(this);
+        if(temp){
+            temp=Matrix2x2T.prototype.copy.call(temp);
+            temp.e=-temp.e;
+            temp.f=-temp.f;
+            return temp;
+        }
+        else{
+            // 这个矩阵没有逆
+            return;
+        }
+    }
+
     /**
      * 设置 translate 值
      * @param {Number} x 

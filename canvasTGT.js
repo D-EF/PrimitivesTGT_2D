@@ -35,6 +35,24 @@ class CanvasTGT{
         
         return rtn;
     }
+    // 重载函数 , 在class定义的外面实现
+    /**
+     * 将局部坐标系变换到世界坐标系
+     * @method localToWorld 拥有两个重载
+     * @param {Number} x 重载1的参数 局部坐标x
+     * @param {Number} y 重载1的参数 局部坐标y
+     * @param {Vector2} v  重载2的参数 局部坐标向量
+     */
+    localToWorld (x,y){}
+    // 重载函数 , 在class定义的外面实现
+    /**
+     * 将世界坐标系变换到局部坐标系
+     * @method localToWorld 拥有两个重载
+     * @param {Number} x 重载1的参数 世界坐标x
+     * @param {Number} y 重载1的参数 世界坐标y
+     * @param {Vector2} v  重载2的参数 世界坐标向量
+     */
+    worldToLocal (x,y){}
     /** 
      * 判断某一点是否在目标内部
      * @param {Number} x    坐标
@@ -51,8 +69,7 @@ class CanvasTGT{
     render(ctx){
         ctx.save();
         ctx.beginPath();
-        ctx.translate(this.gridx,this.gridy);
-        ctx.rotate(this.rotate);
+        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e,this.transformMatrix.f);
         ctx.fillStyle=this.fillStyle;
         ctx.strokeStyle=this.strokeStyle;
         ctx.lineWidth=this.lineWidth;
@@ -129,7 +146,24 @@ class CanvasTGT{
         }
     }   //回调地狱 ('A'#)
 }
-
+// 局部坐标 to 世界坐标
+CanvasTGT.prototype.localToWorld=createOlFnc();
+CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function(x,y){
+    return Vector2.afterTranslate_linearMapping(new Vector2(x,y),this.transformMatrix);
+});
+CanvasTGT.prototype.localToWorld.addOverload([Vector2],function(v){
+    return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
+});
+// 世界坐标 to 局部坐标
+CanvasTGT.prototype.worldToLocal=createOlFnc();
+CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function(x,y){
+    var tm=this.transformMatrix.inverse();
+    Vector2.beforeTranslate_linearMapping(new Vector2(x,y),tm);
+});
+CanvasTGT.prototype.worldToLocal.addOverload([Vector2],function(v){
+    var tm=this.transformMatrix.inverse();
+    Vector2.beforeTranslate_linearMapping(v,tm);
+});
 
 /** 矩形
  * @param {Number} x 
