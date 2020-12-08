@@ -15,8 +15,8 @@ class Polygon{
 
         this.transformMatrix=new Matrix2x2T();
 
-        this.min    =new Vector2;
-        this.max    =new Vector2;
+        this.min    =new Vector2();
+        this.max    =new Vector2();
 
         if(nodes&&nodes.constructor==Array){
             this.pushNodes(nodes);
@@ -55,7 +55,7 @@ class Polygon{
      * @param {Vector2} v       要追加的顶点
      */
     pushNode(v){
-        this.nodes.push(v.copy());
+        this.nodes.push(Vector2.prototype.copy.call(v));
         if(this.nodes.length>1){
             if(v.x>this.max.x){
                 this.max.x=v.x;

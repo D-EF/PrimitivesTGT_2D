@@ -67,6 +67,30 @@
             console.log(this);
         })
 
+        var tgt3data=new Polygon(
+            [{x:0,y:0},
+            {x:80,y:0},
+            // {x:80,y:80},
+            {x:0,y:80}]
+        );
+        var tgt3 = new CanvasPolygonTGT();
+        tgt3.setTransformMatrix(createMatrix2x2T().scale(2,2).translate(100,100))
+        tgt3.data=tgt3data;
+        tgt3.fillStyle="#00f";
+        tgt3.render(ctx);
+
+        var tgtfdata=new Polygon(
+            [{x:0,y:100},
+            {x:10000,y:100},
+            {x:10000,y:0},
+            {x:100,y:0},
+            {x:100,y:10000}
+        ]
+        );
+        var tgtf= new CanvasPolygonTGT();
+        tgtf.data=tgtfdata;
+        tgtf.fillStyle="#0000";
+        tgtf.render(ctx);
         // const element = document.getElementById('SpritesADemo'); 
         // let start;
 

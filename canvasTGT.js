@@ -15,14 +15,6 @@ class CanvasTGT{
         this.temp_worldToLocalM=createMatrix2x2T();
     }
     /**
-     * 设置变换矩阵
-     * @param {Matrix2x2T} m 
-     */
-    setTransformMatrix(m){
-        this.transformMatrix=m.copy();
-        this.temp_worldToLocalM=m.inverse();
-    }
-    /**
      * 拷贝函数
      */
     copy(){
@@ -44,7 +36,37 @@ class CanvasTGT{
         
         return rtn;
     }
-    // 重载函数 , 在class定义的外面实现
+    /** 
+     * 获取最小的(局部)坐标
+     * @returns {Vector2} 返回一个向量
+     */
+    getMin(){
+        // 在派生类里实现
+    }
+    /** 
+     * 获取最大的(局部)坐标
+     * @returns {Vector2} 返回一个向量
+     */
+    getMax(){
+        // 在派生类里实现
+    }
+    /**
+     * @param {Sprites} _sprites 精灵图像实例
+     */
+    createSpritesFillStyle(_sprites,sx,sy,sw,sh){
+        var vMin=this.getMin();
+        var vMax=this.getMax();
+        return _sprites.createPattern(sx,sy,sw,sh,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
+    }
+    /**
+     * 设置变换矩阵
+     * @param {Matrix2x2T} m 
+     */
+    setTransformMatrix(m){
+        this.transformMatrix=m.copy();
+        this.temp_worldToLocalM=m.inverse();
+    }
+    // 这是个有多个重载的函数 , 在class定义的外面实现
     /**
      * 将局部坐标系变换到世界坐标系
      * @method localToWorld 拥有两个重载
@@ -53,7 +75,7 @@ class CanvasTGT{
      * @param {Vector2} v  重载2的参数 局部坐标向量
      */
     localToWorld (x,y){
-        // 重载函数 , 在class定义的外面实现
+        // 这是个有多个重载的函数 , 在class定义的外面实现
     }
     /**
      * 将世界坐标系变换到局部坐标系
@@ -201,6 +223,12 @@ class CanvasRectTGT extends CanvasTGT{
         super();
         this.data={x:x,y:y,width:width,height:height};
     }
+    getMin(){
+        return new Vector2(this.data.x,this.data.y);
+    }
+    getMax(){
+        return new Vector2(this.data.x+this.data.width,this.data.y+this.data.height);
+    }
     isInside(_x,_y){;
         var v=this.worldToLocal(_x,_y);
     
@@ -219,6 +247,13 @@ class CanvasArcTGT extends CanvasTGT{
     constructor(cx,cy,r,startAngle,endAngle,anticlockwise){
         super();
         this.data={cx:cx,cy:cy,r:r,startAngle:startAngle,endAngle:endAngle,anticlockwise:anticlockwise};
+    }
+    
+    getMin(){
+        return new Vector2(this.data.cx-this.datar,this.data.cy-this.datar);
+    }
+    getMax(){
+        return new Vector2(this.data.cx+this.datar,this.data.cy+this.datar);
     }
     isInside(_x,_y){
         var r=this.data.r+this.lineWidth*0.5;
@@ -264,13 +299,22 @@ class CanvasArcTGT extends CanvasTGT{
 }
 
 /** 多边形
- * @param {Polygon} _polygon 多边形
 */
 class CanvasPolygonTGT extends CanvasTGT{
+    /**
+     * @param {Polygon} _polygon 多边形
+     */
     constructor(_polygon){
         super();
         this.data=_polygon;
-        this.data.reMinMax();
+        if(this.data)this.data.reMinMax();
+    }
+    
+    getMin(){
+        return this.data.min.copy();
+    }
+    getMax(){
+        return this.data.max.copy();
     }
     isInside(_x,_y){
         var tv=this.worldToLocal(_x,_y);
@@ -296,3 +340,4 @@ class CanvasPolygonTGT extends CanvasTGT{
         this.gridy=0;
     }
 }
+

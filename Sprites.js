@@ -79,8 +79,8 @@ Sprites.prototype = {
      */
     createPattern:function(sx, sy, sw, sh, dx, dy, dw, dh){
         var tempPattern =Sprites.nullCtx.createPattern(this.img,"repeat"),
-        scaleX = (this.img.width) / (dw * this.SpritesX*sw),
-        scaleY = (this.img.height) / (dh * this.SpritesY*sh),
+        scaleX = (dw * this.SpritesX)/(this.img.width*sw),
+        scaleY = (dh*this.SpritesY)/(this.img.height*sh),
         translateX=dx-scaleX*dw*sx,
         translateY=dy-scaleY*dh*sy;
         tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY));
