@@ -73,6 +73,7 @@ class CanvasTGT{
      * @param {Number} x 重载1的参数 局部坐标x
      * @param {Number} y 重载1的参数 局部坐标y
      * @param {Vector2} v  重载2的参数 局部坐标向量
+     * @returns {Vector2} 返回一个世界坐标系的向量
      */
     localToWorld (x,y){
         // 这是个有多个重载的函数 , 在class定义的外面实现
@@ -83,6 +84,7 @@ class CanvasTGT{
      * @param {Number} x 重载1的参数 世界坐标x
      * @param {Number} y 重载1的参数 世界坐标y
      * @param {Vector2} v  重载2的参数 世界坐标向量
+     * @returns {Vector2} 返回一个局部坐标系的向量
      */
     worldToLocal (x,y){
         // 在class定义的外面, 实现重载
@@ -162,6 +164,27 @@ class CanvasTGT{
     /**用 data 获取多边形代理对象 */
     getPolygonProxy(_accuracy){
         // 在派生类中实现
+    }
+    /** 默认转换成多边形的 精度 */
+    static accuracy = 8;
+    /**
+     * @param {CanvasTGT} canvasTGT1 需要检测碰撞的对象
+     * @param {CanvasTGT} canvasTGT2 需要检测碰撞的对象
+     */
+    static isTouch(canvasTGT1,canvasTGT2){
+        var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy);
+        var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy);
+        var i;
+        for(i=tgt1.data.nodes.length-1;i>=0;--i){
+            tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);
+        }
+        for(i=tgt2.data.nodes.length-1;i>=0;--i){
+            tgt2.data.nodes[i]=tgt2.localToWorld(tgt2.data.nodes[i]);
+        }
+        tgt1.data.reMinMax();
+        tgt2.data.reMinMax();
+        
+        return Polygon.getImpactFlag(tgt1.data,tgt2.data);
     }
 
     /**
@@ -293,8 +316,8 @@ class CanvasArcTGT extends CanvasTGT{
     }
     getPolygonProxy(_accuracy){
         var rtn=Polygon.arc(this.data.r,this.data.startAngle,this.data.endAngle,_accuracy,this.data.anticlockwise);
-        rtn.linearMapping(new Vector2(this.data.cx,this.data.cy));
-        return rtn
+        rtn.translate(new Vector2(this.data.cx,this.data.cy));
+        return rtn;
     }
 }
 
@@ -315,6 +338,9 @@ class CanvasPolygonTGT extends CanvasTGT{
     }
     getMax(){
         return this.data.max.copy();
+    }
+    getPolygonProxy(){
+        return this.data.copy();
     }
     isInside(_x,_y){
         var tv=this.worldToLocal(_x,_y);

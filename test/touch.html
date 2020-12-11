@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>touch 碰撞 test</title>
+</head>
+<body>
+    <canvas id="canvas" tabindex="0" width="500" height="500"></canvas>
+    <script src="../../Basics.js"></script>
+    <script src="../Matrix2x2_mod.js"></script>
+    <script src="../Vector2.js"></script>
+    <script src="../Polygon.js"></script>
+    <script src="../visual.js"></script>
+    <script src="../canvasTGT.js"></script>
+    <script src="../Sprites.js"></script>
+
+    <script type="text/javascript">
+        var canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
+        var ctrlTGT=new CanvasPolygonTGT();
+            ctrlTGT.data=new Polygon([
+                {x:100,y:100},
+                {x:50,y:100},
+                {x:100,y:50}
+            ]);
+            ctrlTGT.transformMatrix=createMatrix2x2T().translate(200,200);
+            
+        var staticTGT1 = ctrlTGT.copy();
+        staticTGT1.transformMatrix=createMatrix2x2T().translate(200,400);
+        var staticTGT2 = new CanvasRectTGT(0,0,50,500);
+        var staticTGT3 = new CanvasArcTGT(400,400,50,0,360*deg);
+
+        staticTGT1.fillStyle="#f00";
+        staticTGT2.fillStyle="#f00";
+        staticTGT3.fillStyle="#f00";
+
+        var staticTGTs=[
+        // staticTGT1,
+        staticTGT2,
+        // staticTGT3
+        ];
+        function renderTGTs(){
+            ctx.clearRect(0,0,500,500);
+            ctrlTGT.render(ctx);
+            staticTGT1.render(ctx);
+            staticTGT2.render(ctx);
+            staticTGT3.render(ctx);
+        }
+
+        ctrlTGT.fillStyle="0f0";
+
+        addKeyEvent(canvas,1,38,function(e){
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,-1);
+            var i=0;
+            for(;i<staticTGTs.length;++i){
+                if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
+                    console.log(staticTGTs[i]);
+                }
+            }
+            renderTGTs()
+        });
+        
+        addKeyEvent(canvas,1,40,function(e){
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,1);
+            var i=0;
+            for(;i<staticTGTs.length;++i){
+                if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
+                    console.log(staticTGTs[i]);
+                }
+            }
+            renderTGTs()
+        });
+        
+        addKeyEvent(canvas,1,39,function(e){
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(1,0);
+            var i=0;
+            for(;i<staticTGTs.length;++i){
+                if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
+                    console.log(staticTGTs[i]);
+                }
+            }
+            renderTGTs()
+        });
+        
+        addKeyEvent(canvas,1,37,function(e){
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(-1,0);
+            var i=0;
+            for(;i<staticTGTs.length;++i){
+                if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
+                    console.log(staticTGTs[i]);
+                }
+            }
+            renderTGTs()
+        });
+        renderTGTs()
+        
+    </script>
+</body>
+</html>

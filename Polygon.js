@@ -161,7 +161,19 @@ class Polygon{
         }
         return rtn;
     }
-    
+    /**
+     * 平移
+     * @param {Vector2} v
+     */
+    translate(v){
+        var i;
+        for(i=this.nodes.length-1;i>=0;--i){
+            this.nodes[i].x+=v.x;
+            this.nodes[i].y+=v.y;
+        }
+        this.min.x+=v.x;
+        this.min.y+=v.y;
+    }
     /** 
      * 创建矩形
      */
@@ -289,7 +301,8 @@ class Polygon{
         var i=vl1.length-1,j;
         for(--i;i>=0;--i){
             for(j=vl2.length-2;j>=0;--j){
-                if(Polygon.getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))return true;
+                if(Polygon.getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))
+                return true;
             }
         }
         return false;
