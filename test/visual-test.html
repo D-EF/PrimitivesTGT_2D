@@ -28,9 +28,16 @@
     <script src="../Vector2.js"></script>
     <script src="../Polygon.js"></script>
     <script src="../visual.js"></script>
-    <script src="../canvasTGT.js"></script>
     <script src="../Sprites.js"></script>
+    <script src="../canvasTGT.js"></script>
     <script type="text/javascript">
+        
+        // importScripts("../Sprites.js")
+        // importScripts("../Matrix2x2_mod.js")
+        // importScripts("../Vector2.js")
+        // importScripts("../Polygon.js")
+        // importScripts("../visual.js")
+        // importScripts("../canvasTGT.js")
         // Sprites 精灵图像 (css)
         var $=function(str){return document.querySelectorAll(str);}
         var sm=new Sprites(10,10,"./SpritesMap.png");
@@ -91,6 +98,8 @@
         tgtf.data=tgtfdata;
         tgtf.fillStyle="#0000";
         tgtf.render(ctx);
+
+        
         // const element = document.getElementById('SpritesADemo'); 
         // let start;
 
@@ -108,6 +117,20 @@
         // }
 
         // window.requestAnimationFrame(step);
+
+        // class A{
+        //     constructor(){
+        //         this.a="a";
+        //     }
+        //     static b=new B();
+        // }
+        // class B{
+        //     constructor(){
+        //         this.b="b";
+        //     }
+        //     static s=new A();
+        // }
+        // 会报错，a里面不能用b的
     </script>
     
 </body>

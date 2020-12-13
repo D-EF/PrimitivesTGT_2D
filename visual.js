@@ -1,32 +1,3 @@
-/**
- * [judgeOs UA & 内核 判断]
- * @return {[type]} [description]
- */
-function judgeOs() {
-    var ua = navigator.userAgent,
-        isWindowsPhone = /(?:Windows Phone)/.test(ua),
-        isSymbian = /(?:SymbianOS)/.test(ua) || isWindowsPhone,
-        // 平板
-        isFireFox = ua.indexOf("Mozilla") != -1,
-        isTabvar = /(?:iPad|PlayBook)/.test(ua) || (isAndroid && !/(?:Mobile)/.test(ua)) || (isFireFox && /(?:Tabvar)/.test(ua)),
-        isPhone = /(?:iPhone)/.test(ua) && !isTabvar,
-        isPc = !isPhone && !isAndroid && !isSymbian,
-        isAndroid = ua.indexOf("Android") != -1,
-        isAndroid = ua.indexOf("Android") != -1,
-        isIE = ua.indexOf("Trident") != -1,
-        isWebkit = ua.indexOf("isWebkit") != -1,
-        isMozilla = ua.indexOf("Mozilla") != -1;
-    return {
-        isTabvar: isTabvar,
-        isPhone: isPhone,
-        isAndroid: isAndroid,
-        isPc: isPc,
-        isFireFox: isFireFox,
-        isWebkit: isWebkit,
-        isIE: isIE
-    };
-}
-/*判断客户端的浏览器UA ed.  资料参考HTML5学堂*/
 
 /**把色卡(#xxx)变成rgba的格式 */
 function colorToRGBA(str) {
