@@ -6,8 +6,6 @@
 class CanvasTGT{
     constructor(){
         this.data;
-        this.parent;
-        this.children;
         this.fillStyle="#fff";
         this.strokeStyle="#000";
         this.lineWidth=1;
@@ -30,9 +28,8 @@ class CanvasTGT{
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
-        rtn.gridx       =this.gridx;
-        rtn.gridy       =this.gridy;
-        rtn.rotate      =this.rotate;
+        rtn.transformMatrix=Matrix2x2T.prototype.copy.call(this.transformMatrix);
+        rtn.temp_worldToLocalM=Matrix2x2T.prototype.copy.call(this.temp_worldToLocalM);
         
         return rtn;
     }
@@ -329,7 +326,7 @@ class CanvasPolygonTGT extends CanvasTGT{
      */
     constructor(_polygon){
         super();
-        this.data=_polygon;
+        this.data=Polygon.prototype.copy(_polygon);
         if(this.data)this.data.reMinMax();
     }
     
