@@ -13,7 +13,7 @@
         var sm=new Sprites(10,10,"../SpritesMap.png");
         
         sm.img.onload=function(){
-            var newS=document.createElement("canvas"),x=0,y=0,ctx=newS.getContext("2d");
+            var newS=new OffscreenCanvas(1,1),x=0,y=0,ctx=newS.getContext("2d");
             newS.width=1000;
             newS.height=1000;
             document.body.appendChild(newS);

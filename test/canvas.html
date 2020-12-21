@@ -15,7 +15,7 @@
         sm.img.onload=function(){
             var d=[];
             for(i=0;i<100;++i){
-                var newS=document.createElement("canvas");
+                var newS=new OffscreenCanvas(1,1);
                 newS.width=100;
                 newS.height=100;
                 d.push(newS)
