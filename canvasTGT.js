@@ -221,7 +221,6 @@ CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function(x,y){
 });
 CanvasTGT.prototype.worldToLocal.addOverload([Vector2],function(v){
     var tm;
-    // todo : 怎么判断当前的变换矩阵的逆是否过期
     if(this.temp_worldToLocalM&&(this.temp_worldToLocalM)){
         tm=this.temp_worldToLocalM;
     }

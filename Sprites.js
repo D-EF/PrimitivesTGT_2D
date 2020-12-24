@@ -25,7 +25,7 @@ class Sprites{
         return { height: flagElement.offsetHeight, width: flagElement.offsetWidth };
     }
     /**
-     * 
+     * 渲染精灵图像
      * @param {*} tgt 上下文, 可以是 Element 或者 CanvasRenderingContext2D
      * @param {*} sx  当前的X坐标(单位: 格)
      * @param {*} sy  当前的Y坐标(单位: 格)

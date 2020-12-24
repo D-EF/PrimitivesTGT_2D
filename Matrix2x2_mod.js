@@ -72,6 +72,11 @@ class Matrix2x2{
         rtn.d=  m.a*oneOverDet;
         return rtn;
     }
+    /**
+     * 矩阵乘法
+     * @param {Matrix2x2} m1 
+     * @param {Matrix2x2} m2 
+     */
     static product(m1,m2){
         return new Matrix2x2(
             m1.a*m2.a+m1.b*m2.c , m1.a*m2.b+m1.b*m2.d,
@@ -112,6 +117,9 @@ class Matrix2x2{
                 return new Matrix2x2(1,k,0,1);
             }
         },
+        /**
+         * 单位矩阵
+         */
         identity:function(){
             return new Matrix2x2(1,0,0,1);
         }
