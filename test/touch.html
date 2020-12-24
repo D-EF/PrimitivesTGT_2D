@@ -50,44 +50,44 @@
         ctrlTGT.fillStyle="0f0";
 
         addKeyEvent(canvas,1,38,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,-1);
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,-2);
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
-                    console.log(staticTGTs[i]);
+                    console.log("is touching ",staticTGTs[i]);
                 }
             }
             renderTGTs()
         });
         
         addKeyEvent(canvas,1,40,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,1);
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,2);
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
-                    console.log(staticTGTs[i]);
+                    console.log("is touching ",staticTGTs[i]);
                 }
             }
             renderTGTs()
         });
         
         addKeyEvent(canvas,1,39,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(1,0);
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(2,0);
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
-                    console.log(staticTGTs[i]);
+                    console.log("is touching ",staticTGTs[i]);
                 }
             }
             renderTGTs()
         });
         
         addKeyEvent(canvas,1,37,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(-1,0);
+            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(-2,0);
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
-                    console.log(staticTGTs[i]);
+                    console.log("is touching ",staticTGTs[i]);
                 }
             }
             renderTGTs()

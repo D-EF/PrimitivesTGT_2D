@@ -163,7 +163,7 @@ class CanvasTGT{
         // 在派生类中实现
     }
     /** 默认转换成多边形的 精度 */
-    static accuracy = 8;
+    static accuracy = 20;
     /**
      * @param {CanvasTGT} canvasTGT1 需要检测碰撞的对象
      * @param {CanvasTGT} canvasTGT2 需要检测碰撞的对象
