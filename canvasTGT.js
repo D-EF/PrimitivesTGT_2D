@@ -326,7 +326,7 @@ class CanvasPolygonTGT extends CanvasTGT{
      */
     constructor(_polygon){
         super();
-        this.data=Polygon.prototype.copy(_polygon);
+        this.data=Polygon.prototype.copy.call(_polygon);
         if(this.data)this.data.reMinMax();
     }
     

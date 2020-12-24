@@ -24,13 +24,15 @@ class Polygon{
     }
     copy(){
         var ret=new Polygon();
-        ret.nodes=[];
-        ret.min=Vector2.prototype.copy.call(this.min);
-        ret.max=Vector2.prototype.copy.call(this.max);
-        ret.transformMatrix=Matrix2x2T.prototype.copy.call(this.transformMatrix);
-        var l=this.nodes.length,i=0;
-        for(;i<l;++i){
-            ret.pushNode(this.nodes[i]);
+        if(this&&this.nodes){
+            ret.nodes=[];
+            ret.min=Vector2.prototype.copy.call(this.min);
+            ret.max=Vector2.prototype.copy.call(this.max);
+            ret.transformMatrix=Matrix2x2T.prototype.copy.call(this.transformMatrix);
+            var l=this.nodes.length,i=0;
+            for(;i<l;++i){
+                ret.pushNode(this.nodes[i]);
+            }
         }
 
         return ret;
@@ -39,6 +41,7 @@ class Polygon{
      * 刷新 最大xy 最小xy
      */
     reMinMax(){
+        if(!this.nodes.length)return;
         this.max.x=this.nodes[0].x;
         this.max.y=this.nodes[0].y;
         this.min.x=this.nodes[0].x;
