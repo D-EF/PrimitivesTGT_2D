@@ -14,8 +14,13 @@ class Sprites{
         this.img = new Image();
         this.img.src = imgUrl;
         if(thisThread.createMatrix2x2T&&!Sprites.Matrix)Sprites.Matrix = createMatrix2x2T();
+        if(thisThread.OffscreenCanvas){
+            Sprites.nullCtx=new OffscreenCanvas(1,1).getContext("2d");
+        }
+        else if(thisThread.Document){
+            Sprites.nullCtx=document.createElement("canvas").getContext("2d");
+        }
     }
-    static nullCtx=new OffscreenCanvas(1,1).getContext("2d");
     /**
      * 图像显示的尺寸 (铺满)
      * @return {Object{height : Number , width : Number}}
