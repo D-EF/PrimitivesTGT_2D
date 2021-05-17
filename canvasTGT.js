@@ -48,6 +48,7 @@ class CanvasTGT{
         // 在派生类里实现
     }
     /**
+     * 创建填充类型
      * @param {Sprites} _sprites 精灵图像实例
      */
     createSpritesFillStyle(_sprites,sx,sy,sw,sh){
@@ -261,7 +262,9 @@ class CanvasRectTGT extends CanvasTGT{
         return Polygon.rect(this.data.x,this.data.y,this.data.width,this.data.height);
     }
 }
-
+/**
+ * 圆形
+ */
 class CanvasArcTGT extends CanvasTGT{
     constructor(cx,cy,r,startAngle,endAngle,anticlockwise){
         super();
@@ -307,7 +310,7 @@ class CanvasArcTGT extends CanvasTGT{
         // 不在半径内直接判定为外
         return false;
     }
-    createCanvasPath(){
+    createCanvasPath(ctx){
         ctx.arc(this.data.cx,this.data.cy,this.data.r,this.data.startAngle,this.data.endAngle,this.data.anticlockwise);
     }
     getPolygonProxy(_accuracy){
