@@ -5,10 +5,11 @@
  */
 
 
-/** 多边形
- * @param {Array<Vector2>} nodes 装着顶点的数组
- */
+
 class Polygon{
+    /** 多边形
+     * @param {Array<Vector2>} nodes 装着顶点的数组
+     */
     constructor(nodes){
         // 存放 Vector2 的列表 
         this.nodes=[];
