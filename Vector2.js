@@ -181,7 +181,7 @@ class Vector2{
     }
 }
 
-Vector2.baseLinearMapping=createOlFnc();
+Vector2.baseLinearMapping=OlFunction.create();
 /**
  * 行向量后乘矩阵
  */

@@ -327,7 +327,7 @@ class Polygon{
     static EX_linearMapping(p,m,translate_befroeOrAfter){}
 
 }
-Polygon.EX_linearMapping=createOlFnc();
+Polygon.EX_linearMapping=OlFunction.create();
 Polygon.EX_linearMapping.addOverload([Polygon,Matrix2x2,Boolean],function(p,m,f){
     var i=0,
         rtn=new Polygon();

@@ -14,6 +14,7 @@ class CanvasTGT{
     }
     /**
      * 拷贝函数
+     * @return {CanvasTGT} 返回一个拷贝
      */
     copy(){
         var rtn=new this.constructor();
@@ -59,10 +60,12 @@ class CanvasTGT{
     /**
      * 设置变换矩阵
      * @param {Matrix2x2T} m 
+     * @return {CanvasTGT} 返回当前对象
      */
     setTransformMatrix(m){
         this.transformMatrix=m.copy();
         this.temp_worldToLocalM=m.inverse();
+        return this;
     }
     // 这是个有多个重载的函数 , 在class定义的外面实现
     /**
@@ -200,7 +203,7 @@ class CanvasTGT{
     }   //回调地狱 ('A'#)
 }
 // 局部坐标 to 世界坐标
-CanvasTGT.prototype.localToWorld=createOlFnc();
+CanvasTGT.prototype.localToWorld=OlFunction.create();
 CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function(x,y){
     return Vector2.afterTranslate_linearMapping(new Vector2(x,y),this.transformMatrix);
 });
@@ -208,7 +211,7 @@ CanvasTGT.prototype.localToWorld.addOverload([Vector2],function(v){
     return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
 });
 // 世界坐标 to 局部坐标
-CanvasTGT.prototype.worldToLocal=createOlFnc();
+CanvasTGT.prototype.worldToLocal=OlFunction.create();
 CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function(x,y){
     var tm;
     if(this.temp_worldToLocalM){
