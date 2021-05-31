@@ -11,7 +11,7 @@ class Polygon{
      * @param {Array<Vector2>} nodes 装着顶点的数组
      */
     constructor(nodes){
-        // 存放 Vector2 的列表 
+        /** @type {Array<Vector2>}  存放 向量 的列表  */
         this.nodes=[];
 
         this.transformMatrix=new Matrix2x2T();
