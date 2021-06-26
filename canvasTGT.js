@@ -26,11 +26,11 @@ class CanvasTGT{
             rtn.data=Object.assign({},this.data);
         }
 
-        rtn.fillStyle   =this.fillStyle;
-        rtn.strokeStyle =this.strokeStyle;
-        rtn.lineWidth   =this.lineWidth;
-        rtn.transformMatrix=Matrix2x2T.prototype.copy.call(this.transformMatrix);
-        rtn.temp_worldToLocalM=Matrix2x2T.prototype.copy.call(this.temp_worldToLocalM);
+        rtn.fillStyle           = this.fillStyle;
+        rtn.strokeStyle         = this.strokeStyle;
+        rtn.lineWidth           = this.lineWidth;
+        rtn.transformMatrix     = Matrix2x2T.prototype.copy.call(this.transformMatrix);
+        rtn.temp_worldToLocalM  = Matrix2x2T.prototype.copy.call(this.temp_worldToLocalM);
         
         return rtn;
     }
