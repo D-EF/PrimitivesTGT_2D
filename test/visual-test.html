@@ -58,7 +58,7 @@
         // canvasTGT
         var canvas=document.getElementById("canvasDemo"),ctx=canvas.getContext("2d");
         var tgt1=new CanvasRectTGT(-50,-50,100,100);
-            tgt1.setTransformMatrix(createMatrix2x2T().rotate(45*deg).translate(200,200));
+            tgt1.setTransformMatrix(createMatrix2x2T().rotate(45*Math.DEG).translate(200,200));
             tgt1.regEvent(canvas,"click",function(e){
                 console.log(this);
             })
