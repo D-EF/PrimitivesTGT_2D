@@ -39,10 +39,6 @@
         // importScripts("../visual.js")
         // importScripts("../canvasTGT.js")
         // Sprites 精灵图像 (css)
-        var $=function(str){return document.querySelectorAll(str);}
-        var sm=new Sprites(10,10,"./SpritesMap.png");
-        sm.renderSprites($(".SpritesDemo")[0],1,2,2,2);
-        sm.renderSprites($(".SpritesDemo")[1],4,0,3,4);
         // var sma=new Sprites_Animation(sm,0,24);
         // sma.callstep=function(){
         //     console.log(1);
@@ -55,17 +51,19 @@
         // sma.go($(".SpritesDemo")[2],2,2,10,9,1,1,0,0,0,0,1);
 
 
+        var $=function(str){return document.querySelectorAll(str);}
+        var sm=new Sprites(10,10,"./SpritesMap.png");
+        sm.renderSprites($(".SpritesDemo")[0],1,2,2,2);
+        sm.renderSprites($(".SpritesDemo")[1],4,0,3,4);
+        
         // canvasTGT
         var canvas=document.getElementById("canvasDemo"),ctx=canvas.getContext("2d");
+
         var tgt1=new CanvasRectTGT(-50,-50,100,100);
-            tgt1.setTransformMatrix(createMatrix2x2T().rotate(45*Math.DEG).translate(200,200));
-            tgt1.regEvent(canvas,"click",function(e){
-                console.log(this);
-            })
-        sm.img.onload=function(){sm.renderSprites(ctx,0,0,2,1,300,100,100,100);
-            tgt1.fillStyle=sm.createPattern(2,9,1,1,tgt1.data.x,tgt1.data.y,tgt1.data.width,tgt1.data.height);
-            tgt1.render(ctx);
-        }
+        tgt1.setTransformMatrix(createMatrix2x2T().rotate(45*Math.DEG).translate(200,200));
+        tgt1.regEvent(canvas,"click",function(e){
+            console.log(this);
+        });
         
         var tgt2=new CanvasRectTGT(0,0,50,50);
         tgt2.fillStyle="#0f0";
@@ -76,17 +74,19 @@
 
         var tgt3data=new Polygon(
             [{x:0,y:0},
-            {x:80,y:0},
-            // {x:80,y:80},
+            {x:100,y:0},
+            {x:80,y:80},
             {x:0,y:80},
             {x:0,y:0}]
         );
         var tgt3 = new CanvasPolygonTGT();
-        tgt3.setTransformMatrix(createMatrix2x2T().scale(2,2).translate(100,100))
+        tgt3.setTransformMatrix(createMatrix2x2T().scale(2,2).rotate(23*Math.DEG).translate(100,150))
         tgt3.data=tgt3data;
-        tgt3.fillStyle="#00f";
-        tgt3.render(ctx);
 
+        tgt3.regEvent(canvas,"click",function(e){
+            console.log(this);
+            return "stop";
+        })
         var tgtfdata=new Polygon(
             [{x:0,y:100},
             {x:10000,y:100},
@@ -101,6 +101,18 @@
         tgtf.render(ctx);
 
         
+        sm.img.onload=function(){
+            sm.renderSprites(ctx,0,0,2,1,300,100,100,100);
+
+            var min=tgt3.getMin(),max=tgt3.getMax();
+            tgt3.fillStyle=sm.createPattern(3,7,2,1,min.x,min.y,max.x-min.x,max.y-min.y);
+            tgt3.render(ctx);
+
+            tgt1.fillStyle=sm.createPattern(2,9,2,2,tgt1.data.x,tgt1.data.y,tgt1.data.width,tgt1.data.height);
+            tgt1.render(ctx);
+
+        }
+
         // const element = document.getElementById('SpritesADemo'); 
         // let start;
 

@@ -89,8 +89,8 @@ class Sprites{
         var tempPattern =Sprites.nullCtx.createPattern(this.img,"repeat"),
         scaleX = (dw * this.SpritesX)/(this.img.width*sw),
         scaleY = (dh*this.SpritesY)/(this.img.height*sh),
-        translateX=dx-scaleX*dw*sx,
-        translateY=dy-scaleY*dh*sy;
+        translateX=dx-/* scaleX* */dw*sx,
+        translateY=dy-/* scaleY* */dh*sy;
         tempPattern.setTransform(Sprites.Matrix.scale(scaleX, scaleY).translate(translateX,translateY));
         return tempPattern;
     }
