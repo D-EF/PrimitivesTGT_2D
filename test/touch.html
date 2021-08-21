@@ -16,7 +16,9 @@
     <script src="../Sprites.js"></script>
 
     <script type="text/javascript">
+    var s=new Sprites(10,10,"./SpritesMap.png");
         var canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
+        
         var ctrlTGT=new CanvasPolygonTGT();
             ctrlTGT.data=new Polygon([
                 {x:100,y:100},
@@ -30,9 +32,11 @@
         var staticTGT2 = new CanvasRectTGT(0,0,50,500);
         var staticTGT3 = new CanvasArcTGT(400,400,50,0,360*Math.DEG);
 
-        staticTGT1.fillStyle="#f00";
+        staticTGT1.fillStyle="#ff0";
+        // staticTGT1.fillStyle=staticTGT1.createSpritesFillStyle(s,2,2,1,1);
         staticTGT2.fillStyle="#f00";
         staticTGT3.fillStyle="#f00";
+        ctrlTGT.fillStyle="#adf";
 
         var staticTGTs=[
         staticTGT1,
@@ -47,7 +51,6 @@
             staticTGT3.render(ctx);
         }
 
-        ctrlTGT.fillStyle="0f0";
 
         addKeyEvent(canvas,1,38,function(e){
             ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,-2);
@@ -92,8 +95,17 @@
             }
             renderTGTs()
         });
-        renderTGTs()
-        
+        renderTGTs();
+
+        canvas.addEventListener("click",function(e){
+            var x=e.clientX,y=e.clientY;
+            var i=0;
+            for(;i<staticTGTs.length;++i){
+                if(staticTGTs[i].isInside(x,y)){
+                    console.log("is click staticTGTs!",staticTGTs[i]);
+                }
+            }
+        })
     </script>
 </body>
 </html>

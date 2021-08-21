@@ -1,4 +1,5 @@
 var thisThread=this;
+
 /**
  * 精灵图像
  */
@@ -7,6 +8,7 @@ class Sprites{
      * 精灵图像
      * @param {Number} _SpritesX X轴有几格精灵图像
      * @param {Number} _SpritesY Y轴有几格精灵图像
+     * @param {String} imgUrl 图像的url
      */
     constructor(_SpritesX, _SpritesY, imgUrl){
         this.SpritesX = Number(_SpritesX);

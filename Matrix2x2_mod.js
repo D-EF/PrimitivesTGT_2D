@@ -104,6 +104,7 @@ class Matrix2x2{
         },
         
         /**
+         * 切变
          * @param {Number} axis 方向轴 0:x 非零:y
          * @param {Number} k 切变系数
          */

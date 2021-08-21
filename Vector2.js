@@ -61,8 +61,8 @@ class Vector2{
      * @return {Vector2}
      */
     instead(){return new Vector2(-1*this.x,-1*this.y);}
+
     /**向量和
-     * @param {Vector2} v1
      * @param {Vector2} v2
      * @return {Vector2}
      */
@@ -78,7 +78,6 @@ class Vector2{
      * @return {Vector2}
      */
     dif(v2){return new Vector2(this.x-v2.x,this.y-v2.y);}
-    
     /**
      * 向量内积
      * @param {Vector2} v2
@@ -90,6 +89,13 @@ class Vector2{
      * @return {Number}
      */
     op(v2){return this.x*v2.y-this.y*v2.x;}
+    
+    /**向量和
+     * @param {Vector2} v1
+     * @param {Vector2} v2
+     * @return {Vector2}
+     */
+     static add(v1,v2){return new Vector2(v1.x+v2.x,v1.y+v2.y);}
     /**向量差
      * @param {Vector2} v1
      * @param {Vector2} v2
