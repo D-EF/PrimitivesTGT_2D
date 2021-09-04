@@ -169,6 +169,8 @@ class CanvasTGT{
     /** 默认转换成多边形的 精度 */
     static accuracy = 20;
     /**
+     * 碰撞检测
+     * 不能用组对象进行检测
      * @param {CanvasTGT} canvasTGT1 需要检测碰撞的对象
      * @param {CanvasTGT} canvasTGT2 需要检测碰撞的对象
      */
