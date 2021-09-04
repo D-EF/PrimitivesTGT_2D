@@ -11,6 +11,7 @@ class CanvasTGT{
         this.lineWidth=1;
         this.transformMatrix=createMatrix2x2T();
         this.temp_worldToLocalM=createMatrix2x2T();
+        this.want_to_closePath=false;
     }
     /**
      * 拷贝函数
@@ -169,27 +170,11 @@ class CanvasTGT{
     /** 默认转换成多边形的 精度 */
     static accuracy = 20;
     /**
-     * 碰撞检测
-     * 不能用组对象进行检测
+     * 碰撞检测 有多个重载, 在class外面实现
      * @param {CanvasTGT} canvasTGT1 需要检测碰撞的对象
      * @param {CanvasTGT} canvasTGT2 需要检测碰撞的对象
      */
-    static isTouch(canvasTGT1,canvasTGT2){
-        var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy);
-        var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy);
-        var i;
-        for(i=tgt1.data.nodes.length-1;i>=0;--i){
-            tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);
-        }
-        for(i=tgt2.data.nodes.length-1;i>=0;--i){
-            tgt2.data.nodes[i]=tgt2.localToWorld(tgt2.data.nodes[i]);
-        }
-        tgt1.data.reMinMax();
-        tgt2.data.reMinMax();
-        
-        return Polygon.getImpactFlag(tgt1.data,tgt2.data);
-    }
-
+    static isTouch(){}
     /**
      * 根据鼠标xy触发内部tgt事件
      */
@@ -204,6 +189,128 @@ class CanvasTGT{
         }
     }   //回调地狱 ('A'#)
 }
+
+function isTouch_base(canvasTGT1,canvasTGT2){
+    var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy);
+    var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy);
+    var i;
+    for(i=tgt1.data.nodes.length-1;i>=0;--i){
+        tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);
+    }
+    for(i=tgt2.data.nodes.length-1;i>=0;--i){
+        tgt2.data.nodes[i]=tgt2.localToWorld(tgt2.data.nodes[i]);
+    }
+    tgt1.data.reMinMax();
+    tgt2.data.reMinMax();
+    
+    return Polygon.getImpactFlag(tgt1.data,tgt2.data);
+}
+
+CanvasTGT.isTouch=OlFunction.create(isTouch_base);
+
+/**
+ * 碰撞检测函数 矩形对矩形
+ * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
+ * @param {CanvasRectTGT} tgt2 进行碰撞检测的对象
+ */
+function isTouch_Rect_Rect(tgt1,tgt2){
+    var v1min=tgt1.localToWorld(tgt1.getMin()),
+        v1max=tgt1.localToWorld(tgt1.getMax()),
+        v2min=tgt2.localToWorld(tgt2.getMin()),
+        v2max=tgt2.localToWorld(tgt2.getMax());
+
+    if(v1min.x<v2min.x&&v1max.x<v2min.x){
+        return false;
+    }
+    if(v1min.y<v2min.y&&v1max.y<v2min.y){
+        return false;
+    }
+    if(v2min.x<v1min.x&&v2max.x<v1min.x){
+        return false;
+    }
+    if(v2min.y<v1min.y&&v2max.y<v1min.y){
+        return false;
+    }
+    return true;
+}
+
+/**
+ * 碰撞检测函数 矩形 弧形(圆形)
+ * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
+ * @param {CanvasArcTGT}  tgt2 进行碰撞检测的对象
+ */
+function isTouch_Rect_Arc(tgt1,tgt2){
+    var arcA=Math.abs(tgt2.data.startAngle-tgt2.data.endAngle);
+    var v1min=tgt1.localToWorld(tgt1.getMin()),
+        v1max=tgt1.localToWorld(tgt1.getMax()),
+        cx=tgt2.data.cx,
+        cy=tgt2.data.cy;
+    if(tgt2.want_to_closePath||arcA>=Math.PI*2){
+
+        return tgt2.isInside(v1min.x,v1min.y)||
+            tgt2.isInside(v1max.x,v1min.y)||
+            tgt2.isInside(v1min.x,v1max.y)||
+            tgt2.isInside(v1max.x,v1max.y)||
+            tgt2.isInside(v1min.x,cy)||
+            tgt2.isInside(cx,v1min.y)||
+            tgt2.isInside(v1max.x,cy)||
+            tgt2.isInside(cx,v1max.y);
+    }
+    if((v1min.y<cy&&v1min.x<cx)&&(v1max.y>cy&&v1max.x>cx)){
+        return true;
+    }
+    return isTouch_base(tgt1,tgt2);
+}
+
+/**
+ * 碰撞检测函数 矩形 多边形
+ */
+function isTouch_Rect_Polygon(){
+    return isTouch_base(tgt1,tgt2);
+}
+
+/**
+ * 碰撞检测函数 弧形(圆形) 多边形
+ */
+ function isTouch_Arc_Polygon(){
+    return isTouch_base(tgt1,tgt2);
+}
+
+/**
+ * 碰撞检测函数 多边形 多边形
+ */
+function isTouch_Polygon_Polygon(){
+    return isTouch_base(tgt1,tgt2);
+}
+
+/**
+ * 碰撞检测函数 组 组
+ */
+function isTouch_Group_Group(){
+    
+}
+
+/**
+ * 碰撞检测函数 组 矩形
+ */
+function isTouch_Group_Rect(){
+    
+}
+
+/**
+ * 碰撞检测函数 组 弧形(多边形)
+ */
+function isTouch_Group_Arc(){
+    
+}
+
+/**
+ * 碰撞检测函数 组 多边形
+ */
+function isTouch_Group_Polygon(){
+    
+}
+
 // 局部坐标 to 世界坐标
 CanvasTGT.prototype.localToWorld=OlFunction.create();
 CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function(x,y){
@@ -249,12 +356,37 @@ class CanvasRectTGT extends CanvasTGT{
         this.data={x:x,y:y,width:width,height:height};
     }
     getMin(){
-        return new Vector2(this.data.x,this.data.y);
+        var rtnx,rtny;
+        if(this.data.width>=0){
+            rtnx=this.data.x;
+        }else{
+            rtnx=this.data.x+this.data.width;
+        }
+        
+        if(this.data.height>=0){
+            rtny=this.data.y;
+        }else{
+            rtny=this.data.y+this.data.height;
+        }
+        return new Vector2(rtnx,rtny);
     }
+    
     getMax(){
-        return new Vector2(this.data.x+this.data.width,this.data.y+this.data.height);
+        var rtnx,rtny;
+        if(this.data.width<=0){
+            rtnx=this.data.x;
+        }else{
+            rtnx=this.data.x+this.data.width;
+        }
+        
+        if(this.data.height<=0){
+            rtny=this.data.y;
+        }else{
+            rtny=this.data.y+this.data.height;
+        }
+        return new Vector2(rtnx,rtny);
     }
-    isInside(_x,_y){;
+    isInside(_x,_y){
         var v=this.worldToLocal(_x,_y);
     
         if(v.x>this.data.x&&v.x<this.data.x+this.data.width&&v.y>this.data.y&&v.y<this.data.y+this.data.height)return true;
@@ -262,6 +394,7 @@ class CanvasRectTGT extends CanvasTGT{
     }
     createCanvasPath(ctx){
         ctx.rect(this.data.x,this.data.y,this.data.width,this.data.height);
+
     }
     getPolygonProxy(){
         return Polygon.rect(this.data.x,this.data.y,this.data.width,this.data.height);
@@ -317,6 +450,12 @@ class CanvasArcTGT extends CanvasTGT{
     }
     createCanvasPath(ctx){
         ctx.arc(this.data.cx,this.data.cy,this.data.r,this.data.startAngle,this.data.endAngle,this.data.anticlockwise);
+        if(this.want_to_closePath){
+            var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
+            if(Math.PI*2>arcA){
+                ctx.closePath();
+            }
+        }
     }
     getPolygonProxy(_accuracy){
         var rtn=Polygon.arc(this.data.r,this.data.startAngle,this.data.endAngle,_accuracy,this.data.anticlockwise);
@@ -358,6 +497,9 @@ class CanvasPolygonTGT extends CanvasTGT{
         ctx.moveTo(nodes[i].x,nodes[i].y);
         for(--i;i>=0;--i){
             ctx.lineTo(nodes[i].x,nodes[i].y);
+        }
+        if(this.want_to_closePath){
+            ctx.closePath();
         }
     }
     useRotate(){
