@@ -198,7 +198,7 @@ class Vector2{
     static rotateF(v1,v2){
         var k1=(v1.y/v1.x),
             k2=(v2.y/v2.x);
-        var f=(v2.x>=0)===(v1.x>=0);
+        var f=(v2.x>=0)===(v1.x>0);
         return (k1>k2)^f;
     }
     
