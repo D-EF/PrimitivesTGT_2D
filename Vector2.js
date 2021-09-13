@@ -83,7 +83,7 @@ class Vector2{
      * @param {Vector2} v2
      * @return {Number}
      */
-    ip(v2){return v1.x*v2.x+v1.y*v2.y;}
+    ip(v2){return this.x*v2.x+this.y*v2.y;}
     /**向量外积
      * @param {Vector2} v2 
      * @return {Number}
@@ -96,7 +96,7 @@ class Vector2{
      * @return {Vector2}
      */
      static add(v1,v2){return new Vector2(v1.x+v2.x,v1.y+v2.y);}
-    /**向量差
+    /**向量差1-2
      * @param {Vector2} v1
      * @param {Vector2} v2
      * @return {Vector2}
@@ -184,6 +184,32 @@ class Vector2{
         }else{
             return Vector2.afterTranslate_linearMapping(v,m)
         }
+    }
+    static isEqual(v1,v2){
+        return (v1.x==v2.x&&v1.y==v2.y);
+    }
+    
+    /**
+     * 向量的旋转倾向 如果旋转角度为0会认为是顺时针 180度会认为是逆时针
+     * @param {Vector2} v1  起点向量
+     * @param {Vector2} v2  终点向量
+     * @returns {Boolean} true为顺时针
+     */
+    static rotateF(v1,v2){
+        var k1=(v1.y/v1.x),
+            k2=(v2.y/v2.x);
+        var f=(v2.x>=0)===(v1.x>=0);
+        return (k1>k2)^f;
+    }
+    
+    /**
+     * 向量夹角运算
+     * @param {Vector2} v1 向量
+     * @param {Vector2} v2 向量
+     * @returns {Number} 返回夹角的cos值
+     */
+    static cos_VV(v1,v2){
+        return Vector2.ip(v1,v2)/(v1.mag()*v2.mag());
     }
 }
 

@@ -193,14 +193,14 @@ class Polygon{
     /**
      * 把弧形转换成多边形, 如果弧度的 绝对值 大于 2π 将作为圆形而不是弧形
      * @param {Number} r                半径
-     * @param {Number} _accuracy         精度 最小为3, 表示弧形由个顶点构成
+     * @param {Number} _accuracy         精度 最小为2, 表示弧形由个顶点构成
      * @param {Number} startAngle       开始的弧度(rad)
      * @param {Number} endAngle         结束的弧度(rad)
      * @param {Boolean} anticlockwise   逆时针或顺时针
      */
     static arc(r,_startAngle,_endAngle,_accuracy,anticlockwise){
         var rtn=new Polygon();
-        var accuracy=_accuracy>=3?_accuracy:3,
+        var accuracy=_accuracy>=2?_accuracy:2,
             startAngle,endAngle,cyclesflag,
             stepLong,
             cycles=Math.PI*2,
@@ -233,49 +233,6 @@ class Polygon{
         return rtn;
     }
     
-    /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
-     * @param {Vector2} l1op    线段1的起点
-     * @param {Vector2} l1ed    线段1的终点
-     * @param {Vector2} l2op    线段2的起点
-     * @param {Vector2} l2ed    线段2的终点
-     * @return {Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上; 
-     */
-    static getIntersectFlag(l1op,l1ed,l2op,l2ed){
-        var temp1=Vector2.dif(l1ed,l1op),
-            t1o=Vector2.dif(l1ed,l2op),
-            t1e=Vector2.dif(l1ed,l2ed);
-        var temp2=Vector2.dif(l2ed,l2op),
-            t2o=Vector2.dif(l2ed,l1op),
-            t2e=Vector2.dif(l2ed,l1ed);
-        // fx   x是线段号码 (1 or 2)
-        // fx1 是起点的 flag, fx2 是终点的 flag
-        var f11=Vector2.op(temp1,t1o),
-            f12=Vector2.op(temp1,t1e);
-        var f21=Vector2.op(temp2,t2o),
-            f22=Vector2.op(temp2,t2e);
-        
-        if((f11==0)&&((f22>0)!=(f21>0))){
-            // l1 起点在 l2 上
-            return 2;
-        }
-        else if((f12==0)&&((f22>0)!=(f21>0))){
-            // l1 终点在 l2 上
-            return -1;
-        }else if((f21==0)&&((f11>0)!=(f12>0))){
-            // l2 起点在 l1 上
-            return -1;
-        }
-        else if((f22==0)&&((f11>0)!=(f12>0))){
-            // l2 终点在 l1 上
-            return 2;
-        }
-        
-        if((f11>0)!=(f12>0)&&(f22>0)!=(f21>0)){
-            // 两线段相交
-            return 1;
-        }
-        return 0;
-    }
     /** 获取两个多边形的相交次数
      * @param   {Polygon}   _polygon1
      * @param   {Polygon}   _polygon2
@@ -289,7 +246,7 @@ class Polygon{
         var f=0;
         for(--i;i>=0;--i){
             for(j=vl2.length-2;j>=0;--j){
-                f+=Polygon.getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
+                f+=Math2D.line_i_line(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
             }
         }
         return f;
@@ -305,7 +262,7 @@ class Polygon{
         var i=vl1.length-1,j;
         for(--i;i>=0;--i){
             for(j=vl2.length-2;j>=0;--j){
-                if(Polygon.getIntersectFlag(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))
+                if(Math2D.line_i_line(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))
                 return true;
             }
         }

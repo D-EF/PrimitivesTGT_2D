@@ -264,16 +264,51 @@ function isTouch_Rect_Arc(tgt1,tgt2){
 
 /**
  * 碰撞检测函数 矩形 多边形
+ * @param {CanvasRectTGT} tgt1
+ * @param {CanvasPolygonTGT} tgt2
  */
-function isTouch_Rect_Polygon(){
-    return isTouch_base(tgt1,tgt2);
+function isTouch_Rect_Polygon(tgt1,tgt2){
+    var i =tgt2.data.nodes.length-1,
+        l=i;
+    for(;i>=0;--i){
+        if(tgt1.isInside(tgt2.data.nodes[i].x,tgt2.data.nodes[i].y)){
+            return true;
+        }
+    }
+    if(tgt2.want_to_closePath||Vector2.isEqual(tgt2.data.nodes[0],tgt2.data.nodes[l])){
+        var min=tgt1.localToWorld(tgt1.getMin());
+            max=tgt1.localToWorld(tgt1.getMax());
+        return tgt2.isInside(min.x,min.y)||
+            tgt2.isInside(max.x,max.y)||
+            tgt2.isInside(max.x,min.y)||
+            tgt2.isInside(min.x,max.y);
+    }
+    else{
+        return false;
+    }
 }
 
 /**
  * 碰撞检测函数 弧形(圆形) 多边形
+ * @param {CanvasArcTGT} tgt1
+ * @param {CanvasPolygonTGT} tgt2
  */
- function isTouch_Arc_Polygon(){
-    return isTouch_base(tgt1,tgt2);
+ function isTouch_Arc_Polygon(tgt1,tgt2){
+    var i =tgt2.data.nodes.length-1,
+        l=i,
+        temp_node;
+    for(;i>=0;--i){
+        temp_node=tgt2.localToWorld(tgt2.data.nodes[i]);
+        if(tgt1.isInside(temp_node.x,temp_node.y)){
+            return true;
+        }
+    }
+    if(tgt2.want_to_closePath||Vector2.isEqual(tgt2.data.nodes[0],tgt2.data.nodes[l])){
+        tgt2.isInside()
+    }
+    else{
+        return false;
+    }
 }
 
 /**
@@ -387,9 +422,10 @@ class CanvasRectTGT extends CanvasTGT{
         return new Vector2(rtnx,rtny);
     }
     isInside(_x,_y){
-        var v=this.worldToLocal(_x,_y);
-    
-        if(v.x>this.data.x&&v.x<this.data.x+this.data.width&&v.y>this.data.y&&v.y<this.data.y+this.data.height)return true;
+        var v=this.worldToLocal(_x,_y),
+        max=this.getMax(),
+        min=this.getMin();
+        if(v.x>min.x&&v.x<max.x&&v.y>min.y&&v.y<max.y)return true;
         return false;
     }
     createCanvasPath(ctx){
@@ -404,11 +440,59 @@ class CanvasRectTGT extends CanvasTGT{
  * 圆形
  */
 class CanvasArcTGT extends CanvasTGT{
+    /**
+     * @param {Number} cx 圆心的坐标
+     * @param {Number} cy 圆心的坐标
+     * @param {Number} r  半径
+     * @param {Number} startAngle       起点的弧度
+     * @param {Number} endAngle         终点的弧度
+     * @param {Boolean} anticlockwise    true 顺时针, false 逆时针
+     */
     constructor(cx,cy,r,startAngle,endAngle,anticlockwise){
         super();
-        this.data={cx:cx,cy:cy,r:r,startAngle:startAngle,endAngle:endAngle,anticlockwise:anticlockwise};
+        /**
+         * @type {{
+         * cx:Number
+         * cy:Number
+         * r:Number
+         * startAngle:Number
+         * endAngle:Number
+         * anticlockwise:Boolean
+         * }}
+         */
+        this.data={
+            cx:cx,
+            cy:cy,
+            r:r,
+            startAngle:startAngle,
+            endAngle:endAngle,
+            anticlockwise:anticlockwise
+        };
+    }
+    /**
+     * 获取起点的向量(相对于圆心)
+     */
+    get_opv(){
+        var tempAngle=this.data.startAngle;
+        if(!this.data.anticlockwise){
+            tempAngle*=-1;
+        }
+        
+        return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
     }
     
+    /**
+     * 获取终点的向量(相对于圆心)
+     */
+     get_edv(){
+        var tempAngle=this.data.endAngle;
+        if(!this.data.anticlockwise){
+            tempAngle*=-1;
+        }
+        
+        return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
+    }
+
     getMin(){
         return new Vector2(this.data.cx-this.datar,this.data.cy-this.datar);
     }
@@ -452,7 +536,7 @@ class CanvasArcTGT extends CanvasTGT{
         ctx.arc(this.data.cx,this.data.cy,this.data.r,this.data.startAngle,this.data.endAngle,this.data.anticlockwise);
         if(this.want_to_closePath){
             var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
-            if(Math.PI*2>arcA){
+            if((Math.PI*2>arcA)&&this.want_to_closePath){
                 ctx.closePath();
             }
         }
@@ -472,6 +556,9 @@ class CanvasPolygonTGT extends CanvasTGT{
      */
     constructor(_polygon){
         super();
+        /**
+         * @type {Polygon}
+         */
         this.data=Polygon.prototype.copy.call(_polygon);
         if(this.data)this.data.reMinMax();
     }
@@ -489,7 +576,14 @@ class CanvasPolygonTGT extends CanvasTGT{
         var tv=this.worldToLocal(_x,_y);
         var x=tv.x,y=tv.y;
         if(this.data.min.x>x||this.data.max.x<x||this.data.min.y>y||this.data.max.y<y) return false;
+        if(this.want_to_closePath&&!this.data.isClosed()){
+            this.data.seal();
+            var rtn=this.data.isInside(x,y);
+            this.data.remove(this.data.length-1);
+            return rtn;
+        }
         return this.data.isInside(x,y);
+        
     }
     createCanvasPath(){
         var i=this.data.nodes.length-1,
