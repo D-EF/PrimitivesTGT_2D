@@ -3,6 +3,84 @@
  *  
  */
 
+// data
+
+/**
+ * 弧形的图形数据
+ */
+class Arc_Data{
+    constructor(cx,cy,r,startAngle,endAngle,anticlockwise){
+        /**圆心的坐标 */
+        this.c=new Vector2(cx,cy);
+        /**圆半径 */
+        this.r=r;
+        /**弧形的起点弧度 */
+        this.startAngle=startAngle;
+        /**弧形的终点弧度 */
+        this.endAngle=endAngle;
+        /**弧形弧度的旋转方向 */
+        this.anticlockwise;
+
+        //以下应该是只读的 
+        /**弧形起点 */
+        this.opv=this.get_opv();
+        /**弧形终点 */
+        this.edv=this.get_edv();
+        /**弧度差  */
+    }
+    /**
+     * 拷贝函数
+     * @returns {Arc_Data}
+     */
+    copy(){
+        return new Arc_Data(
+            this.c.x,
+            this.c.y,
+            this.r,
+            this.startAngle,
+            this.endAngle,
+            this.anticlockwise
+            );
+    }
+    /**
+     * 重新计算起点和重点的坐标
+     */
+    re_oped(){
+        /**弧形起点 */
+        this.opv=this.get_opv();
+        /**弧形终点 */
+        this.edv=this.get_edv();
+    }
+    
+    /**
+     * 获取起点的向量(相对于圆心)
+     */
+     get_opv(){
+        var tempAngle=this.data.startAngle;
+        if(!this.data.anticlockwise){
+            tempAngle*=-1;
+        }
+        
+        return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
+    }
+    
+    /**
+     * 获取终点的向量(相对于圆心)
+     */
+    get_edv(){
+        var tempAngle=this.data.endAngle;
+        if(!this.data.anticlockwise){
+            tempAngle*=-1;
+        }
+        
+        return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
+    }
+
+}
+
+
+
+
 class CanvasTGT{
     constructor(){
         this.data;
@@ -436,8 +514,10 @@ class CanvasRectTGT extends CanvasTGT{
         return Polygon.rect(this.data.x,this.data.y,this.data.width,this.data.height);
     }
 }
+
+
 /**
- * 圆形
+ * 弧形
  */
 class CanvasArcTGT extends CanvasTGT{
     /**
@@ -458,6 +538,7 @@ class CanvasArcTGT extends CanvasTGT{
          * startAngle:Number
          * endAngle:Number
          * anticlockwise:Boolean
+         * startAngle_V:Vector2
          * }}
          */
         this.data={
@@ -466,31 +547,22 @@ class CanvasArcTGT extends CanvasTGT{
             r:r,
             startAngle:startAngle,
             endAngle:endAngle,
-            anticlockwise:anticlockwise
+            anticlockwise:anticlockwise,
         };
-    }
-    /**
-     * 获取起点的向量(相对于圆心)
-     */
-    get_opv(){
-        var tempAngle=this.data.startAngle;
-        if(!this.data.anticlockwise){
-            tempAngle*=-1;
-        }
         
-        return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
-    }
-    
-    /**
-     * 获取终点的向量(相对于圆心)
-     */
-     get_edv(){
-        var tempAngle=this.data.endAngle;
-        if(!this.data.anticlockwise){
-            tempAngle*=-1;
+        /**
+         * 只读的属性
+         * @type {{
+         * startAngle_V:Vector2,
+         * endAngle_V:Vector2,
+         * angle_value:Number
+         * }}
+         */
+        this.onlyRead_data={
+            startAngle_V,
+            endAngle_V,
+            angle_value
         }
-        
-        return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
     }
 
     getMin(){
@@ -499,12 +571,28 @@ class CanvasArcTGT extends CanvasTGT{
     getMax(){
         return new Vector2(this.data.cx+this.datar,this.data.cy+this.datar);
     }
+    /**
+     * 存入弧度值
+     * @param {Number} val  新的弧度值
+     * @returns val
+     */
+    setStartAngle(val){
+        this.data.startAngle=val;
+        this.data.startAngle_V=new Vector2(Math.cos(this.data.startAngle)*r,Math.sin(this.data.startAngle)*r);
+        this.data.angle_value=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
+        return this.data.startAngle;
+    }
+    getStartAngle(){
+        return this.data.startAngle;
+    }
+
+
     isInside(_x,_y){
         var r=this.data.r+this.lineWidth*0.5;
         var v=this.worldToLocal(_x-this.data.cx,_y-this.data.cy);
         var x=v.x,y=v.y;
         if(r<x||-1*r>x||r<y||-1*r>y) return false;
-        var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
+        var arcA=this.onlyRead_data.angle_value;
         var tr=Math.sqrt(x*x+y*y);
         if(tr<=r){
             // 在半径内
@@ -512,13 +600,16 @@ class CanvasArcTGT extends CanvasTGT{
                 return true;//圆形
             }
             else{
+                if(this.want_to_closePath===false){
+                    return false;
+                }
                 // 弧线的两端点
-                var l1op=new Vector2(Math.cos(this.data.startAngle)*r,Math.sin(this.data.startAngle)*r);
-                var l1ed=new Vector2(Math.cos(this.data.endAngle)*r,Math.sin(this.data.endAngle)*r);
+                var l1op=this.onlyRead_data.startAngle_V,
+                    l1ed=this.onlyRead_data.endAngle_V;
                 // 圆心和实参的坐标
                 var l2op=new Vector2(0,0);
                 var l2ed=new Vector2(x,y);
-                var ISF=Polygon.getIntersectFlag(l1op,l1ed,l2op,l2ed);  //相交情况
+                var ISF=Math2D.line_i_line(l1op,l1ed,l2op,l2ed);  //相交情况
                 if(arcA>Math.PI){
                     // 大于半圆
                     return !ISF;
