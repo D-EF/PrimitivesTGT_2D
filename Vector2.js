@@ -190,16 +190,26 @@ class Vector2{
     }
     
     /**
-     * 向量的旋转倾向 如果旋转角度为0会认为是顺时针 180度会认为是逆时针
+     * 向量的旋转倾向 如果旋转角度为0或180度会认为是顺时针
      * @param {Vector2} v1  起点向量
      * @param {Vector2} v2  终点向量
      * @returns {Boolean} true为顺时针
      */
     static rotateF(v1,v2){
-        var k1=(v1.y/v1.x),
-            k2=(v2.y/v2.x);
-        var f=(v2.x>=0)===(v1.x>0);
-        return (k1>k2)^f;
+        if((v1.x===0&&v1.y===0)||(v2.x===0&&v2.y===0)){
+            // 有一个是原点，不能形成夹角
+            return false;
+        }
+        var k1,k2;
+        k1=(v1.y/v1.x),
+        k2=(v2.y/v2.x);
+        if(k1===k2)return true;
+        var f=(v2.x>0)!==(v1.x>0);
+
+        if((k1===-Infinity&&v2.x<=0)||(k2===-Infinity&&v1.x<0)){
+            f=!f;
+        }
+        return !!((k1>k2)^f);
     }
     
     /**

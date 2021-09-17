@@ -11,10 +11,8 @@ class Math2D{
      * @returns {Array<Vector2>} 长度最多为2的数组，两个交点的坐标
      */
     static circle_i_line(lop,led,c,r) {
-
         var d=Vector2.dif(led,lop);
         var f=Vector2.dif(lop,c);
-
         var a = d.ip(d);
         var b = 2 * f.ip(d);
         var c = f.ip(f) - r * r;
@@ -35,7 +33,6 @@ class Math2D{
             }
             return rtn;
         }
-
     }
     /**
      * 弧形与线段相交的坐标 弧度是顺时针
@@ -45,15 +42,10 @@ class Math2D{
      * @param {Number}  r       弧的半径
      * @param {Number}  opRad   起点弧度
      * @param {Number}  edRad   终点弧度 
+     * @returns {Array<Vector2>}  返回交点坐标
      */
     static arc_i_line(lop,led,c,r,opRad,edRad){
-        var cis=circle_i_line(lop,led,c,r);
-        var k=edRad-opRad;
-        if(k>2*Math.PI){
-            // 完整的圆型
-            return cis;
-        }
-        var f=k>Math.PI;
+        
         var t_opRad,t_edRad;
         if(opRad>edRad){
             t_opRad=edRad;
@@ -62,21 +54,67 @@ class Math2D{
             t_opRad=opRad;
             t_edRad=edRad;
         }
+
+        var k=t_edRad-t_opRad;
+        if(k<=0){
+            // 夹角小于0,跳出
+            return [];
+        }
+        var cis=Math2D.circle_i_line(lop,led,c,r);
+        if(k>2*Math.PI){
+            // 完整的圆型
+            return cis;
+        }
+        var f=k>Math.PI;
         var oprv=new Vector2(Math.cos(t_opRad)*r,Math.sin(t_opRad)*r),
             edrv=new Vector2(Math.cos(t_edRad)*r,Math.sin(t_edRad)*r);
         var rtn=[];
         for(var i =cis.length-1;i>=0;--i){
-            if(f){
-                if((Vector2.rotateF(oprv,cis[i])==true)&&(Vector2.rotateF(edrv,cis[i])==false)){
-                    rtn.push(cis[i]);
-                }
-            }else{
-                if((Vector2.rotateF(oprv,cis[i])==true)||(Vector2.rotateF(edrv,cis[i])==false)){
-                    rtn.push(cis[i]);
-                }
+            if(Math2D.in_angle_V(oprv,edrv,cis[i].dif(c),f)){
+                rtn.push(cis[i]) 
             }
         }
         return rtn;
+    }
+    /**
+     * 弧形与线段相交的坐标 优化计算速度版本
+     * @param {Vector2} lop   线段起点
+     * @param {Vector2} led   线段终点
+     * @param {Vector2} c     圆心坐标
+     * @param {Number}  r     圆半径
+     * @param {Vector2} oprv  弧 的起点 用向量表示 需要先弄成顺时针 op to ed
+     * @param {Vector2} edrv  弧 的终点 用向量表示 需要先弄成顺时针 op to ed
+     * @param {Boolean} f     弧是否大于半圆 用于优化计算
+     * @returns {Array<Vector2>}  返回交点坐标
+     */
+    static arc_i_line_V(lop,led,c,r,oprv,edrv,f){
+        var cis=Math2D.circle_i_line(lop,led,c,r);
+        var rtn=[];
+        for(var i =cis.length-1;i>=0;--i){
+            if(Math2D.in_angle_V(oprv,edrv,cis[i].dif(c),f)){
+                rtn.push(cis[i]) 
+            }
+        }
+        return rtn;
+    }
+    /**
+     * 判断 tgtv 是否在 顺时针旋转 op 到 ed 的夹角内, 角不会超过360度 
+     * @param {Vector2} angle_op_V    夹角的射线 开始
+     * @param {Vector2} angle_ed_V    夹角的射线 结束
+     * @param {Vector2} tgtv        夹角的射线
+     * @param {Boolean} f 表示角度的大小是否大于半圆
+     */
+    static in_angle_V(angle_op_V,angle_ed_V,tgtv,f){
+        if(f){
+            if((Vector2.rotateF(angle_op_V,tgtv)===true)&&(Vector2.rotateF(angle_ed_V,tgtv)===false)){
+                return true;
+            }
+        }else{
+            if((Vector2.rotateF(angle_op_V,tgtv)===true)||(Vector2.rotateF(angle_ed_V,tgtv)===false)){
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
