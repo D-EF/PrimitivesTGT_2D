@@ -1,5 +1,3 @@
-var thisThread=this;
-
 /**
  * 精灵图像
  */
