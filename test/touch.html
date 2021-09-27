@@ -8,13 +8,10 @@
 <body>
     <canvas id="canvas" tabindex="0" width="500" height="500"></canvas>
     <script src="../../basics/basics.js"></script>
-    <script src="../Matrix2x2_mod.js"></script>
-    <script src="../Vector2.js"></script>
-    <script src="../Polygon.js"></script>
+    <script src="../Math2d.js"></script>
     <script src="../visual.js"></script>
     <script src="../canvasTGT.js"></script>
     <script src="../Sprites.js"></script>
-    <script src="../Math2d.js"></script>
 
     <script type="text/javascript">
     var s=new Sprites(10,10,"./SpritesMap.png");
@@ -31,7 +28,8 @@
         var staticTGT1 = ctrlTGT.copy();
         staticTGT1.transformMatrix=createMatrix2x2T().translate(200,400);
         var staticTGT2 = new CanvasRectTGT(0,0,50,500);
-        var staticTGT3 = new CanvasArcTGT(400,400,50,0,360*Math.DEG);
+        // canvas 弧形 弧度 从x正方向为 0
+        var staticTGT3 = new CanvasArcTGT(400,400,50,0,20*Math.DEG);
 
         staticTGT1.fillStyle="#ff0";
         // staticTGT1.fillStyle=staticTGT1.createSpritesFillStyle(s,2,2,1,1);

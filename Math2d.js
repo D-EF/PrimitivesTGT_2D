@@ -106,14 +106,15 @@ class Math2D{
      */
     static in_angle_V(angle_op_V,angle_ed_V,tgtv,f){
         if(f){
-            if((Vector2.rotateF(angle_op_V,tgtv)===true)&&(Vector2.rotateF(angle_ed_V,tgtv)===false)){
+            if((Vector2.op(angle_op_V,tgtv)>=0)&&(Vector2.op(angle_ed_V,tgtv)<=0)){
                 return true;
             }
         }else{
-            if((Vector2.rotateF(angle_op_V,tgtv)===true)||(Vector2.rotateF(angle_ed_V,tgtv)===false)){
+            if((Vector2.op(angle_op_V,tgtv)>=0)||(Vector2.op(angle_ed_V,tgtv)<=0)){
                 return true;
             }
         }
+        
         return false;
     }
 
@@ -165,9 +166,76 @@ class Math2D{
 /* 基础图形------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
 /**
+ * 矩形的数据
+ */
+class Ract_Data{
+    /**
+     * @param {Number} x 坐标
+     * @param {Number} y 坐标
+     * @param {Number} w 宽度
+     * @param {Number} h 高度
+     */
+    constructor(x,y,w,h){
+        this.x=x;
+        this.y=y;
+        this.w=w;
+        this.h=h;
+    }
+    copy(){
+        return new Ract_Data(
+            this.x,
+            this.y,
+            this.w,
+            this.h
+        );
+    }
+    
+    getMin(){
+        var rtnx,rtny;
+        if(this.w>=0){
+            rtnx=this.x;
+        }else{
+            rtnx=this.x+this.w;
+        }
+        
+        if(this.h>=0){
+            rtny=this.y;
+        }else{
+            rtny=this.y+this.h;
+        }
+        return new Vector2(rtnx,rtny);
+    }
+    
+    getMax(){
+        var rtnx,rtny;
+        if(this.w<=0){
+            rtnx=this.x;
+        }else{
+            rtnx=this.x+this.w;
+        }
+        
+        if(this.h<=0){
+            rtny=this.y;
+        }else{
+            rtny=this.y+this.h;
+        }
+        return new Vector2(rtnx,rtny);
+    }
+}
+
+/**
  * 弧形的图形数据
  */
  class Arc_Data{
+     /**
+      * 
+      * @param {Number} cx 圆心坐标
+      * @param {Number} cy 圆心坐标
+      * @param {Number} r  半径
+      * @param {Number} startAngle  弧形起点弧度
+      * @param {Number} endAngle    弧形终点弧度
+      * @param {Boolean} anticlockwise 旋转方向
+      */
     constructor(cx,cy,r,startAngle,endAngle,anticlockwise){
         /**圆心的坐标 */
         this.c=new Vector2(cx,cy);
@@ -178,7 +246,7 @@ class Math2D{
         /**弧形的终点弧度 */
         this.endAngle=endAngle;
         /**弧形弧度的旋转方向 */
-        this.anticlockwise;
+        this.anticlockwise=anticlockwise;
 
         //以下应该是只读的 
         /**弧形起点 */
@@ -202,7 +270,7 @@ class Math2D{
             );
     }
     /**
-     * 重新计算起点和重点的坐标
+     * 重新计算起点和重点的坐标 (相对于圆心)
      */
     re_oped(){
         /**弧形起点 */
@@ -212,7 +280,7 @@ class Math2D{
     }
     
     /**
-     * 获取起点的向量(相对于圆心)
+     * 获取起点的向量 (相对于圆心)
      */
      get_opv(){
         var tempAngle=this.data.startAngle;
@@ -224,7 +292,7 @@ class Math2D{
     }
     
     /**
-     * 获取终点的向量(相对于圆心)
+     * 获取终点的向量 (相对于圆心)
      */
     get_edv(){
         var tempAngle=this.data.endAngle;
@@ -233,6 +301,29 @@ class Math2D{
         }
         
         return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
+    }
+    get_min(){
+        var a=this.get_opv(),
+            b=this.get_edv();
+        var f=Math.abs(this.startAngle-this.endAngle)>Math.PI,
+            f1=a.x>=0,
+            f2=a.y>=0,
+            f3=b.x>=0,
+            f4=b.y>=0,
+            f5=f1===f3,
+            f6=f2===f4;
+
+            var f7=!!(f5^f6),
+                f8=f5===f6;
+            if(f7===false&&f8===false){
+                
+            }
+            
+
+
+    }
+    get_max(){
+
     }
 
 }
@@ -425,29 +516,6 @@ class Math2D{
     }
     
     /**
-     * 向量的旋转倾向 如果旋转角度为0或180度会认为是顺时针
-     * @param {Vector2} v1  起点向量
-     * @param {Vector2} v2  终点向量
-     * @returns {Boolean} true为顺时针
-     */
-    static rotateF(v1,v2){
-        if((v1.x===0&&v1.y===0)||(v2.x===0&&v2.y===0)){
-            // 有一个是原点，不能形成夹角
-            return false;
-        }
-        var k1,k2;
-        k1=(v1.y/v1.x),
-        k2=(v2.y/v2.x);
-        if(k1===k2)return true;
-        var f=(v2.x>0)!==(v1.x>0);
-
-        if((k1===-Infinity&&v2.x<=0)||(k2===-Infinity&&v1.x<0)){
-            f=!f;
-        }
-        return !!((k1>k2)^f);
-    }
-    
-    /**
      * 向量夹角运算
      * @param {Vector2} v1 向量
      * @param {Vector2} v2 向量
@@ -457,28 +525,6 @@ class Math2D{
         return Vector2.ip(v1,v2)/(v1.mag()*v2.mag());
     }
 }
-
-Vector2.baseLinearMapping=OlFunction.create();
-/**
- * 行向量后乘矩阵
- */
-Vector2.baseLinearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
-    var rtn = new Vector2(
-        v.x*m.a+v.y*m.c,
-        v.x*m.b+v.y*m.d
-    )
-    return rtn;
-},"行向量后乘矩阵");
-/**
- * 矩阵后乘列向量
- */
-Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
-    var rtn = new Vector2(
-        v.x*m.a+v.y*m.b,
-        v.x*m.c+v.y*m.d
-    );
-    return rtn;
-},"矩阵后乘列向量");
 
 /* 矩阵 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -563,49 +609,6 @@ Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
             );
     }
     /**
-     * 创建矩阵
-     */
-    static create={
-        /**
-         * @param {Number} theta 顺时针 旋转角弧度
-         */
-        rotate:function(theta){
-            var s=Math.sin(theta),
-                c=Math.cos(theta);
-            return new Matrix2x2(c,s,-s,c);
-        },
-        /**
-         * @param {Number} x x 轴方向上的缩放系数
-         * @param {Number} y y 轴方向上的缩放系数
-         */
-        scale:function(x,y){
-            return new Matrix2x2(x,0,0,y);
-        },
-        
-        /**
-         * 切变
-         * @param {Number} axis 方向轴 0:x 非零:y
-         * @param {Number} k 切变系数
-         */
-        shear:function(axis,k){
-            if(axis){
-                // y轴
-                return new Matrix2x2(1,0,k,1);
-            }
-            else{
-                // x轴
-                return new Matrix2x2(1,k,0,1);
-            }
-        },
-        /**
-         * 单位矩阵
-         */
-        identity:function(){
-            return new Matrix2x2(1,0,0,1);
-        }
-    }
-    
-    /**
      * 缩放
      * @param {Number} x x 轴方向上的缩放系
      * @param {Number} y y 轴方向上的缩放系
@@ -633,6 +636,49 @@ Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
         return this.multiplication(
             Matrix2x2.create.shear(axis,k)
         )
+    }
+}
+
+/**
+ * 创建矩阵
+ */
+Matrix2x2.create={
+    /**
+     * @param {Number} theta 顺时针 旋转角弧度
+     */
+    rotate:function(theta){
+        var s=Math.sin(theta),
+            c=Math.cos(theta);
+        return new Matrix2x2(c,s,-s,c);
+    },
+    /**
+     * @param {Number} x x 轴方向上的缩放系数
+     * @param {Number} y y 轴方向上的缩放系数
+     */
+    scale:function(x,y){
+        return new Matrix2x2(x,0,0,y);
+    },
+    
+    /**
+     * 切变
+     * @param {Number} axis 方向轴 0:x 非零:y
+     * @param {Number} k 切变系数
+     */
+    shear:function(axis,k){
+        if(axis){
+            // y轴
+            return new Matrix2x2(1,0,k,1);
+        }
+        else{
+            // x轴
+            return new Matrix2x2(1,k,0,1);
+        }
+    },
+    /**
+     * 单位矩阵
+     */
+    identity:function(){
+        return new Matrix2x2(1,0,0,1);
     }
 }
 
@@ -996,6 +1042,33 @@ class Polygon{
     static EX_linearMapping(p,m,translate_befroeOrAfter){}
 
 }
+
+// 函数重载 -------------------------------------------------------------------------------------------
+
+
+Vector2.baseLinearMapping=OlFunction.create();
+/**
+ * 行向量后乘矩阵
+ */
+Vector2.baseLinearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
+    var rtn = new Vector2(
+        v.x*m.a+v.y*m.c,
+        v.x*m.b+v.y*m.d
+    )
+    return rtn;
+},"行向量后乘矩阵");
+/**
+ * 矩阵后乘列向量
+ */
+Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
+    var rtn = new Vector2(
+        v.x*m.a+v.y*m.b,
+        v.x*m.c+v.y*m.d
+    );
+    return rtn;
+},"矩阵后乘列向量");
+
+
 Polygon.EX_linearMapping=OlFunction.create();
 Polygon.EX_linearMapping.addOverload([Polygon,Matrix2x2,Boolean],function(p,m,f){
     var i=0,

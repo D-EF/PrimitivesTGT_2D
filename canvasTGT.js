@@ -170,8 +170,6 @@ class CanvasTGT{
     getPolygonProxy(_accuracy){
         // 在派生类中实现
     }
-    /** 默认转换成多边形的 精度 */
-    static accuracy = 20;
     /**
      * 碰撞检测 有多个重载, 在class外面实现
      * @param {CanvasTGT} canvasTGT1 需要检测碰撞的对象
@@ -192,6 +190,9 @@ class CanvasTGT{
         }
     }   //回调地狱 ('A'#)
 }
+
+/** 默认转换成多边形的 精度 */
+CanvasTGT.accuracy = 20;
 
 function isTouch_base(canvasTGT1,canvasTGT2){
     var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy);
@@ -475,19 +476,19 @@ class CanvasArcTGT extends CanvasTGT{
             anticlockwise:anticlockwise,
         };
         
-        /**
-         * 只读的属性
-         * @type {{
-         * startAngle_V:Vector2,
-         * endAngle_V:Vector2,
-         * angle_value:Number
-         * }}
-         */
-        this.onlyRead_data={
-            startAngle_V,
-            endAngle_V,
-            angle_value
-        }
+        // /**
+        //  * 只读的属性
+        //  * @type {{
+        //  * startAngle_V:Vector2,
+        //  * endAngle_V:Vector2,
+        //  * angle_value:Number
+        //  * }}
+        //  */
+        // this.onlyRead_data={
+        //     startAngle_V,
+        //     endAngle_V,
+        //     angle_value
+        // }
     }
 
     getMin(){

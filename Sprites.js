@@ -13,11 +13,11 @@ class Sprites{
         this.SpritesY = Number(_SpritesY);
         this.img = new Image();
         this.img.src = imgUrl;
-        if(thisThread.createMatrix2x2T&&!Sprites.Matrix)Sprites.Matrix = createMatrix2x2T();
-        if(thisThread.OffscreenCanvas){
+        if(thisEnvironment.createMatrix2x2T&&!Sprites.Matrix)Sprites.Matrix = createMatrix2x2T();
+        if(thisEnvironment.OffscreenCanvas){
             Sprites.nullCtx=new OffscreenCanvas(1,1).getContext("2d");
         }
-        else if(thisThread.Document){
+        else if(thisEnvironment.Document){
             Sprites.nullCtx=document.createElement("canvas").getContext("2d");
         }
     }
