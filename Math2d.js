@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-09-27 22:59:01
+ * @LastEditTime: 2021-09-27 23:38:49
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -387,10 +387,8 @@ class Ract_Data{
         var min=new Vector2(),
             max=new Vector2();
         if(f7===false){
-            if(f6){
-                // 在同一象限
-                if(f){
-                    // 大于半圆
+            if(f6){// 在同一象限
+                if(f){// 大于半圆
                     min.x=-r;
                     min.y=-r;
                     max.x=r;
@@ -403,31 +401,25 @@ class Ract_Data{
                 }
 
             }else{
-                if(f5){
-                    // 分别在 1,3 象限
-                    if(f1){
-                        // a在 1 象限
+                if(f5){// 分别在 1,3 象限
+                    if(f1){// a在 1 象限
                         min.x=b.x;
                         min.y=a.y;
                         max.x=r;
                         max.y=r;
-                    }else{
-                        // a在 3 象限
+                    }else{// a在 3 象限
                         min.x=-r;
                         min.y=-r;
                         max.x=b.x;
                         max.y=a.y;
                     }
-                }else{
-                    // 2,4 象限
-                    if(f1){
-                        // a在 4 象限
+                }else{// 2,4 象限
+                    if(f1){// a在 4 象限
                         min.x=-r;
                         min.y=b.y;
                         max.x=a.x;
                         max.y=r;
-                    }else{
-                        // a在 2 象限
+                    }else{// a在 2 象限
                         min.x=a.x;
                         min.y=-r;
                         max.x=r;
@@ -436,31 +428,26 @@ class Ract_Data{
                 }
             }
         }else{
-            if(f6){
-                // 横向相邻 (1,2) 或 (3,4)
+            if(f6){// 横向相邻 (1,2) 或 (3,4)
                 if(f1){
-                    if(f2){
-                        // a在 1 象限
+                    if(f2){// a在 1 象限
                         min.x=-r;
                         min.y=(a.y>b.y)?(b.y):(a.y);
                         max.x=r;
                         max.y=r;
-                    }else{
-                        // a在 4 象限
+                    }else{// a在 4 象限
                         min.x=b.x;
                         min.y=(a.y>b.y)?(b.y):(a.y);
                         max.x=a.x;
                         max.y=r;
                     }
                 }else{
-                    if(f2){
-                        // a在 2 象限
+                    if(f2){// a在 2 象限
                         min.x=a.x;
                         min.y=-r;
                         max.x=b.x;
                         max.y=(a.y<b.y)?(b.y):(a.y);
-                    }else{
-                        // a在 3 象限
+                    }else{// a在 3 象限
                         min.x=-r;
                         min.y=-r;
                         max.x=r;
@@ -468,32 +455,26 @@ class Ract_Data{
                     }
                 }
             }
-            else{
-                // 纵向相邻 (1,4) 或 (3,2)
-                
+            else{// 纵向相邻 (1,4) 或 (3,2)
                 if(f1){
-                    if(f2){
-                        // a在 1 象限
+                    if(f2){// a在 1 象限
                         min.x=(a.x>b.x)?(b.x):(a.x);
                         min.y=a.y;
                         max.x=r;
                         max.y=b.y;
-                    }else{
-                        // a在 4 象限
+                    }else{// a在 4 象限
                         min.x=-r;
                         min.y=-r;
                         max.x=(a.x<b.x)?(b.x):(a.x);
                         max.y=r;
                     }
                 }else{
-                    if(f2){
-                        // a在 2 象限
+                    if(f2){// a在 2 象限
                         min.x=(a.x>b.x)?(b.x):(a.x);
                         min.y=-r;
                         max.x=r;
                         max.y=r;
-                    }else{
-                        // a在 3 象限
+                    }else{// a在 3 象限
                         min.x=-r;
                         min.y=b.y;
                         max.x=(a.x<b.x)?(b.x):(a.x);
