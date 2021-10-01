@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-09-27 23:38:49
+ * @LastEditTime: 2021-10-01 17:01:47
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -14,7 +14,7 @@ class Math2D{
      * 圆形和线段 的 交点 坐标
      * @param {Vector2} lop 线段起点
      * @param {Vector2} led 线段终点
-     * @param {Vector2} cv   圆心
+     * @param {Vector2} c   圆心
      * @param {Number}  r   圆形的半径
      * @returns {Array<Vector2>} 长度最多为2的数组，两个交点的坐标
      */
@@ -43,69 +43,6 @@ class Math2D{
         }
     }
     /**
-     * 弧形与线段相交的坐标 弧度是顺时针
-     * @param {Vector2} lop     线段起点坐标
-     * @param {Vector2} led     线段终点坐标
-     * @param {Vector2} c       圆心坐标
-     * @param {Number}  r       弧的半径
-     * @param {Number}  opRad   起点弧度
-     * @param {Number}  edRad   终点弧度 
-     * @returns {Array<Vector2>}  返回交点坐标
-     */
-    static arc_i_line(lop,led,c,r,opRad,edRad){
-        
-        var t_opRad,t_edRad;
-        if(opRad>edRad){
-            t_opRad=edRad;
-            t_edRad=opRad;
-        }else{
-            t_opRad=opRad;
-            t_edRad=edRad;
-        }
-
-        var k=t_edRad-t_opRad;
-        if(k<=0){
-            // 夹角小于0,跳出
-            return [];
-        }
-        var cis=Math2D.circle_i_line(lop,led,c,r);
-        if(k>2*Math.PI){
-            // 完整的圆型
-            return cis;
-        }
-        var f=k>Math.PI;
-        var oprv=new Vector2(Math.cos(t_opRad)*r,Math.sin(t_opRad)*r),
-            edrv=new Vector2(Math.cos(t_edRad)*r,Math.sin(t_edRad)*r);
-        var rtn=[];
-        for(var i =cis.length-1;i>=0;--i){
-            if(Math2D.in_angle_V(oprv,edrv,cis[i].dif(c),f)){
-                rtn.push(cis[i]) 
-            }
-        }
-        return rtn;
-    }
-    /**
-     * 弧形与线段相交的坐标 优化计算速度版本
-     * @param {Vector2} lop   线段起点
-     * @param {Vector2} led   线段终点
-     * @param {Vector2} c     圆心坐标
-     * @param {Number}  r     圆半径
-     * @param {Vector2} oprv  弧 的起点 用向量表示 需要先弄成顺时针 op to ed
-     * @param {Vector2} edrv  弧 的终点 用向量表示 需要先弄成顺时针 op to ed
-     * @param {Boolean} f     弧是否大于半圆 用于优化计算
-     * @returns {Array<Vector2>}  返回交点坐标
-     */
-    static arc_i_line_V(lop,led,c,r,oprv,edrv,f){
-        var cis=Math2D.circle_i_line(lop,led,c,r);
-        var rtn=[];
-        for(var i =cis.length-1;i>=0;--i){
-            if(Math2D.in_angle_V(oprv,edrv,cis[i].dif(c),f)){
-                rtn.push(cis[i]) 
-            }
-        }
-        return rtn;
-    }
-    /**
      * 判断 tgtv 是否在 顺时针旋转 op 到 ed 的夹角内, 角不会超过360度 
      * @param {Vector2} angle_op_V    夹角的射线 开始
      * @param {Vector2} angle_ed_V    夹角的射线 结束
@@ -125,6 +62,23 @@ class Math2D{
         }
         
         return false;
+    }
+    /**
+     * 判断弧形是否与线段相交
+     * @param {Arc_Data} arc    弧形数据
+     * @param {Vector2} lop     线段端点
+     * @param {Vector2} led     线段端点
+     */
+    static arc_i_line(arc,lop,led){
+        var cis=Math2D.circle_i_line(lop,led,arc.c,arc.r);
+        var rtn=[];
+        var f=arc.angle>Math.PI;
+        for(var i =cis.length-1;i>=0;--i){
+            if(Math2D.in_angle_V(arc.opv,arc.edv,cis[i].dif(arc.c),f)){
+                rtn.push(cis[i]);
+            }
+        }
+        return rtn;
     }
 
     /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
@@ -230,6 +184,18 @@ class Ract_Data{
         }
         return new Vector2(rtnx,rtny);
     }
+    /**
+     * 是否在内部
+     * @param {Number} _x 
+     * @param {Number} _y 
+     * @returns {Boolean} 返回 点是否在内部
+     */
+    isInside(_x,_y){
+        var max=this.getMax(),
+            min=this.getMin();
+        if(x>min.x&&x<max.x&&y>min.y&&y<max.y)return true;
+        return false;
+    }
 }
 
 /**
@@ -248,13 +214,14 @@ class Ract_Data{
         /**圆心的坐标 */
         this.c=new Vector2(cx,cy);
         /**圆半径 */
-        this.r=r;
+        this._r=r;
         /**弧形的起点弧度 */
         this._startAngle=0;
         /**弧形的终点弧度 */
         this._endAngle=0;
 
         //以下应该是只读的 只在 startAngle, endAngle 的访问器中修改
+
         /**弧形起点 
          * @type {Vector2}
          */
@@ -267,12 +234,22 @@ class Ract_Data{
          * @type {Number}
          */
         this.angle;
-
+        /** 一个 刚好包裹 弧形 的 矩形 的 最大坐标
+         * @type {Vector2}
+         */
+        this.max;
+        /**一个 刚好包裹 弧形 的 矩形 的 最小坐标
+         * @type {Vector2}
+         */
+        this.min;
         // 访问器
         this.startAngle=startAngle;
         this.endAngle=endAngle;
     }
-
+    /**
+     * 录入 弧形起点的弧度 startAngle , 根据大小关系会修改起点和终点的顺序
+     * @param {Number} val
+     */
     set startAngle(val){
         if(val.constructor===Number){
             this._startAngle=val;
@@ -283,9 +260,13 @@ class Ract_Data{
             this.re_onlyread();
             return this._startAngle;
         }else{
-            throw new Error("错误的类型 ! Unexpected Type !")
+            throw new Error("错误的类型 ! Unexpected Type !");
         }
     }
+    /**
+     * 录入 弧形终点的弧度 endAngle , 根据大小关系会修改起点和终点的顺序
+     * @param {Number} val
+     */
     set endAngle(val){
         if(val.constructor===Number){
             this._endAngle=val;
@@ -296,25 +277,60 @@ class Ract_Data{
             this.re_onlyread();
             return this._endAngle;
         }else{
-            throw new Error("错误的类型 ! Unexpected Type !")
+            throw new Error("错误的类型 ! Unexpected Type !");
         }
     }
-    
+    /**
+     * 录入 两个端点的弧度
+     * @param {Number} val1 端点的弧度
+     * @param {Number} val2 端点的弧度
+     */
+    setEndpointAngle(val1,val2){
+        if((val1.constructor!==Number)||(val2.constructor!==Number)){
+            throw new Error("错误的类型 ! Unexpected Type !");
+        }
+        var f=val1>val2;
+        this._startAngle=f?val2:val1;
+        this._endAngle=f?val1:val2;
+        this.re_onlyread();
+    }
+    /**
+     * 读取 弧形起点的弧度 _startAngle
+     */
     get startAngle(){
         return this._startAngle;
     }
+    /**
+     * 读取 弧形终点的弧度 endAngle
+     */
     get endAngle(){
         return this._endAngle
     }
-
+    /**
+     * 录入半径
+     */
+    set r(val){
+        this._r=val;
+        this.re_onlyread();
+        return this._r;
+    }
+    /**
+     * 获取半径
+     */
+    get r(){
+        return this._r;
+    }
     /**刷新只读属性 */
     re_onlyread(){
-            /**夹角弧度 */
-            this.angle=Math.abs(this.startAngle-this.endAngle);
-            /**弧形起点 */
-            this.opv=this.get_opv();
-            /**弧形终点 */
-            this.edv=this.get_edv();
+        /**夹角弧度 */
+        this.angle=Math.abs(this.startAngle-this.endAngle);
+        /**弧形起点 */
+        this.opv=this.get_opv();
+        /**弧形终点 */
+        this.edv=this.get_edv();
+        var mm=this.get_min_A_max();
+        this.max=mm.max;
+        this.min=mm.min;
     }
 
     /**
@@ -345,8 +361,9 @@ class Ract_Data{
      * 获取起点的向量 (相对于圆心)
      */
      get_opv(){
-        var tempAngle=this.data.startAngle;
-        if(!this.data.anticlockwise){
+        var tempAngle=this.startAngle;
+        var r= this.r;
+        if(!this.anticlockwise){
             tempAngle*=-1;
         }
         
@@ -357,8 +374,9 @@ class Ract_Data{
      * 获取终点的向量 (相对于圆心)
      */
     get_edv(){
-        var tempAngle=this.data.endAngle;
-        if(!this.data.anticlockwise){
+        var tempAngle=this.endAngle;
+        var r= this.r;
+        if(!this.anticlockwise){
             tempAngle*=-1;
         }
         
@@ -372,6 +390,7 @@ class Ract_Data{
         if(this.angle>=2*Math.PI){
             return new Vector2(c.x-r,c.y-r);
         }
+        var r= this.r;
         var a=this.opv,
             b=this.edv;
         var f=this.angle>Math.PI,
@@ -493,10 +512,65 @@ class Ract_Data{
             min:min,
             max:max
         };
-
-
     }
-
+    /**
+     * 一个 刚好包裹 弧形 的 矩形 的 最大坐标
+     * @returns {Vector2}
+     */
+    getMax(){
+        return this.max;
+    }
+    /**
+     * 一个 刚好包裹 弧形 的 矩形 的 最小坐标
+     * @returns {Vector2}
+     */
+    getMin(){
+        return this.min;
+    }
+    /**
+     * 点是否在内部
+     * @param {Number} _x 点的坐标
+     * @param {Number} _y 点的坐标
+     * @param {Boolean} f want_to_closePath 当没有成为完整的圆时, 是否需要将其当作一个切圆
+     * @returns {Boolean} 返回 点是否在内部
+     */
+    isInside(_x,_y,f){
+        if((_x>this.max.x)||(_x<this.min.x)||(_y>this.max.y)||(_y<this.min.y)){
+            return false;
+        }
+        var r=this._r;
+        var x=_x-this.c.x,y=_y-this.c.y;
+        var arcA=this.angle;
+        var tr=Math.sqrt(x*x+y*y);
+        if(tr<=r){
+            // 在半径内
+            if(Math.PI*2<=arcA){
+                return true;//圆形
+            }
+            else{
+                if(f===false){
+                    return false;
+                }
+                // 弧线的两端点
+                var l1op=this.onlyRead_data.startAngle_V,
+                    l1ed=this.onlyRead_data.endAngle_V;
+                // 圆心和实参的坐标
+                var l2op=new Vector2(0,0);
+                var l2ed=new Vector2(x,y);
+                var ISF=Math2D.line_i_line(l1op,l1ed,l2op,l2ed);  //相交情况
+                if(arcA>Math.PI){
+                    // 大于半圆
+                    return !ISF;
+                }
+                else{
+                    // 小于半圆
+                    return ISF;
+                }
+            }
+        }
+        // 不在半径内直接判定为外
+        return false;
+    }
 }
 
 /* 向量------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
