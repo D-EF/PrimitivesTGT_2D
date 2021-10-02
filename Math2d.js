@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-02 14:26:19
+ * @LastEditTime: 2021-10-03 00:14:15
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -680,6 +680,38 @@ class Ract_Data{
      */
     op(v2){return this.x*v2.y-this.y*v2.x;}
     
+    /**
+     * 
+     * @param {Matrix2x2T}  m   变换矩阵
+     * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
+     * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false)
+     */ 
+    linearMapping(m,fln,f=false){
+        if(f){
+            if(m.e){
+                this.x+=m.e;
+            }
+            if(m.f){
+                this.x+=m.f;
+            }
+        }
+        if(fln){   
+            this.x=this.x*m.a+this.y*m.c;
+            this.y=this.x*m.b+this.y*m.d;
+        }else{
+            this.x=this.x*m.a+this.y*m.b;
+            this.y=this.x*m.c+this.y*m.d;
+        }
+        if(!f){
+            if(m.e){
+                this.x+=m.e;
+            }
+            if(m.f){
+                this.x+=m.f;
+            }
+        }
+    }
+
     /**向量和
      * @param {Vector2} v1
      * @param {Vector2} v2
@@ -1035,9 +1067,6 @@ class Polygon{
     constructor(nodes){
         /** @type {Array<Vector2>}  存放 向量 的列表  */
         this.nodes=[];
-
-        this.transformMatrix=new Matrix2x2T();
-
         this.min    =new Vector2();
         this.max    =new Vector2();
 
@@ -1051,7 +1080,6 @@ class Polygon{
             ret.nodes=[];
             ret.min=Vector2.prototype.copy.call(this.min);
             ret.max=Vector2.prototype.copy.call(this.max);
-            ret.transformMatrix=Matrix2x2T.prototype.copy.call(this.transformMatrix);
             var l=this.nodes.length,i=0;
             for(;i<l;++i){
                 ret.pushNode(this.nodes[i]);
@@ -1200,6 +1228,21 @@ class Polygon{
         this.min.x+=v.x;
         this.min.y+=v.y;
     }
+
+    /**
+     * 线性变换
+     * @param {Matrix2x2T} m
+     * @param {Boolean} fln
+     * @param {Boolean} translate_befroeOrAfter
+     */
+    linearMapping(m,fln,translate_befroeOrAfter=false){
+        for(var i=this.nodes.length-1;i>=0;--i){
+            // todo
+            // if()this.nodes[i].EX_linearMapping_nt();
+            this.nodes[i].EX_linearMapping_nt();
+        }
+    }
+
     /** 
      * 创建矩形
      */
@@ -1297,13 +1340,14 @@ class Polygon{
      * (m,p)矩阵后乘列向量
      * @param {Matrix2x2T} m 矩阵
      * @param {Polygon} p 多边形
-     * @param {Boolean} translate_befroeOrAfter 先平移或后平移; 默认后平移
+     * @param {Boolean} translate_befroeOrAfter 先平移或后平移; 默认后平移(默认false)
      * @returns {Polygon} 返回一个新的多边形
      */
     static linearMapping(p,m,translate_befroeOrAfter=false){
         return Polygon.EX_linearMapping(p,m,!!translate_befroeOrAfter);
     }
     static EX_linearMapping(p,m,translate_befroeOrAfter){}
+    static EX_linearMapping_nt(p,m,translate_befroeOrAfter){}
 
 }
 
@@ -1349,4 +1393,20 @@ Polygon.EX_linearMapping.addOverload([Matrix2x2,Polygon,Boolean],function(m,p,f)
         rtn.pushNode(Vector2.linearMapping(m,p.nodes[i],f));
     }
     return rtn;
+});
+
+
+
+Polygon.EX_linearMapping_nt=OlFunction.create();
+Polygon.EX_linearMapping_nt.addOverload([Polygon,Matrix2x2,Boolean],function(p,m,f){
+    for(var i=p.nodes.length-1;i>=0;--i){
+        p.nodes[i].linearMapping(m,true,f);
+    }
+    return p;
+});
+Polygon.EX_linearMapping_nt.addOverload([Matrix2x2,Polygon,Boolean],function(m,p,f){
+    for(var i=p.nodes.length-1;i>=0;--i){
+        p.nodes[i].linearMapping(m,false,f);
+    }
+    return p;
 });

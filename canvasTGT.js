@@ -260,13 +260,12 @@ class CanvasRectTGT extends CanvasTGT{
         this.data=new Ract_Data(x,y,w,h);
     }
     getMin(){
-        var tv = this.data.getMin();
-        return this.localToWorld(tv.x,tv.y);
+        
+        return this.data.getMin();
     }
     
     getMax(){
-        var tv = this.data.getMax();
-        return this.localToWorld(tv.x,tv.y);
+        return this.data.getMax();
     }
     createCanvasPath(ctx){
         ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
@@ -295,10 +294,10 @@ class CanvasArcTGT extends CanvasTGT{
         this.data=new Arc_Data(cx,cy,r,startAngle,endAngle);
     }
     getMin(){
-        return this.data.min;
+        return this.data.min.copy();
     }
     getMax(){
-        return this.data.max;
+        return this.data.max.copy();
     }
     createCanvasPath(ctx){
         ctx.arc(this.data.c.x,this.data.c.y,this.data.r,this.data.startAngle,this.data.endAngle,false);
@@ -369,9 +368,11 @@ class CanvasPolygonTGT extends CanvasTGT{
         this.rotate=0;
     }
     useTranslate(){
-        this.data.linearMapping(new Vector2(this.gridx,this.gridy));
-        this.gridx=0;
-        this.gridy=0;
+        // todo
+        
+        // this.data.linearMapping(new Vector2(this.gridx,this.gridy));
+        // this.gridx=0;
+        // this.gridy=0;
     }
 }
 
@@ -410,26 +411,19 @@ class CanvasPolygonTGT extends CanvasTGT{
  * @param {CanvasArcTGT}  tgt2 进行碰撞检测的对象
  */
 function isTouch_Rect_Arc(tgt1,tgt2){
-    var arcA=Math.abs(tgt2.data.startAngle-tgt2.data.endAngle);
-    var v1min=tgt1.localToWorld(tgt1.getMin()),
-        v1max=tgt1.localToWorld(tgt1.getMax()),
-        cx=tgt2.data.cx,
-        cy=tgt2.data.cy;
-    if(tgt2.want_to_closePath||arcA>=Math.PI*2){
+    var min=tgt1.localToWorld(tgt1.getMin()),
+        max=tgt1.localToWorld(tgt1.getMax()),
+        _b=new Vector2(min.x,max.y),
+        _c=new Vector2(max.x,min.y);
+    var a=tgt2.worldToLocal(min),
+        b=tgt2.worldToLocal(_b),
+        c=tgt2.worldToLocal(_c),
+        d=tgt2.worldToLocal(max);
 
-        return tgt2.isInside(v1min.x,v1min.y)||
-            tgt2.isInside(v1max.x,v1min.y)||
-            tgt2.isInside(v1min.x,v1max.y)||
-            tgt2.isInside(v1max.x,v1max.y)||
-            tgt2.isInside(v1min.x,cy)||
-            tgt2.isInside(cx,v1min.y)||
-            tgt2.isInside(v1max.x,cy)||
-            tgt2.isInside(cx,v1max.y);
-    }
-    if((v1min.y<cy&&v1min.x<cx)&&(v1max.y>cy&&v1max.x>cx)){
-        return true;
-    }
-    return isTouch_base(tgt1,tgt2);
+    return Math2D.arc_i_line(tgt2.data,a,b)||
+           Math2D.arc_i_line(tgt2.data,a,c)||
+           Math2D.arc_i_line(tgt2.data,b,d)||
+           Math2D.arc_i_line(tgt2.data,c,d);
 }
 
 /**
@@ -465,20 +459,36 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
  */
  function isTouch_Arc_Polygon(tgt1,tgt2){
     var i =tgt2.data.nodes.length-1,
-        l=i,
-        temp_node;
-    for(;i>=0;--i){
-        temp_node=tgt2.localToWorld(tgt2.data.nodes[i]);
-        if(tgt1.isInside(temp_node.x,temp_node.y)){
+        l=i;
+    if(l<0)return false;
+
+    var t2d=Polygon.linearMapping(tgt2.data,tgt2.temp_worldToLocalM,true),
+        nodes=t2d.nodes;
+
+    for(;i>0;--i){
+        if(Math2D.arc_i_line(tgt1.data,nodes[i],nodes[i-1])){
             return true;
         }
+        if(tgt1.want_to_closePath){
+            // 割圆 的线段也要判断
+            if(Math2D.line_i_line(tgt1.data.opv,tgt1.data.edv,nodes[i],nodes[i-1])){
+                return true;
+            }
+        }
     }
-    if(tgt2.want_to_closePath||Vector2.isEqual(tgt2.data.nodes[0],tgt2.data.nodes[l])){
-        tgt2.isInside()
+    if(l>1&&tgt2.want_to_closePath&&tgt2.data.isClosed()){
+        // 规定闭合路径的多边形, 多算一次
+        if(Math2D.arc_i_line(tgt1.data,nodes[0],nodes[l])){
+            return true;
+        }
+        if(tgt1.want_to_closePath){
+            if(Math2D.line_i_line(tgt1.data.opv,nodes[0],nodes[l])){
+                return true;
+            }
+        }
     }
-    else{
-        return false;
-    }
+    
+
 }
 
 /**
