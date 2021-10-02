@@ -1,6 +1,6 @@
 /*!
  *  用于 canvas 面向对象化的 tgt 库
- *  
+ *  注意 canvas 大部分情况是 x 正方向向右, y 正方向向下的。
  */
 
 // data
@@ -99,9 +99,9 @@ class CanvasTGT{
      * @param {Number} x    坐标
      * @param {Number} y    坐标
     */
-    isInside(x,y){
-        // 在派生类中实现
-        return 0;
+    isInside(_x,_y){
+        var v=this.worldToLocal(_x,_y);
+        return this.data.isInside(v.x,v.y,this.want_to_closePath);
     }
     /** 
      * 渲染图形 
@@ -166,7 +166,9 @@ class CanvasTGT{
         rtn.setTransformMatrix(this.transformMatrix);
         return rtn;
     }
-    /**用 data 获取多边形代理对象 */
+    /**用 data 获取多边形代理对象 
+     * 不使用变换矩阵的
+     */
     getPolygonProxy(_accuracy){
         // 在派生类中实现
     }
@@ -212,12 +214,176 @@ function isTouch_base(canvasTGT1,canvasTGT2){
 
 CanvasTGT.isTouch=OlFunction.create(isTouch_base);
 
+
+// 局部坐标 to 世界坐标
+CanvasTGT.prototype.localToWorld=OlFunction.create();
+CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function(x,y){
+    return Vector2.afterTranslate_linearMapping(new Vector2(x,y),this.transformMatrix);
+});
+CanvasTGT.prototype.localToWorld.addOverload([Vector2],function(v){
+    return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
+});
+// 世界坐标 to 局部坐标
+CanvasTGT.prototype.worldToLocal=OlFunction.create();
+CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function(x,y){
+    var tm;
+    if(this.temp_worldToLocalM){
+        tm=this.temp_worldToLocalM;
+    }
+    else{
+        tm=this.transformMatrix.inverse();
+        this.temp_worldToLocalM=tm;
+    }
+    return Vector2.beforeTranslate_linearMapping(new Vector2(x,y),tm);
+});
+CanvasTGT.prototype.worldToLocal.addOverload([Vector2],function(v){
+    var tm;
+    if(this.temp_worldToLocalM&&(this.temp_worldToLocalM)){
+        tm=this.temp_worldToLocalM;
+    }
+    else{
+        tm=this.transformMatrix.inverse();
+        this.temp_worldToLocalM=tm;
+    }
+    return Vector2.beforeTranslate_linearMapping(v,tm);
+});
+
+/** 矩形
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} width 
+ * @param {Number} height 
+ */
+class CanvasRectTGT extends CanvasTGT{
+    constructor(x,y,w,h){
+        super();
+        this.data=new Ract_Data(x,y,w,h);
+    }
+    getMin(){
+        var tv = this.data.getMin();
+        return this.localToWorld(tv.x,tv.y);
+    }
+    
+    getMax(){
+        var tv = this.data.getMax();
+        return this.localToWorld(tv.x,tv.y);
+    }
+    createCanvasPath(ctx){
+        ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
+
+    }
+    getPolygonProxy(){
+        return Polygon.rect(this.data.x,this.data.y,this.data.w,this.data.h);
+    }
+}
+
+
+/**
+ * 弧形
+ * 需要注意旋转方向因为坐标系不同而有所变动
+ */
+class CanvasArcTGT extends CanvasTGT{
+    /**
+     * @param {Number} cx 圆心的坐标
+     * @param {Number} cy 圆心的坐标
+     * @param {Number} r  半径
+     * @param {Number} startAngle       起点的弧度
+     * @param {Number} endAngle         终点的弧度
+     */
+    constructor(cx,cy,r,startAngle,endAngle){
+        super();
+        this.data=new Arc_Data(cx,cy,r,startAngle,endAngle);
+    }
+    getMin(){
+        return this.data.min;
+    }
+    getMax(){
+        return this.data.max;
+    }
+    createCanvasPath(ctx){
+        ctx.arc(this.data.c.x,this.data.c.y,this.data.r,this.data.startAngle,this.data.endAngle,false);
+        if(this.want_to_closePath){
+            var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
+            if((Math.PI*2>arcA)&&this.want_to_closePath){
+                ctx.closePath();
+            }
+        }
+    }
+    getPolygonProxy(_accuracy){
+        var rtn=Polygon.arc(this.data.r,this.data.startAngle,this.data.endAngle,_accuracy,this.data.anticlockwise);
+        rtn.translate(new Vector2(this.data.cx,this.data.cy));
+        return rtn;
+    }
+}
+
+/** 多边形
+*/
+class CanvasPolygonTGT extends CanvasTGT{
+    /**
+     * @param {Polygon} _polygon 多边形
+     */
+    constructor(_polygon){
+        super();
+        /**
+         * @type {Polygon}
+         */
+        this.data=Polygon.prototype.copy.call(_polygon);
+        if(this.data)this.data.reMinMax();
+    }
+    
+    getMin(){
+        return this.data.min.copy();
+    }
+    getMax(){
+        return this.data.max.copy();
+    }
+    getPolygonProxy(){
+        return this.data.copy();
+    }
+    isInside(_x,_y){
+        var tv=this.worldToLocal(_x,_y);
+        var x=tv.x,y=tv.y;
+        if(this.data.min.x>x||this.data.max.x<x||this.data.min.y>y||this.data.max.y<y) return false;
+        if(this.want_to_closePath&&!this.data.isClosed()){
+            this.data.seal();
+            var rtn=this.data.isInside(x,y);
+            this.data.remove(this.data.nodes.length-1);
+            return rtn;
+        }
+        return this.data.isInside(x,y);
+        
+    }
+    createCanvasPath(){
+        var i=this.data.nodes.length-1,
+            nodes=this.data.nodes;
+        ctx.moveTo(nodes[i].x,nodes[i].y);
+        for(--i;i>=0;--i){
+            ctx.lineTo(nodes[i].x,nodes[i].y);
+        }
+        if(this.want_to_closePath){
+            ctx.closePath();
+        }
+    }
+    useRotate(){
+        this.data.linearMapping(ctrlM2.rotate(this.rotate));
+        this.rotate=0;
+    }
+    useTranslate(){
+        this.data.linearMapping(new Vector2(this.gridx,this.gridy));
+        this.gridx=0;
+        this.gridy=0;
+    }
+}
+
+
+//碰撞检测函数 ----------------------------------------------------------------------------------------------------------------------------------
+
 /**
  * 碰撞检测函数 矩形对矩形
  * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
  * @param {CanvasRectTGT} tgt2 进行碰撞检测的对象
  */
-function isTouch_Rect_Rect(tgt1,tgt2){
+ function isTouch_Rect_Rect(tgt1,tgt2){
     var v1min=tgt1.localToWorld(tgt1.getMin()),
         v1max=tgt1.localToWorld(tgt1.getMax()),
         v2min=tgt2.localToWorld(tgt2.getMin()),
@@ -349,278 +515,3 @@ function isTouch_Group_Arc(){
 function isTouch_Group_Polygon(){
     
 }
-
-// 局部坐标 to 世界坐标
-CanvasTGT.prototype.localToWorld=OlFunction.create();
-CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function(x,y){
-    return Vector2.afterTranslate_linearMapping(new Vector2(x,y),this.transformMatrix);
-});
-CanvasTGT.prototype.localToWorld.addOverload([Vector2],function(v){
-    return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
-});
-// 世界坐标 to 局部坐标
-CanvasTGT.prototype.worldToLocal=OlFunction.create();
-CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function(x,y){
-    var tm;
-    if(this.temp_worldToLocalM){
-        tm=this.temp_worldToLocalM;
-    }
-    else{
-        tm=this.transformMatrix.inverse();
-        this.temp_worldToLocalM=tm;
-    }
-    return Vector2.beforeTranslate_linearMapping(new Vector2(x,y),tm);
-});
-CanvasTGT.prototype.worldToLocal.addOverload([Vector2],function(v){
-    var tm;
-    if(this.temp_worldToLocalM&&(this.temp_worldToLocalM)){
-        tm=this.temp_worldToLocalM;
-    }
-    else{
-        tm=this.transformMatrix.inverse();
-        this.temp_worldToLocalM=tm;
-    }
-    return Vector2.beforeTranslate_linearMapping(v,tm);
-});
-
-/** 矩形
- * @param {Number} x 
- * @param {Number} y 
- * @param {Number} width 
- * @param {Number} height 
- */
-class CanvasRectTGT extends CanvasTGT{
-    constructor(x,y,width,height){
-        super();
-        this.data={x:x,y:y,width:width,height:height};
-    }
-    getMin(){
-        var rtnx,rtny;
-        if(this.data.width>=0){
-            rtnx=this.data.x;
-        }else{
-            rtnx=this.data.x+this.data.width;
-        }
-        
-        if(this.data.height>=0){
-            rtny=this.data.y;
-        }else{
-            rtny=this.data.y+this.data.height;
-        }
-        return new Vector2(rtnx,rtny);
-    }
-    
-    getMax(){
-        var rtnx,rtny;
-        if(this.data.width<=0){
-            rtnx=this.data.x;
-        }else{
-            rtnx=this.data.x+this.data.width;
-        }
-        
-        if(this.data.height<=0){
-            rtny=this.data.y;
-        }else{
-            rtny=this.data.y+this.data.height;
-        }
-        return new Vector2(rtnx,rtny);
-    }
-    isInside(_x,_y){
-        var v=this.worldToLocal(_x,_y),
-        max=this.getMax(),
-        min=this.getMin();
-        if(v.x>min.x&&v.x<max.x&&v.y>min.y&&v.y<max.y)return true;
-        return false;
-    }
-    createCanvasPath(ctx){
-        ctx.rect(this.data.x,this.data.y,this.data.width,this.data.height);
-
-    }
-    getPolygonProxy(){
-        return Polygon.rect(this.data.x,this.data.y,this.data.width,this.data.height);
-    }
-}
-
-
-/**
- * 弧形
- */
-class CanvasArcTGT extends CanvasTGT{
-    /**
-     * @param {Number} cx 圆心的坐标
-     * @param {Number} cy 圆心的坐标
-     * @param {Number} r  半径
-     * @param {Number} startAngle       起点的弧度
-     * @param {Number} endAngle         终点的弧度
-     * @param {Boolean} anticlockwise    true 顺时针, false 逆时针
-     */
-    constructor(cx,cy,r,startAngle,endAngle,anticlockwise){
-        super();
-        /**
-         * @type {{
-         * cx:Number
-         * cy:Number
-         * r:Number
-         * startAngle:Number
-         * endAngle:Number
-         * anticlockwise:Boolean
-         * startAngle_V:Vector2
-         * }}
-         */
-        this.data={
-            cx:cx,
-            cy:cy,
-            r:r,
-            startAngle:startAngle,
-            endAngle:endAngle,
-            anticlockwise:anticlockwise,
-        };
-        
-        // /**
-        //  * 只读的属性
-        //  * @type {{
-        //  * startAngle_V:Vector2,
-        //  * endAngle_V:Vector2,
-        //  * angle_value:Number
-        //  * }}
-        //  */
-        // this.onlyRead_data={
-        //     startAngle_V,
-        //     endAngle_V,
-        //     angle_value
-        // }
-    }
-
-    getMin(){
-        return new Vector2(this.data.cx-this.datar,this.data.cy-this.datar);
-    }
-    getMax(){
-        return new Vector2(this.data.cx+this.datar,this.data.cy+this.datar);
-    }
-    /**
-     * 存入弧度值
-     * @param {Number} val  新的弧度值
-     * @returns val
-     */
-    setStartAngle(val){
-        this.data.startAngle=val;
-        this.data.startAngle_V=new Vector2(Math.cos(this.data.startAngle)*r,Math.sin(this.data.startAngle)*r);
-        this.data.angle_value=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
-        return this.data.startAngle;
-    }
-    getStartAngle(){
-        return this.data.startAngle;
-    }
-
-
-    isInside(_x,_y){
-        var r=this.data.r+this.lineWidth*0.5;
-        var v=this.worldToLocal(_x-this.data.cx,_y-this.data.cy);
-        var x=v.x,y=v.y;
-        if(r<x||-1*r>x||r<y||-1*r>y) return false;
-        var arcA=this.onlyRead_data.angle_value;
-        var tr=Math.sqrt(x*x+y*y);
-        if(tr<=r){
-            // 在半径内
-            if(Math.PI*2<=arcA){
-                return true;//圆形
-            }
-            else{
-                if(this.want_to_closePath===false){
-                    return false;
-                }
-                // 弧线的两端点
-                var l1op=this.onlyRead_data.startAngle_V,
-                    l1ed=this.onlyRead_data.endAngle_V;
-                // 圆心和实参的坐标
-                var l2op=new Vector2(0,0);
-                var l2ed=new Vector2(x,y);
-                var ISF=Math2D.line_i_line(l1op,l1ed,l2op,l2ed);  //相交情况
-                if(arcA>Math.PI){
-                    // 大于半圆
-                    return !ISF;
-                }
-                else{
-                    // 小于半圆
-                    return ISF;
-                }
-            }
-        }
-        // 不在半径内直接判定为外
-        return false;
-    }
-    createCanvasPath(ctx){
-        ctx.arc(this.data.cx,this.data.cy,this.data.r,this.data.startAngle,this.data.endAngle,this.data.anticlockwise);
-        if(this.want_to_closePath){
-            var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
-            if((Math.PI*2>arcA)&&this.want_to_closePath){
-                ctx.closePath();
-            }
-        }
-    }
-    getPolygonProxy(_accuracy){
-        var rtn=Polygon.arc(this.data.r,this.data.startAngle,this.data.endAngle,_accuracy,this.data.anticlockwise);
-        rtn.translate(new Vector2(this.data.cx,this.data.cy));
-        return rtn;
-    }
-}
-
-/** 多边形
-*/
-class CanvasPolygonTGT extends CanvasTGT{
-    /**
-     * @param {Polygon} _polygon 多边形
-     */
-    constructor(_polygon){
-        super();
-        /**
-         * @type {Polygon}
-         */
-        this.data=Polygon.prototype.copy.call(_polygon);
-        if(this.data)this.data.reMinMax();
-    }
-    
-    getMin(){
-        return this.data.min.copy();
-    }
-    getMax(){
-        return this.data.max.copy();
-    }
-    getPolygonProxy(){
-        return this.data.copy();
-    }
-    isInside(_x,_y){
-        var tv=this.worldToLocal(_x,_y);
-        var x=tv.x,y=tv.y;
-        if(this.data.min.x>x||this.data.max.x<x||this.data.min.y>y||this.data.max.y<y) return false;
-        if(this.want_to_closePath&&!this.data.isClosed()){
-            this.data.seal();
-            var rtn=this.data.isInside(x,y);
-            this.data.remove(this.data.length-1);
-            return rtn;
-        }
-        return this.data.isInside(x,y);
-        
-    }
-    createCanvasPath(){
-        var i=this.data.nodes.length-1,
-            nodes=this.data.nodes;
-        ctx.moveTo(nodes[i].x,nodes[i].y);
-        for(--i;i>=0;--i){
-            ctx.lineTo(nodes[i].x,nodes[i].y);
-        }
-        if(this.want_to_closePath){
-            ctx.closePath();
-        }
-    }
-    useRotate(){
-        this.data.linearMapping(ctrlM2.rotate(this.rotate));
-        this.rotate=0;
-    }
-    useTranslate(){
-        this.data.linearMapping(new Vector2(this.gridx,this.gridy));
-        this.gridx=0;
-        this.gridy=0;
-    }
-}
-

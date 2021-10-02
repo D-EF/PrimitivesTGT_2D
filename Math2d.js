@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-01 17:01:47
+ * @LastEditTime: 2021-10-02 14:26:19
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -186,11 +186,11 @@ class Ract_Data{
     }
     /**
      * 是否在内部
-     * @param {Number} _x 
-     * @param {Number} _y 
+     * @param {Number} x 
+     * @param {Number} y 
      * @returns {Boolean} 返回 点是否在内部
      */
-    isInside(_x,_y){
+    isInside(x,y){
         var max=this.getMax(),
             min=this.getMin();
         if(x>min.x&&x<max.x&&y>min.y&&y<max.y)return true;
@@ -552,13 +552,13 @@ class Ract_Data{
                     return false;
                 }
                 // 弧线的两端点
-                var l1op=this.onlyRead_data.startAngle_V,
-                    l1ed=this.onlyRead_data.endAngle_V;
+                var l1op=this.opv,
+                    l1ed=this.edv;
                 // 圆心和实参的坐标
                 var l2op=new Vector2(0,0);
                 var l2ed=new Vector2(x,y);
                 var ISF=Math2D.line_i_line(l1op,l1ed,l2op,l2ed);  //相交情况
-                if(arcA>Math.PI){
+                if(arcA>=Math.PI){
                     // 大于半圆
                     return !ISF;
                 }

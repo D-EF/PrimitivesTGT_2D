@@ -23,13 +23,13 @@
                 {x:50,y:100},
                 {x:100,y:50}
             ]);
-            ctrlTGT.transformMatrix=createMatrix2x2T().translate(200,200);
+            ctrlTGT.setTransformMatrix(createMatrix2x2T().translate(200,200));
             
         var staticTGT1 = ctrlTGT.copy();
-        staticTGT1.transformMatrix=createMatrix2x2T().translate(200,400);
+        staticTGT1.setTransformMatrix(createMatrix2x2T().translate(200,400));
         var staticTGT2 = new CanvasRectTGT(0,0,50,500);
         // canvas 弧形 弧度 从x正方向为 0
-        var staticTGT3 = new CanvasArcTGT(400,400,50,0,20*Math.DEG);
+        var staticTGT3 = new CanvasArcTGT(400,400,50,0,180*Math.DEG);
 
         staticTGT1.fillStyle="#ff0";
         // staticTGT1.fillStyle=staticTGT1.createSpritesFillStyle(s,2,2,1,1);
@@ -42,6 +42,9 @@
         staticTGT2,
         staticTGT3
         ];
+        staticTGT1.want_to_closePath=true
+        staticTGT2.want_to_closePath=true
+        staticTGT3.want_to_closePath=true
         function renderTGTs(){
             ctx.clearRect(0,0,500,500);
             ctrlTGT.render(ctx);
@@ -52,7 +55,7 @@
 
 
         addKeyEvent(canvas,1,38,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,-2);
+            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(0,-2));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
@@ -63,7 +66,7 @@
         });
         
         addKeyEvent(canvas,1,40,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(0,2);
+            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(0,2));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
@@ -74,7 +77,7 @@
         });
         
         addKeyEvent(canvas,1,39,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(2,0);
+            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(2,0));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
@@ -85,7 +88,7 @@
         });
         
         addKeyEvent(canvas,1,37,function(e){
-            ctrlTGT.transformMatrix = ctrlTGT.transformMatrix.translate(-2,0);
+            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(-2,0));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
