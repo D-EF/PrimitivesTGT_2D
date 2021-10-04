@@ -17,14 +17,14 @@
     var s=new Sprites(10,10,"./SpritesMap.png");
         var canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
         
-        // var ctrlTGT=new CanvasPolygonTGT();
-        //     ctrlTGT.data=new Polygon([
-        //         {x:100,y:100},
-        //         {x:50,y:100},
-        //         {x:100,y:50}
-        //     ]);
+        var ctrlTGT=new CanvasPolygonTGT();
+            ctrlTGT.data=new Polygon([
+                {x:100,y:100},
+                {x:50,y:100},
+                {x:100,y:50}
+            ]);
         
-        var ctrlTGT=new CanvasRectTGT(0,0,20,20);
+        // var ctrlTGT=new CanvasRectTGT(0,0,20,20);
             ctrlTGT.setTransformMatrix(createMatrix2x2T().translate(200,200));
             
         // var staticTGT1 = ctrlTGT.copy();

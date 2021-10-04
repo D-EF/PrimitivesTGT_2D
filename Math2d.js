@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-04 21:52:42
+ * @LastEditTime: 2021-10-04 22:52:24
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -46,7 +46,7 @@ class Math2D{
      * 判断 tgtv 是否在 顺时针旋转 op 到 ed 的夹角内, 角不会超过360度 
      * @param {Vector2} angle_op_V    夹角的射线 开始
      * @param {Vector2} angle_ed_V    夹角的射线 结束
-     * @param {Vector2} tgtv        夹角的射线
+     * @param {Vector2} tgtv        目标
      * @param {Boolean} f 表示角度的大小是否大于半圆
      * @param {Boolean} f1 半圆时使用，表示是顺时针还是逆时针
      */
@@ -64,10 +64,11 @@ class Math2D{
         return false;
     }
     /**
-     * 判断弧形是否与线段相交
+     * 计算弧形与线段的交点
      * @param {Arc_Data} arc    弧形数据
      * @param {Vector2} lop     线段端点
      * @param {Vector2} led     线段端点
+     * @returns {Array<Vector2>} 弧形与线段的交点
      */
     static arc_i_line(arc,lop,led){
         var cis=Math2D.circle_i_line(lop,led,arc.c,arc.r);
@@ -663,35 +664,35 @@ class Ract_Data{
     judgeZero(){return !(this.x||this.y);}
     
     /**取反
-     * @return {Vector2}
+     * @return {Vector2} 返回新的向量
      */
     instead(){return new Vector2(-1*this.x,-1*this.y);}
 
     /**向量和
      * @param {Vector2} v2
-     * @return {Vector2}
+     * @return {Vector2} 返回新的向量
      */
     add(v2){return new Vector2(this.x+v2.x,this.y+v2.y);}
     /**数字乘向量 
      * @param {Number} n
      * @param {Vector2} v
-     * @return {Vector2}
+     * @return {Vector2} 返回新的向量
     */
     np(n){return new Vector2(this.x*n,this.y*n);}
     /**向量差
      * @param {Vector2} v2 减
-     * @return {Vector2}
+     * @return {Vector2} 返回新的向量
      */
     dif(v2){return new Vector2(this.x-v2.x,this.y-v2.y);}
     /**
      * 向量内积
      * @param {Vector2} v2
-     * @return {Number}
+     * @return {Number} 
      */
     ip(v2){return this.x*v2.x+this.y*v2.y;}
     /**向量外积
      * @param {Vector2} v2 
-     * @return {Number}
+     * @return {Number} 
      */
     op(v2){return this.x*v2.y-this.y*v2.x;}
     
@@ -786,7 +787,7 @@ class Ract_Data{
     static beforeTranslate_linearMapping(v,m){
         var tv,tm,rtn;
         if(arguments[0].constructor==Vector2){
-            tv=arguments[0];
+            tv=arguments[0].copy();
             tm=arguments[1];
             if(tm.constructor==Matrix2x2T){
                 tv.x+=tm.e;
@@ -796,7 +797,7 @@ class Ract_Data{
         }
         else{
             tm=arguments[0];
-            tv=arguments[1];
+            tv=arguments[1].copy();
             if(tm.constructor==Matrix2x2T){
                 tv.x+=tm.e;
                 tv.y+=tm.f;

@@ -447,6 +447,9 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
     }
 }
 CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasPolygonTGT],isTouch_Rect_Polygon);
+CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt2){
+    return isTouch_Rect_Polygon(tgt2,tgt1);
+});
 
 /**
  * 碰撞检测函数 弧形(圆形) 多边形
@@ -458,23 +461,29 @@ CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasPolygonTGT],isTouch_Rect_Poly
         l=i;
     if(l<0)return false;
 
-    var t2d=Polygon.linearMapping(tgt2.data,tgt2.temp_worldToLocalM,true),
+    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    var t2d=Polygon.linearMapping(t2d1,tgt1.temp_worldToLocalM,true);
         nodes=t2d.nodes;
 
     for(;i>0;--i){
-        if(Math2D.arc_i_line(tgt1.data,nodes[i],nodes[i-1])){
+        if(Math2D.arc_i_line(tgt1.data,nodes[i],nodes[i-1]).length){
             return true;
         }
-        if(tgt1.want_to_closePath){
-            // 割圆 的线段也要判断
-            if(Math2D.line_i_line(tgt1.data.opv,tgt1.data.edv,nodes[i],nodes[i-1])){
+    }
+    var opv,edv;
+    if(tgt1.want_to_closePath){
+        // 割圆 的线段也要判断
+        opv=Vector2.add(tgt1.data.opv,tgt1.data.c);
+        edv=tgt1.data.edv.add(tgt1.data.c);
+        for(i=l;i>0;--i){
+            if(Math2D.line_i_line(opv,edv,nodes[i],nodes[i-1])){
                 return true;
             }
         }
     }
     if(l>1&&tgt2.want_to_closePath&&tgt2.data.isClosed()){
         // 规定闭合路径的多边形, 多算一次
-        if(Math2D.arc_i_line(tgt1.data,nodes[0],nodes[l])){
+        if(Math2D.arc_i_line(tgt1.data,nodes[0],nodes[l]).length){
             return true;
         }
         if(tgt1.want_to_closePath){
@@ -487,6 +496,9 @@ CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasPolygonTGT],isTouch_Rect_Poly
 
 }
 CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasPolygonTGT],isTouch_Arc_Polygon);
+CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasArcTGT],function(tgt1,tgt2){
+    return isTouch_Arc_Polygon(tgt2,tgt1);
+});
 
 // 多边形和多边形直接用多边形(口胡)
 
