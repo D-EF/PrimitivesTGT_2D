@@ -1,6 +1,7 @@
 /*!
  *  用于 canvas 面向对象化的 tgt 库
  *  注意 canvas 大部分情况是 x 正方向向右, y 正方向向下的。
+ *  canvas 是向量后乘矩阵
  */
 
 // data
@@ -43,14 +44,14 @@ class CanvasTGT{
      * @returns {Vector2} 返回一个向量
      */
     getMin(){
-        // 在派生类里实现
+        return this.localToWorld(this.data.getMin());
     }
     /** 
      * 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
     getMax(){
-        // 在派生类里实现
+        return this.localToWorld(this.data.getMax());
     }
     /**
      * 创建填充类型
@@ -159,18 +160,12 @@ class CanvasTGT{
     }
     /** 转换成多边形 */
     toPolygon(){
-        var rtn = new CanvasPolygonTGT(this.getPolygonProxy(...arguments));
+        var rtn = new CanvasPolygonTGT(this.data.ceratePolygonProxy(...arguments));
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
         rtn.setTransformMatrix(this.transformMatrix);
         return rtn;
-    }
-    /**用 data 获取多边形代理对象 
-     * 不使用变换矩阵的
-     */
-    getPolygonProxy(_accuracy){
-        // 在派生类中实现
     }
     /**
      * 碰撞检测 有多个重载, 在class外面实现
@@ -193,26 +188,6 @@ class CanvasTGT{
     }   //回调地狱 ('A'#)
 }
 
-/** 默认转换成多边形的 精度 */
-CanvasTGT.accuracy = 20;
-
-function isTouch_base(canvasTGT1,canvasTGT2){
-    var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy);
-    var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy);
-    var i;
-    for(i=tgt1.data.nodes.length-1;i>=0;--i){
-        tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);
-    }
-    for(i=tgt2.data.nodes.length-1;i>=0;--i){
-        tgt2.data.nodes[i]=tgt2.localToWorld(tgt2.data.nodes[i]);
-    }
-    tgt1.data.reMinMax();
-    tgt2.data.reMinMax();
-    
-    return Polygon.getImpactFlag(tgt1.data,tgt2.data);
-}
-
-CanvasTGT.isTouch=OlFunction.create(isTouch_base);
 
 
 // 局部坐标 to 世界坐标
@@ -259,20 +234,9 @@ class CanvasRectTGT extends CanvasTGT{
         super();
         this.data=new Ract_Data(x,y,w,h);
     }
-    getMin(){
-        
-        return this.data.getMin();
-    }
-    
-    getMax(){
-        return this.data.getMax();
-    }
     createCanvasPath(ctx){
         ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
 
-    }
-    getPolygonProxy(){
-        return Polygon.rect(this.data.x,this.data.y,this.data.w,this.data.h);
     }
 }
 
@@ -293,12 +257,6 @@ class CanvasArcTGT extends CanvasTGT{
         super();
         this.data=new Arc_Data(cx,cy,r,startAngle,endAngle);
     }
-    getMin(){
-        return this.data.min.copy();
-    }
-    getMax(){
-        return this.data.max.copy();
-    }
     createCanvasPath(ctx){
         ctx.arc(this.data.c.x,this.data.c.y,this.data.r,this.data.startAngle,this.data.endAngle,false);
         if(this.want_to_closePath){
@@ -307,11 +265,6 @@ class CanvasArcTGT extends CanvasTGT{
                 ctx.closePath();
             }
         }
-    }
-    getPolygonProxy(_accuracy){
-        var rtn=Polygon.arc(this.data.r,this.data.startAngle,this.data.endAngle,_accuracy,this.data.anticlockwise);
-        rtn.translate(new Vector2(this.data.cx,this.data.cy));
-        return rtn;
     }
 }
 
@@ -330,12 +283,6 @@ class CanvasPolygonTGT extends CanvasTGT{
         if(this.data)this.data.reMinMax();
     }
     
-    getMin(){
-        return this.data.min.copy();
-    }
-    getMax(){
-        return this.data.max.copy();
-    }
     getPolygonProxy(){
         return this.data.copy();
     }
@@ -379,16 +326,41 @@ class CanvasPolygonTGT extends CanvasTGT{
 
 //碰撞检测函数 ----------------------------------------------------------------------------------------------------------------------------------
 
+/** @type {Number} 默认精度 用于弧形转换成多边形 */
+CanvasTGT.accuracy=20;
+CanvasTGT.isTouch=OlFunction.create(isTouch_base);
+
+/**
+ * 可以通用的碰撞检测函数 将对象转换成多边形 开销较大
+ * @param {CanvasTGT} canvasTGT1
+ * @param {CanvasTGT} canvasTGT2
+ */
+function isTouch_base(canvasTGT1,canvasTGT2){
+    var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy);
+    var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy);
+    var i;
+    for(i=tgt1.data.nodes.length-1;i>=0;--i){
+        tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);
+    }
+    for(i=tgt2.data.nodes.length-1;i>=0;--i){
+        tgt2.data.nodes[i]=tgt2.localToWorld(tgt2.data.nodes[i]);
+    }
+    tgt1.data.reMinMax();
+    tgt2.data.reMinMax();
+    
+    return Polygon.getImpactFlag(tgt1.data,tgt2.data);
+}
+
 /**
  * 碰撞检测函数 矩形对矩形
  * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
  * @param {CanvasRectTGT} tgt2 进行碰撞检测的对象
  */
  function isTouch_Rect_Rect(tgt1,tgt2){
-    var v1min=tgt1.localToWorld(tgt1.getMin()),
-        v1max=tgt1.localToWorld(tgt1.getMax()),
-        v2min=tgt2.localToWorld(tgt2.getMin()),
-        v2max=tgt2.localToWorld(tgt2.getMax());
+    var v1min=tgt1.getMin(),
+        v1max=tgt1.getMax(),
+        v2min=tgt2.getMin(),
+        v2max=tgt2.getMax();
 
     if(v1min.x<v2min.x&&v1max.x<v2min.x){
         return false;
@@ -404,6 +376,7 @@ class CanvasPolygonTGT extends CanvasTGT{
     }
     return true;
 }
+CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasRectTGT],isTouch_Rect_Rect);
 
 /**
  * 碰撞检测函数 矩形 弧形(圆形)
@@ -411,20 +384,42 @@ class CanvasPolygonTGT extends CanvasTGT{
  * @param {CanvasArcTGT}  tgt2 进行碰撞检测的对象
  */
 function isTouch_Rect_Arc(tgt1,tgt2){
-    var min=tgt1.localToWorld(tgt1.getMin()),
-        max=tgt1.localToWorld(tgt1.getMax()),
+    var min=tgt1.getMin(),
+        max=tgt1.getMax(),
         _b=new Vector2(min.x,max.y),
         _c=new Vector2(max.x,min.y);
     var a=tgt2.worldToLocal(min),
         b=tgt2.worldToLocal(_b),
         c=tgt2.worldToLocal(_c),
         d=tgt2.worldToLocal(max);
+       
+    // 矩形在弧形内部
+    if(tgt2.want_to_closePath&&(
+        tgt2.data.isInside(a.x,a.y,tgt2.want_to_closePath)||
+        tgt2.data.isInside(b.x,b.y,tgt2.want_to_closePath)||
+        tgt2.data.isInside(c.x,c.y,tgt2.want_to_closePath)||
+        tgt2.data.isInside(d.x,d.y,tgt2.want_to_closePath)
+    ))return true;
+    
+    // 相交
+    if( Math2D.arc_i_line(tgt2.data,a,b).length||
+        Math2D.arc_i_line(tgt2.data,a,c).length||
+        Math2D.arc_i_line(tgt2.data,b,d).length||
+        Math2D.arc_i_line(tgt2.data,c,d).length
+    )return true;
 
-    return Math2D.arc_i_line(tgt2.data,a,b)||
-           Math2D.arc_i_line(tgt2.data,a,c)||
-           Math2D.arc_i_line(tgt2.data,b,d)||
-           Math2D.arc_i_line(tgt2.data,c,d);
+    // 弧形在矩形内
+    var t1p=new Ract_Data(a.x,a.y,d.x-a.x,d.y-a.y);
+    if( t1p.isInside(tgt2.data.opv.x+tgt2.data.c.x,tgt2.data.opv.y+tgt2.data.c.y)||
+        t1p.isInside(tgt2.data.edv.x+tgt2.data.c.x,tgt2.data.edv.y+tgt2.data.c.y)
+    )return true;
+
+    return false;
 }
+CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasArcTGT],isTouch_Rect_Arc);
+CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasRectTGT],function(tgt1,tgt2){
+    return isTouch_Rect_Arc(tgt2,tgt1)
+});
 
 /**
  * 碰撞检测函数 矩形 多边形
@@ -440,8 +435,8 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
         }
     }
     if(tgt2.want_to_closePath||Vector2.isEqual(tgt2.data.nodes[0],tgt2.data.nodes[l])){
-        var min=tgt1.localToWorld(tgt1.getMin());
-            max=tgt1.localToWorld(tgt1.getMax());
+        var min=tgt1.getMin();
+            max=tgt1.getMax();
         return tgt2.isInside(min.x,min.y)||
             tgt2.isInside(max.x,max.y)||
             tgt2.isInside(max.x,min.y)||
@@ -451,6 +446,7 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
         return false;
     }
 }
+CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasPolygonTGT],isTouch_Rect_Polygon);
 
 /**
  * 碰撞检测函数 弧形(圆形) 多边形
@@ -490,13 +486,9 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
     
 
 }
+CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasPolygonTGT],isTouch_Arc_Polygon);
 
-/**
- * 碰撞检测函数 多边形 多边形
- */
-function isTouch_Polygon_Polygon(){
-    return isTouch_base(tgt1,tgt2);
-}
+// 多边形和多边形直接用多边形(口胡)
 
 /**
  * 碰撞检测函数 组 组

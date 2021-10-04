@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-03 00:14:15
+ * @LastEditTime: 2021-10-04 21:52:42
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -196,6 +196,12 @@ class Ract_Data{
         if(x>min.x&&x<max.x&&y>min.y&&y<max.y)return true;
         return false;
     }
+    /**
+     * 获取代理用的多边形
+     */
+    ceratePolygonProxy(){
+        return Polygon.rect(this.x,this.y,this.w,this.h);
+    }
 }
 
 /**
@@ -383,7 +389,7 @@ class Ract_Data{
         return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
     }
     /**
-     * 获取一个 刚好包裹 弧形 的 矩形 的 最小,最大坐标
+     * 获取一个 刚好包裹 弧形 的 矩形 的 x和y最小的顶点的 和 x和y最大的顶点 的 坐标
      * @returns {{min:Vector2,max:Vector2}}
      */
     get_min_A_max(){
@@ -514,14 +520,14 @@ class Ract_Data{
         };
     }
     /**
-     * 一个 刚好包裹 弧形 的 矩形 的 最大坐标
+     * 一个 刚好包裹 弧形 的 矩形 的 x和y最大的顶点
      * @returns {Vector2}
      */
     getMax(){
         return this.max;
     }
     /**
-     * 一个 刚好包裹 弧形 的 矩形 的 最小坐标
+     * 一个 刚好包裹 弧形 的 矩形 的 x和y最小的顶点
      * @returns {Vector2}
      */
     getMin(){
@@ -529,8 +535,8 @@ class Ract_Data{
     }
     /**
      * 点是否在内部
-     * @param {Number} _x 点的坐标
-     * @param {Number} _y 点的坐标
+     * @param {Number} _x 点的坐标x
+     * @param {Number} _y 点的坐标y
      * @param {Boolean} f want_to_closePath 当没有成为完整的圆时, 是否需要将其当作一个切圆
      * @returns {Boolean} 返回 点是否在内部
      */
@@ -570,6 +576,15 @@ class Ract_Data{
         }
         // 不在半径内直接判定为外
         return false;
+    }
+
+    /**
+     * 获取代理用的多边形
+     */
+    ceratePolygonProxy(_accuracy){
+        var rtn=Polygon.arc(this.r,this.startAngle,this.endAngle,_accuracy);
+        rtn.translate(this.c);
+        return rtn;
     }
 }
 
@@ -686,7 +701,7 @@ class Ract_Data{
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false)
      */ 
-    linearMapping(m,fln,f=false){
+    linearMapping(m,fln=true,f=false){
         if(f){
             if(m.e){
                 this.x+=m.e;
@@ -1067,7 +1082,9 @@ class Polygon{
     constructor(nodes){
         /** @type {Array<Vector2>}  存放 向量 的列表  */
         this.nodes=[];
+        /** @type {Vectro2} 能正好包住多边形的矩形的x和y最小的顶点 */
         this.min    =new Vector2();
+        /** @type {Vectro2} 能正好包住多边形的矩形的x和y最大的顶点 */
         this.max    =new Vector2();
 
         if(nodes&&nodes.constructor==Array){
@@ -1181,6 +1198,14 @@ class Polygon{
         var l=this.nodes.length-1;
         return this.nodes[0].x==this.nodes[l].x&&this.nodes[0].y==this.nodes[l].y;
     }
+    /**获取一个能正好包住多边形的矩形的x和y最小的顶点 */
+    getMin(){
+        return this.min;
+    }
+    /**获取一个能正好包住多边形的矩形的x和y最大的顶点 */
+    getMax(){
+        return this.max;
+    }
     /**
      * 使用局部坐标系判断某点是否在内部, 
      * 也可以使用向量作为实参
@@ -1231,16 +1256,18 @@ class Polygon{
 
     /**
      * 线性变换
-     * @param {Matrix2x2T} m
-     * @param {Boolean} fln
-     * @param {Boolean} translate_befroeOrAfter
+     * @param {Matrix2x2T} m    矩阵
+     * @param {Boolean} fln     矩阵后乘向量 还是 矩阵前乘向量
+     * @param {Boolean} translate_befroeOrAfter 先变换还是先平移
      */
-    linearMapping(m,fln,translate_befroeOrAfter=false){
+    linearMapping(m,fln=true,translate_befroeOrAfter=false){
         for(var i=this.nodes.length-1;i>=0;--i){
-            // todo
-            // if()this.nodes[i].EX_linearMapping_nt();
-            this.nodes[i].EX_linearMapping_nt();
+            this.nodes[i].linearMapping(m,fln,translate_befroeOrAfter);
         }
+    }
+    /** 获取代理用的多边形 */
+    ceratePolygonProxy(){
+        return this.copy();
     }
 
     /** 
@@ -1258,28 +1285,27 @@ class Polygon{
     /**
      * 把弧形转换成多边形, 如果弧度的 绝对值 大于 2π 将作为圆形而不是弧形
      * @param {Number} r                半径
-     * @param {Number} _accuracy         精度 最小为2, 表示弧形由个顶点构成
      * @param {Number} startAngle       开始的弧度(rad)
      * @param {Number} endAngle         结束的弧度(rad)
-     * @param {Boolean} anticlockwise   逆时针或顺时针
+     * @param {Number} _accuracy         精度 最小为2, 表示弧形由个顶点构成
      */
-    static arc(r,_startAngle,_endAngle,_accuracy,anticlockwise){
+    static arc(r,_startAngle,_endAngle,_accuracy){
         var rtn=new Polygon();
         var accuracy=_accuracy>=2?_accuracy:2,
             startAngle,endAngle,cyclesflag,
             stepLong,
             cycles=Math.PI*2,
             i,tempAngle;
-        if(anticlockwise){
-            // 逆时针
-            startAngle=_endAngle;
-            endAngle=_startAngle;
-        }
-        else{
-            // 顺时针
+        // if(anticlockwise){
+        //     // 逆时针
+        //     startAngle=_endAngle;
+        //     endAngle=_startAngle;
+        // }
+        // else{
+        //     // 顺时针
             startAngle=_startAngle;
             endAngle=_endAngle;
-        }
+        // }
         if(endAngle-startAngle>=cycles||endAngle-startAngle<=-1*cycles){
             // 如果弧度 绝对值 大于 2π 将作为圆形而不是弧形
             stepLong=cycles/accuracy;
