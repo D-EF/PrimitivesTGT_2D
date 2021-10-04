@@ -290,13 +290,7 @@ class CanvasPolygonTGT extends CanvasTGT{
         var tv=this.worldToLocal(_x,_y);
         var x=tv.x,y=tv.y;
         if(this.data.min.x>x||this.data.max.x<x||this.data.min.y>y||this.data.max.y<y) return false;
-        if(this.want_to_closePath&&!this.data.isClosed()){
-            this.data.seal();
-            var rtn=this.data.isInside(x,y);
-            this.data.remove(this.data.nodes.length-1);
-            return rtn;
-        }
-        return this.data.isInside(x,y);
+        return this.data.isInside(x,y,this.want_to_closePath);
         
     }
     createCanvasPath(){
@@ -309,17 +303,6 @@ class CanvasPolygonTGT extends CanvasTGT{
         if(this.want_to_closePath){
             ctx.closePath();
         }
-    }
-    useRotate(){
-        this.data.linearMapping(ctrlM2.rotate(this.rotate));
-        this.rotate=0;
-    }
-    useTranslate(){
-        // todo
-        
-        // this.data.linearMapping(new Vector2(this.gridx,this.gridy));
-        // this.gridx=0;
-        // this.gridy=0;
     }
 }
 
@@ -336,8 +319,8 @@ CanvasTGT.isTouch=OlFunction.create(isTouch_base);
  * @param {CanvasTGT} canvasTGT2
  */
 function isTouch_base(canvasTGT1,canvasTGT2){
-    var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy);
-    var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy);
+    var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy,canvasTGT1.want_to_closePath);
+    var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy,canvasTGT2.want_to_closePath);
     var i;
     for(i=tgt1.data.nodes.length-1;i>=0;--i){
         tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);

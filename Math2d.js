@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-04 22:52:24
+ * @LastEditTime: 2021-10-04 23:18:25
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -581,9 +581,11 @@ class Ract_Data{
 
     /**
      * 获取代理用的多边形
+     * @param {Number}  _accuracy   弧形转换成多边形时代精度
+     * @param {Boolean} _closeFlag  当不足为整个圆时 是否要封闭
      */
-    ceratePolygonProxy(_accuracy){
-        var rtn=Polygon.arc(this.r,this.startAngle,this.endAngle,_accuracy);
+    ceratePolygonProxy(_accuracy,_closeFlag){
+        var rtn=Polygon.arc(this.r,this.startAngle,this.endAngle,_accuracy,_closeFlag);
         rtn.translate(this.c);
         return rtn;
     }
@@ -1212,16 +1214,31 @@ class Polygon{
      * 也可以使用向量作为实参
      * @param {Number} x 局部坐标系中的坐标
      * @param {Number} y 局部坐标系中的坐标
+     * @param {Boolean} f 是否认作是一个密封的多边形 为true时会多计算一个起点和终点的线
      */
-    isInside(x,y){
+    isInside(x,y,f){
         // 如果图形不是密封的, 直接返回否
-        if(!this.isClosed()) return false;
+        var _cf=this.isClosed();
+        if(!_cf){
+            if(!f)
+            return false;
+        }
 
         var i,j,rtn=false,temp=0,tempK;
         i=this.nodes.length-1;
         if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;
-        for(;i>0;--i){
+        for(;i>=0;--i){
             j=i-1;
+            if(i<=0){
+                if(f){
+                    if(!_cf)
+                        j=this.nodes.length-1;
+                    else 
+                        break;
+                }else{
+                    break;
+                }
+            }
             if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;//如果正好在顶点上直接算在内部
             else if((this.nodes[i].y>=y)!=(this.nodes[j].y>=y)){
                 // 点的 y 坐标 在范围内
@@ -1266,9 +1283,16 @@ class Polygon{
             this.nodes[i].linearMapping(m,fln,translate_befroeOrAfter);
         }
     }
-    /** 获取代理用的多边形 */
-    ceratePolygonProxy(){
-        return this.copy();
+    /** 获取代理用的多边形
+     * @param {Number} _accuracy 精度 在这里是无用的
+     * @param {Number} _closeFlag 是否需要封闭
+     */
+    ceratePolygonProxy(_accuracy,_closeFlag){
+        var rtn= this.copy();
+        if(_closeFlag&&!rtn.isClosed()){
+            rtn.seal();
+        }
+        return rtn;
     }
 
     /** 
@@ -1289,8 +1313,9 @@ class Polygon{
      * @param {Number} startAngle       开始的弧度(rad)
      * @param {Number} endAngle         结束的弧度(rad)
      * @param {Number} _accuracy         精度 最小为2, 表示弧形由个顶点构成
+     * @param {Boolean} _closeFlag 当不足为整个圆时 是否要封闭
      */
-    static arc(r,_startAngle,_endAngle,_accuracy){
+    static arc(r,_startAngle,_endAngle,_accuracy,_closeFlag){
         var rtn=new Polygon();
         var accuracy=_accuracy>=2?_accuracy:2,
             startAngle,endAngle,cyclesflag,
@@ -1319,7 +1344,7 @@ class Polygon{
             tempAngle=endAngle-i*stepLong;
             rtn.pushNode(new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
         }
-        if(cyclesflag){
+        if(cyclesflag||_closeFlag){
             rtn.seal();
         }
         return rtn;
