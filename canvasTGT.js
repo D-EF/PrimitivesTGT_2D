@@ -1,7 +1,7 @@
 /*!
  *  用于 canvas 面向对象化的 tgt 库
  *  注意 canvas 大部分情况是 x 正方向向右, y 正方向向下的。
- *  canvas 是向量后乘矩阵
+ *  canvas 是向量后乘矩阵再偏移
  */
 
 // data

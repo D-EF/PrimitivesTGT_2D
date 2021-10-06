@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-06 22:28:40
+ * @LastEditTime: 2021-10-07 01:28:22
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -284,8 +284,7 @@ class Ract_Data{
     isInside(x,y){
         var max=this.getMax(),
             min=this.getMin();
-        if(x>min.x&&x<max.x&&y>min.y&&y<max.y)return true;
-        return false;
+        return (x>min.x&&x<max.x&&y>min.y&&y<max.y);
     }
     /**
      * 获取代理用的多边形
@@ -628,7 +627,7 @@ class Ract_Data{
      * 点是否在内部
      * @param {Number} _x 点的坐标x
      * @param {Number} _y 点的坐标y
-     * @param {Boolean} f want_to_closePath 当没有成为完整的圆时, 是否需要将其当作一个切圆
+     * @param {Boolean} f want_to_closePath 当没有成为完整的圆时, 是否需要将其当作一个割圆
      * @returns {Boolean} 返回 点是否在内部
      */
     isInside(_x,_y,f){
@@ -792,7 +791,7 @@ class Ract_Data{
      * 
      * @param {Matrix2x2T}  m   变换矩阵
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
-     * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false)
+     * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
      */ 
     linearMapping(m,fln=true,f=false){
         if(f){
