@@ -385,10 +385,10 @@ function isTouch_Rect_Arc(tgt1,tgt2){
     ))return true;
     
     // 相交
-    if( Math2D.arc_i_line(tgt2.data,a,b).length||
-        Math2D.arc_i_line(tgt2.data,a,c).length||
-        Math2D.arc_i_line(tgt2.data,b,d).length||
-        Math2D.arc_i_line(tgt2.data,c,d).length
+    if( Math2D.arc_i_line(tgt2.data,a,b)||
+        Math2D.arc_i_line(tgt2.data,a,c)||
+        Math2D.arc_i_line(tgt2.data,b,d)||
+        Math2D.arc_i_line(tgt2.data,c,d)
     )return true;
 
     // 弧形在矩形内
@@ -449,7 +449,7 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
         nodes=t2d.nodes;
 
     for(;i>0;--i){
-        if(Math2D.arc_i_line(tgt1.data,nodes[i],nodes[i-1]).length){
+        if(Math2D.arc_i_line(tgt1.data,nodes[i],nodes[i-1])){
             return true;
         }
     }
@@ -466,7 +466,7 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
     }
     if(l>1&&tgt2.want_to_closePath&&tgt2.data.isClosed()){
         // 规定闭合路径的多边形, 多算一次
-        if(Math2D.arc_i_line(tgt1.data,nodes[0],nodes[l]).length){
+        if(Math2D.arc_i_line(tgt1.data,nodes[0],nodes[l])){
             return true;
         }
         if(tgt1.want_to_closePath){

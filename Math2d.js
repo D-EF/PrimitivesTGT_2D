@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-04 23:18:25
+ * @LastEditTime: 2021-10-06 16:46:01
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -10,6 +10,78 @@
  * 放了一点2d静态函数
  */
 class Math2D{
+
+    /**
+     * 两个圆形是否相交
+     * @param {Vector2} c1  圆1 圆心坐标
+     * @param {Number} r1   圆1 半径
+     * @param {Vector2} c2  圆2 圆心坐标
+     * @param {Number} r2   圆2 半径
+     * @returns {Boolean} 返回相交情况
+     */
+    static circular_i_circular(c1,r1,c2,r2){
+        var l=Vector2.dif(c2,c1).mag(),
+            l1=r1+r2,
+            l2=Math.abs(r1-r2);
+        if(l>l1||l<l2){
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 两个圆形的交点
+     * @param {Vector2} c1  圆1 圆心坐标
+     * @param {Number} r1   圆1 半径
+     * @param {Vector2} c2  圆2 圆心坐标
+     * @param {Number} r2   圆2 半径
+     * @returns {Array<Vector2>} 返回交点
+     */
+    static circular_i_circular_V(c1,r1,c2,r2){
+        var d=Vector2.dif(c2,c1).mag(),
+            a=(r1*r1-r2*r2+d*d)/(2*d),
+            fv=r1*r1-a*a;
+
+        if(fv<0){
+            return [];
+        }
+
+        var x0=c1.x+(a/d)*(c2.x-c1.x),
+        y0=c1.y+(a/d)*(c2.y-c1.y),
+        h=Math.sqrt(fv);
+        
+        var x1=x0-h*(c2.y-c1.y)/d,
+            y1=y0+h*(c2.x-c1.x)/d,
+            x2=x0+h*(c2.y-c1.y)/d,
+            y2=y0-h*(c2.x-c1.x)/d;
+
+        return [
+            new Vector2(x1,y1),
+            new Vector2(x2,y2)
+        ];
+    }
+
+    /**
+     * 弧形是否相交
+     * @param {Arc_Data} arc1 弧形1
+     * @param {Arc_Data} arc2 弧形2
+     * @returns {Boolean} 返回相交情况
+     */
+    static arc_i_arc(arc1,arc2){
+        var cis=Math2D.circular_i_circular_V(arc1.c,arc1.r,arc2.c,arc2.r);
+        var rtn=[];
+        var f=arc.angle>Math.PI;
+        var a1c=cis[i].dif(arc1.c),
+            a2c=cis[i].dif(arc2.c);
+        for(var i =cis.length-1;i>=0;--i){
+            if(Math2D.in_angle_V(arc1.opv,arc1.edv,a1c,f)&&
+               Math2D.in_angle_V(arc2.opv,arc2.edv,a2c,f)){
+                rtn.push(cis[i]);
+            }
+        }
+        return rtn;
+    }
+
     /**
      * 圆形和线段 的 交点 坐标
      * @param {Vector2} lop 线段起点
@@ -18,7 +90,7 @@ class Math2D{
      * @param {Number}  r   圆形的半径
      * @returns {Array<Vector2>} 长度最多为2的数组，两个交点的坐标
      */
-    static circle_i_line(lop,led,c,r) {
+    static circle_i_line_V(lop,led,c,r) {
         var d=Vector2.dif(led,lop);
         var f=Vector2.dif(lop,c);
         var a = d.ip(d);
@@ -70,8 +142,8 @@ class Math2D{
      * @param {Vector2} led     线段端点
      * @returns {Array<Vector2>} 弧形与线段的交点
      */
-    static arc_i_line(arc,lop,led){
-        var cis=Math2D.circle_i_line(lop,led,arc.c,arc.r);
+    static arc_i_line_V(arc,lop,led){
+        var cis=Math2D.circle_i_line_V(lop,led,arc.c,arc.r);
         var rtn=[];
         var f=arc.angle>Math.PI;
         for(var i =cis.length-1;i>=0;--i){
@@ -80,6 +152,24 @@ class Math2D{
             }
         }
         return rtn;
+    }
+    /**
+     * 弧形与线段是否相交
+     * @param {Arc_Data} arc    弧形数据
+     * @param {Vector2} lop     线段端点
+     * @param {Vector2} led     线段端点
+     * @returns {Boolean} 相交情况
+     */
+    static arc_i_line(arc,lop,led){
+        var cis=Math2D.circle_i_line_V(lop,led,arc.c,arc.r);
+        var rtn=[];
+        var f=arc.angle>Math.PI;
+        for(var i =cis.length-1;i>=0;--i){
+            if(Math2D.in_angle_V(arc.opv,arc.edv,cis[i].dif(arc.c),f)){
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
