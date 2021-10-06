@@ -441,8 +441,6 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasArcTGT],function(tgt1,tgt2
     return isTouch_Arc_Polygon(tgt2,tgt1);
 });
 
-// 多边形和多边形直接用多边形(口胡)
-
 /**
  * 碰撞检测函数 组 组
  */
