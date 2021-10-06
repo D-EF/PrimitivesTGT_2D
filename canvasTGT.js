@@ -44,14 +44,14 @@ class CanvasTGT{
      * @returns {Vector2} 返回一个向量
      */
     getMin(){
-        return this.localToWorld(this.data.getMin());
+        return this.data.getMin();
     }
     /** 
      * 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
     getMax(){
-        return this.localToWorld(this.data.getMax());
+        return this.data.getMax();
     }
     /**
      * 创建填充类型
@@ -97,12 +97,12 @@ class CanvasTGT{
     }
     /** 
      * 判断某一点是否在目标内部
-     * @param {Number} x    坐标
-     * @param {Number} y    坐标
+     * @param {Number} _x    重载1的参数 世界坐标x
+     * @param {Number} _y    重载1的参数 世界坐标y
+     * @param {Vector2} _v   重载2的参数 世界坐标向量
     */
     isInside(_x,_y){
-        var v=this.worldToLocal(_x,_y);
-        return this.data.isInside(v.x,v.y,this.want_to_closePath);
+        // 2个重载
     }
     /** 
      * 渲染图形 
@@ -189,6 +189,15 @@ class CanvasTGT{
 }
 
 
+CanvasTGT.prototype.isInside=OlFunction.create();
+CanvasTGT.prototype.isInside.addOverload([Number,Number],function(_x,_y){
+    var v=this.worldToLocal(_x,_y);
+    return this.data.isInside(v.x,v.y,this.want_to_closePath);
+});
+CanvasTGT.prototype.isInside.addOverload([Vector2],function(_v){
+    var v=this.worldToLocal(_v);
+    return this.data.isInside(v.x,v.y,this.want_to_closePath);
+});
 
 // 局部坐标 to 世界坐标
 CanvasTGT.prototype.localToWorld=OlFunction.create();
@@ -335,69 +344,13 @@ function isTouch_base(canvasTGT1,canvasTGT2){
 }
 
 /**
- * 碰撞检测函数 矩形对矩形
- * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
- * @param {CanvasRectTGT} tgt2 进行碰撞检测的对象
- */
- function isTouch_Rect_Rect(tgt1,tgt2){
-    var v1min=tgt1.getMin(),
-        v1max=tgt1.getMax(),
-        v2min=tgt2.getMin(),
-        v2max=tgt2.getMax();
-
-    if(v1min.x<v2min.x&&v1max.x<v2min.x){
-        return false;
-    }
-    if(v1min.y<v2min.y&&v1max.y<v2min.y){
-        return false;
-    }
-    if(v2min.x<v1min.x&&v2max.x<v1min.x){
-        return false;
-    }
-    if(v2min.y<v1min.y&&v2max.y<v1min.y){
-        return false;
-    }
-    return true;
-}
-CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasRectTGT],isTouch_Rect_Rect);
-
-/**
  * 碰撞检测函数 矩形 弧形(圆形)
  * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
  * @param {CanvasArcTGT}  tgt2 进行碰撞检测的对象
  */
 function isTouch_Rect_Arc(tgt1,tgt2){
-    var min=tgt1.getMin(),
-        max=tgt1.getMax(),
-        _b=new Vector2(min.x,max.y),
-        _c=new Vector2(max.x,min.y);
-    var a=tgt2.worldToLocal(min),
-        b=tgt2.worldToLocal(_b),
-        c=tgt2.worldToLocal(_c),
-        d=tgt2.worldToLocal(max);
-       
-    // 矩形在弧形内部
-    if(tgt2.want_to_closePath&&(
-        tgt2.data.isInside(a.x,a.y,tgt2.want_to_closePath)||
-        tgt2.data.isInside(b.x,b.y,tgt2.want_to_closePath)||
-        tgt2.data.isInside(c.x,c.y,tgt2.want_to_closePath)||
-        tgt2.data.isInside(d.x,d.y,tgt2.want_to_closePath)
-    ))return true;
-    
-    // 相交
-    if( Math2D.arc_i_line(tgt2.data,a,b)||
-        Math2D.arc_i_line(tgt2.data,a,c)||
-        Math2D.arc_i_line(tgt2.data,b,d)||
-        Math2D.arc_i_line(tgt2.data,c,d)
-    )return true;
-
-    // 弧形在矩形内
-    var t1p=new Ract_Data(a.x,a.y,d.x-a.x,d.y-a.y);
-    if( t1p.isInside(tgt2.data.opv.x+tgt2.data.c.x,tgt2.data.opv.y+tgt2.data.c.y)||
-        t1p.isInside(tgt2.data.edv.x+tgt2.data.c.x,tgt2.data.edv.y+tgt2.data.c.y)
-    )return true;
-
-    return false;
+    var t1=tgt1.toPolygon();
+    return isTouch_Arc_Polygon(tgt2,t1);
 }
 CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasArcTGT],isTouch_Rect_Arc);
 CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasRectTGT],function(tgt1,tgt2){
@@ -410,16 +363,19 @@ CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasRectTGT],function(tgt1,tgt2){
  * @param {CanvasPolygonTGT} tgt2
  */
 function isTouch_Rect_Polygon(tgt1,tgt2){
-    var i =tgt2.data.nodes.length-1,
-        l=i;
+    
+    var t2d=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+        nodes=t2d.nodes;
+
+    var i =nodes.length-1;
     for(;i>=0;--i){
-        if(tgt1.isInside(tgt2.data.nodes[i].x,tgt2.data.nodes[i].y)){
+        if(tgt1.isInside(nodes[i].x,nodes[i].y)){
             return true;
         }
     }
-    if(tgt2.want_to_closePath||Vector2.isEqual(tgt2.data.nodes[0],tgt2.data.nodes[l])){
-        var min=tgt1.getMin();
-            max=tgt1.getMax();
+    if(tgt2.want_to_closePath||t2d.isClosed()){
+        var min=tgt1.localToWorld(tgt1.getMin());
+            max=tgt1.localToWorld(tgt1.getMax());
         return tgt2.isInside(min.x,min.y)||
             tgt2.isInside(max.x,max.y)||
             tgt2.isInside(max.x,min.y)||
@@ -464,19 +420,21 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
             }
         }
     }
-    if(l>1&&tgt2.want_to_closePath&&tgt2.data.isClosed()){
+    if((l>1&&tgt2.want_to_closePath)&&(!tgt2.data.isClosed())){
         // 规定闭合路径的多边形, 多算一次
         if(Math2D.arc_i_line(tgt1.data,nodes[0],nodes[l])){
             return true;
         }
         if(tgt1.want_to_closePath){
-            if(Math2D.line_i_line(tgt1.data.opv,nodes[0],nodes[l])){
+            if(Math2D.line_i_line(tgt1.data.opv,tgt1.data.edv,nodes[0],nodes[l])){
                 return true;
             }
         }
     }
-    
-
+    if(tgt2.want_to_closePath||tgt2.data.isClosed()){
+        return t2d.isInside(tgt1.data.c.x+tgt1.data.opv.x,tgt1.data.c.y+tgt1.data.opv.y,true);
+    }
+    return false;
 }
 CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasPolygonTGT],isTouch_Arc_Polygon);
 CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasArcTGT],function(tgt1,tgt2){

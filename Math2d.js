@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-06 16:46:01
+ * @LastEditTime: 2021-10-06 22:28:40
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -915,6 +915,9 @@ class Ract_Data{
             return Vector2.afterTranslate_linearMapping(v,m)
         }
     }
+    /**
+     * 判断向量是否相等
+     */
     static isEqual(v1,v2){
         return (v1.x==v2.x&&v1.y==v2.y);
     }
