@@ -13,7 +13,7 @@ class CanvasTGT{
         this.fillStyle="#fff";
         this.strokeStyle="#000";
         this.lineWidth=1;
-        this.transformMatrix=createMatrix2x2T();
+        this._transformMatrix=createMatrix2x2T();
         this.temp_worldToLocalM=createMatrix2x2T();
         this.want_to_closePath=false;
     }
@@ -68,9 +68,17 @@ class CanvasTGT{
      * @return {CanvasTGT} 返回当前对象
      */
     setTransformMatrix(m){
-        this.transformMatrix=m.copy();
+        this._transformMatrix=m.copy();
         this.temp_worldToLocalM=m.inverse();
         return this;
+    }
+    set transformMatrix(m){
+        this._transformMatrix=m.copy();
+        this.temp_worldToLocalM=m.inverse();
+        return this._transformMatrix;
+    }
+    get transformMatrix(){
+        return this._transformMatrix;
     }
     // 这是个有多个重载的函数 , 在class定义的外面实现
     /**
@@ -462,8 +470,9 @@ CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasArcTGT],isTouch_Arc_Polygon);
  */
 class CanvasTGT_Group{
     constructor(){
-        this.transformMatrix=new Matrix2x2T();
-        this.temp_worldToLocalM=new Matrix2x2T();
+        this.children=[];
+        this._transformMatrix=createMatrix2x2T();
+        this.temp_worldToLocalM=createMatrix2x2T();
     }
     /**
      * 设置变换矩阵
@@ -476,8 +485,6 @@ class CanvasTGT_Group{
         return this;
     }
 }
-
-
 
 
 
