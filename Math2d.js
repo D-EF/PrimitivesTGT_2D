@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-07 01:28:22
+ * @LastEditTime: 2021-10-11 15:24:58
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -222,7 +222,7 @@ class Math2D{
 /**
  * 矩形的数据
  */
-class Ract_Data{
+class Rect_Data{
     /**
      * @param {Number} x 坐标
      * @param {Number} y 坐标
@@ -236,7 +236,7 @@ class Ract_Data{
         this.h=h;
     }
     copy(){
-        return new Ract_Data(
+        return new Rect_Data(
             this.x,
             this.y,
             this.w,

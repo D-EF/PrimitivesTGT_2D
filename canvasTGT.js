@@ -241,7 +241,7 @@ CanvasTGT.prototype.worldToLocal.addOverload([Vector2],function(v){
 class CanvasRectTGT extends CanvasTGT{
     constructor(x,y,w,h){
         super();
-        this.data=new Ract_Data(x,y,w,h);
+        this.data=new Rect_Data(x,y,w,h);
     }
     createCanvasPath(ctx){
         ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
@@ -440,6 +440,46 @@ CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasPolygonTGT],isTouch_Arc_Polygo
 CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasArcTGT],function(tgt1,tgt2){
     return isTouch_Arc_Polygon(tgt2,tgt1);
 });
+
+/**
+ * 
+ * @param {CanvasArcTGT} tgt1 
+ * @param {CanvasArcTGT} tgt2 
+ */
+function isTouch_Arc_Polygon(tgt1,tgt2){
+    var tgtt=tgt1.toPolygon();
+    return isTouch_Arc_Polygon(tgt2,tgtt);
+}
+
+CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasArcTGT],isTouch_Arc_Polygon);
+
+
+// 组---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+/**
+ * canvas tgt 组
+ */
+class CanvasTGT_Group{
+    constructor(){
+        this.transformMatrix=new Matrix2x2T();
+        this.temp_worldToLocalM=new Matrix2x2T();
+    }
+    /**
+     * 设置变换矩阵
+     * @param {Matrix2x2T} m 
+     * @return {CanvasTGT_Group} 返回当前对象
+     */
+    setTransformMatrix(m){
+        this.transformMatrix=m.copy();
+        this.temp_worldToLocalM=m.inverse();
+        return this;
+    }
+}
+
+
+
+
 
 /**
  * 碰撞检测函数 组 组
