@@ -530,7 +530,7 @@ CanvasTGT_Group.prototype.isInside.addOverload([Number,Number],_CanvasTGT_Group_
 CanvasTGT_Group.prototype.isInside.addOverload([Vector2],function(_v){
     _CanvasTGT_Group_isInside.call(this,_v.x,_v.y);
 });
-
+// 此处直接使用了 CanvasTGT 的 重载函数对象
 CanvasTGT_Group.prototype.localToWorld=CanvasTGT.prototype.localToWorld;
 CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
 
