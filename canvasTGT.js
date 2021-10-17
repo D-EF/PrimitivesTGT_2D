@@ -54,23 +54,13 @@ class CanvasTGT{
         return this.data.getMax();
     }
     /**
-     * 创建填充类型
+     * 创建精灵图像填充类型
      * @param {Sprites} _sprites 精灵图像实例
      */
     createSpritesFillStyle(_sprites,sx,sy,sw,sh){
         var vMin=this.getMin();
         var vMax=this.getMax();
         return _sprites.createPattern(sx,sy,sw,sh,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
-    }
-    /**
-     * 设置变换矩阵
-     * @param {Matrix2x2T} m 
-     * @return {CanvasTGT} 返回当前对象
-     */
-    setTransformMatrix(m){
-        this._transformMatrix=m.copy();
-        this._worldToLocalM=undefined;
-        return this;
     }
     set transformMatrix(m){
         this._transformMatrix=m.copy();
@@ -116,6 +106,7 @@ class CanvasTGT{
      * @param {Number} _x    重载1的参数 世界坐标x
      * @param {Number} _y    重载1的参数 世界坐标y
      * @param {Vector2} _v   重载2的参数 世界坐标向量
+     * @returns {Boolean} 
     */
     isInside(_x,_y){
         // 2个重载
@@ -320,7 +311,6 @@ CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
 });
 CanvasTGT.prototype.worldToLocal.addOverload([Vector2],_CanvasTGT_worldToLocal
 );
-
 //碰撞检测函数 ----------------------------------------------------------------------------------------------------------------------------------
 
 /** @type {Number} 默认精度 用于弧形转换成多边形 */
@@ -459,7 +449,7 @@ function isTouch_Arc_Polygon(tgt1,tgt2){
 CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasArcTGT],isTouch_Arc_Polygon);
 
 
-// 组---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// 组----------------------------------------------------------------------------------------------------------------------------------------------
 
 
 /**
@@ -471,40 +461,78 @@ class CanvasTGT_Group{
         this._transformMatrix=createMatrix2x2T();
         this._worldToLocalM=createMatrix2x2T();
     }
-    
     /**
      * 拷贝函数
      * @return {CanvasTGT} 返回一个拷贝
      */
-     copy(){
+    copy(){
         var rtn=new this.constructor();
-
-        if(this.data.copy){
-            rtn.data=this.data.copy();
+        for(var i=this.children.length-1;i>=0;--i){
+            rtn.children.push(this.children.copy);
         }
-        else{
-            rtn.data=Object.assign({},this.data);
-        }
-
-        rtn.fillStyle           = this.fillStyle;
-        rtn.strokeStyle         = this.strokeStyle;
-        rtn.lineWidth           = this.lineWidth;
-        rtn._transformMatrix     = Matrix2x2T.prototype.copy.call(this.transformMatrix);
-        rtn._worldToLocalM  = Matrix2x2T.prototype.copy.call(this._worldToLocalM);
-        
+        rth._transformMatrix=Matrix2x2T.prototype.copy.call(this.transformMatrix);
+        rth._worldToLocalM=Matrix2x2T.prototype.copy.call(this._worldToLocalM);
         return rtn;
-    }
-    set transformMatrix(m){
-        this._transformMatrix=m.copy();
-        this._worldToLocalM=m.inverse();
-        return this._transformMatrix;
     }
     get transformMatrix(){
         return this._transformMatrix;
     }
+    set transformMatrix(m){
+        this._transformMatrix=m.copy();
+        this._worldToLocalM=undefined;
+        return this._transformMatrix;
+    }
+    /**
+     * 刷新逆变换矩阵
+     */
+    re_worldToLocalM(){
+        if(this._worldToLocalM===undefined){
+            this._worldToLocalM=this.transformMatrix.inverse();
+        }
+    }
+    
+    /** 
+     * 判断某一点是否在目标内部
+     * @param {Number} _x    重载1的参数 世界坐标x
+     * @param {Number} _y    重载1的参数 世界坐标y
+     * @param {Vector2} _v   重载2的参数 世界坐标向量
+     * @returns {Boolean} 
+    */
+    isInside(_x,_y){
+        // 2个重载
+    }
+    
+    /** 
+     * 渲染图形 
+     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
+    */
+     render(ctx){
+        ctx.save();
+        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e,this.transformMatrix.f);
+    
+        
+        for(var i=this.children.length-1;i>=0;--i){
+            rtn.children.render(ctx);
+        }
+
+        ctx.restore();
+    }
 }
 
+function _CanvasTGT_Group_isInside(_x,_y){
+    var v=this.worldToLocal(_x,_y);
+    for(var i=this.children.length-1;i>=0;--i){
+        this.children.isInside(v);
+    }
+}
+CanvasTGT_Group.prototype.isInside=OlFunction.create();
+CanvasTGT_Group.prototype.isInside.addOverload([Number,Number],_CanvasTGT_Group_isInside);
+CanvasTGT_Group.prototype.isInside.addOverload([Vector2],function(_v){
+    _CanvasTGT_Group_isInside.call(this,_v.x,_v.y);
+});
 
+CanvasTGT_Group.prototype.localToWorld=CanvasTGT.prototype.localToWorld;
+CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
 
 /**
  * 碰撞检测函数 组 组

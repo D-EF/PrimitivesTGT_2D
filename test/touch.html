@@ -28,7 +28,7 @@
 
         var ctrlTGT=new CanvasRectTGT(0,0,150,150);
         // var ctrlTGT=new CanvasArcTGT(20,100,50,0,180*Math.DEG);
-            ctrlTGT.setTransformMatrix(createMatrix2x2T().translate(200,200));
+            ctrlTGT.transformMatrix=(createMatrix2x2T().translate(200,200));
             
         // var staticTGT1 = ctrlTGT.copy();
         var staticTGT1 =new CanvasPolygonTGT();
@@ -40,11 +40,11 @@
             ]);
         // = new CanvasRectTGT(0,0,50,50);
         
-        staticTGT1.setTransformMatrix(createMatrix2x2T().translate(200,400).rotate(Math.PI*0.25));
+        staticTGT1.transformMatrix=createMatrix2x2T().translate(200,400).rotate(Math.PI*0.25);
         var staticTGT2 = new CanvasRectTGT(0,0,50,500);
         // canvas 弧形 弧度 从x正方向为 0
         var staticTGT3 = new CanvasArcTGT(200,200,50,0,180*Math.DEG);
-        staticTGT3.setTransformMatrix(createMatrix2x2T().scale(2,1))
+        staticTGT3.transformMatrix=(createMatrix2x2T().scale(2,1))
         staticTGT1.fillStyle="#ff0";
         // staticTGT1.fillStyle=staticTGT1.createSpritesFillStyle(s,2,2,1,1);
         staticTGT2.fillStyle="#f00";
@@ -69,7 +69,7 @@
 
 
         addKeyEvent(canvas,1,38,function(e){
-            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(0,-2));
+            ctrlTGT.transformMatrix=(ctrlTGT.transformMatrix.translate(0,-2));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
@@ -80,7 +80,7 @@
         });
         
         addKeyEvent(canvas,1,40,function(e){
-            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(0,2));
+            ctrlTGT.transformMatrix=(ctrlTGT.transformMatrix.translate(0,2));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
@@ -91,7 +91,7 @@
         });
         
         addKeyEvent(canvas,1,39,function(e){
-            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(2,0));
+            ctrlTGT.transformMatrix=(ctrlTGT.transformMatrix.translate(2,0));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
@@ -102,7 +102,7 @@
         });
         
         addKeyEvent(canvas,1,37,function(e){
-            ctrlTGT.setTransformMatrix(ctrlTGT.transformMatrix.translate(-2,0));
+            ctrlTGT.transformMatrix=(ctrlTGT.transformMatrix.translate(-2,0));
             var i=0;
             for(;i<staticTGTs.length;++i){
                 if(CanvasTGT.isTouch(ctrlTGT,staticTGTs[i])){
