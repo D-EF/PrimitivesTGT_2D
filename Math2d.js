@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-11 15:24:58
+ * @LastEditTime: 2021-10-17 20:51:47
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -313,34 +313,48 @@ class Rect_Data{
         this._r=r;
         /**弧形的起点弧度 */
         this._startAngle=0;
-        /**弧形的终点弧度 */
         this._endAngle=0;
 
         //以下应该是只读的 只在 startAngle, endAngle 的访问器中修改
 
-        /**弧形起点 
-         * @type {Vector2}
-         */
-        this.opv;
-        /**弧形终点
-         * @type {Vector2}
-         */
-        this.edv;
-        /** 夹角弧度 Angle 
-         * @type {Number}
-         */
-        this.angle;
-        /** 一个 刚好包裹 弧形 的 矩形 的 最大坐标
-         * @type {Vector2}
-         */
-        this.max;
-        /**一个 刚好包裹 弧形 的 矩形 的 最小坐标
-         * @type {Vector2}
-         */
-        this.min;
+        this._opv;
+        this._edv;
+        this._angle;
+        this._max;
+        this._min;
         // 访问器
         this.startAngle=startAngle;
         this.endAngle=endAngle;
+    }
+    /**弧形起点
+     * @returns {Vector2}
+     */
+    get opv(){
+        return this._opv;
+    }
+    /**弧形终点
+     * @returns {Vector2}
+     */
+    get edv(){
+        return this._edv;
+    }
+    /** 一个 刚好包裹 弧形 的 矩形 的 最大坐标
+     * @returns {Vector2}
+     */
+    get max(){
+        return this._max;
+    }
+    /**一个 刚好包裹 弧形 的 矩形 的 最小坐标
+     * @returns {Vector2}
+     */
+    get min(){
+        return this._min;
+    }
+    /** 夹角弧度 Angle 
+     * @returns {Number}
+     */
+    get angle(){
+        return this._angle;
     }
     /**
      * 录入 弧形起点的弧度 startAngle , 根据大小关系会修改起点和终点的顺序
@@ -419,14 +433,14 @@ class Rect_Data{
     /**刷新只读属性 */
     re_onlyread(){
         /**夹角弧度 */
-        this.angle=Math.abs(this.startAngle-this.endAngle);
+        this._angle=Math.abs(this.startAngle-this.endAngle);
         /**弧形起点 */
-        this.opv=this.get_opv();
+        this._opv=this.get_opv();
         /**弧形终点 */
-        this.edv=this.get_edv();
+        this._edv=this.get_edv();
         var mm=this.get_min_A_max();
-        this.max=mm.max;
-        this.min=mm.min;
+        this._max=mm.max;
+        this._min=mm.min;
     }
 
     /**

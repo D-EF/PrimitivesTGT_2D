@@ -13,9 +13,9 @@ class CanvasTGT{
         this.fillStyle="#fff";
         this.strokeStyle="#000";
         this.lineWidth=1;
-        this._transformMatrix=createMatrix2x2T();
-        this.temp_worldToLocalM=createMatrix2x2T();
         this.want_to_closePath=false;
+        this._transformMatrix=createMatrix2x2T();
+        this._worldToLocalM;
     }
     /**
      * 拷贝函数
@@ -35,7 +35,7 @@ class CanvasTGT{
         rtn.strokeStyle         = this.strokeStyle;
         rtn.lineWidth           = this.lineWidth;
         rtn.transformMatrix     = Matrix2x2T.prototype.copy.call(this.transformMatrix);
-        rtn.temp_worldToLocalM  = Matrix2x2T.prototype.copy.call(this.temp_worldToLocalM);
+        rtn._worldToLocalM  = Matrix2x2T.prototype.copy.call(this._worldToLocalM);
         
         return rtn;
     }
@@ -69,12 +69,12 @@ class CanvasTGT{
      */
     setTransformMatrix(m){
         this._transformMatrix=m.copy();
-        this.temp_worldToLocalM=m.inverse();
+        this._worldToLocalM=undefined;
         return this;
     }
     set transformMatrix(m){
         this._transformMatrix=m.copy();
-        this.temp_worldToLocalM=m.inverse();
+        this._worldToLocalM=undefined;
         return this._transformMatrix;
     }
     get transformMatrix(){
@@ -102,6 +102,14 @@ class CanvasTGT{
      */
     worldToLocal (x,y){
         // 在class定义的外面, 实现重载
+    }
+    /**
+     * 刷新逆变换矩阵
+     */
+    re_worldToLocalM(){
+        if(this._worldToLocalM===undefined){
+            this._worldToLocalM=this.transformMatrix.inverse();
+        }
     }
     /** 
      * 判断某一点是否在目标内部
@@ -196,50 +204,6 @@ class CanvasTGT{
     }   //回调地狱 ('A'#)
 }
 
-
-CanvasTGT.prototype.isInside=OlFunction.create();
-CanvasTGT.prototype.isInside.addOverload([Number,Number],function(_x,_y){
-    var v=this.worldToLocal(_x,_y);
-    return this.data.isInside(v.x,v.y,this.want_to_closePath);
-});
-CanvasTGT.prototype.isInside.addOverload([Vector2],function(_v){
-    var v=this.worldToLocal(_v);
-    return this.data.isInside(v.x,v.y,this.want_to_closePath);
-});
-
-// 局部坐标 to 世界坐标
-CanvasTGT.prototype.localToWorld=OlFunction.create();
-CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function(x,y){
-    return Vector2.afterTranslate_linearMapping(new Vector2(x,y),this.transformMatrix);
-});
-CanvasTGT.prototype.localToWorld.addOverload([Vector2],function(v){
-    return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
-});
-// 世界坐标 to 局部坐标
-CanvasTGT.prototype.worldToLocal=OlFunction.create();
-CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function(x,y){
-    var tm;
-    if(this.temp_worldToLocalM){
-        tm=this.temp_worldToLocalM;
-    }
-    else{
-        tm=this.transformMatrix.inverse();
-        this.temp_worldToLocalM=tm;
-    }
-    return Vector2.beforeTranslate_linearMapping(new Vector2(x,y),tm);
-});
-CanvasTGT.prototype.worldToLocal.addOverload([Vector2],function(v){
-    var tm;
-    if(this.temp_worldToLocalM&&(this.temp_worldToLocalM)){
-        tm=this.temp_worldToLocalM;
-    }
-    else{
-        tm=this.transformMatrix.inverse();
-        this.temp_worldToLocalM=tm;
-    }
-    return Vector2.beforeTranslate_linearMapping(v,tm);
-});
-
 /** 矩形
  * @param {Number} x 
  * @param {Number} y 
@@ -253,7 +217,6 @@ class CanvasRectTGT extends CanvasTGT{
     }
     createCanvasPath(ctx){
         ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
-
     }
 }
 
@@ -323,6 +286,40 @@ class CanvasPolygonTGT extends CanvasTGT{
     }
 }
 
+// CanvasTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
+
+function _CanvasTGT_isInside(_x,_y){
+    var v=this.worldToLocal(_x,_y);
+    return this.data.isInside(v.x,v.y,this.want_to_closePath);
+}
+CanvasTGT.prototype.isInside=OlFunction.create();
+CanvasTGT.prototype.isInside.addOverload([Number,Number],_CanvasTGT_isInside);
+CanvasTGT.prototype.isInside.addOverload([Vector2],function(_v){
+    _CanvasTGT_isInside.call(this,_v.x,_v.y)
+});
+
+// 局部坐标 to 世界坐标
+function _CanvasTGT_localToWorld(v){
+    return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
+}
+CanvasTGT.prototype.localToWorld=OlFunction.create();
+CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
+    _CanvasTGT_localToWorld(new Vector2(x,y));
+});
+CanvasTGT.prototype.localToWorld.addOverload([Vector2],_CanvasTGT_localToWorld);
+
+// 世界坐标 to 局部坐标
+function _CanvasTGT_worldToLocal(x,y){
+    this.re_worldToLocalM();
+    var tm=this.transformMatrix.inverse();
+    return Vector2.beforeTranslate_linearMapping(v,tm);
+}
+CanvasTGT.prototype.worldToLocal=OlFunction.create();
+CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
+    _CanvasTGT_worldToLocal(new Vector2(x,y));
+});
+CanvasTGT.prototype.worldToLocal.addOverload([Vector2],_CanvasTGT_worldToLocal
+);
 
 //碰撞检测函数 ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -409,7 +406,7 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
     if(l<0)return false;
 
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
-    var t2d=Polygon.linearMapping(t2d1,tgt1.temp_worldToLocalM,true);
+    var t2d=Polygon.linearMapping(t2d1,tgt1._worldToLocalM,true);
         nodes=t2d.nodes;
 
     for(;i>0;--i){
@@ -450,7 +447,7 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasArcTGT],function(tgt1,tgt2
 });
 
 /**
- * 
+ * 碰撞检测函数 弧形(圆形) 弧形
  * @param {CanvasArcTGT} tgt1 
  * @param {CanvasArcTGT} tgt2 
  */
@@ -472,17 +469,38 @@ class CanvasTGT_Group{
     constructor(){
         this.children=[];
         this._transformMatrix=createMatrix2x2T();
-        this.temp_worldToLocalM=createMatrix2x2T();
+        this._worldToLocalM=createMatrix2x2T();
     }
+    
     /**
-     * 设置变换矩阵
-     * @param {Matrix2x2T} m 
-     * @return {CanvasTGT_Group} 返回当前对象
+     * 拷贝函数
+     * @return {CanvasTGT} 返回一个拷贝
      */
-    setTransformMatrix(m){
-        this.transformMatrix=m.copy();
-        this.temp_worldToLocalM=m.inverse();
-        return this;
+     copy(){
+        var rtn=new this.constructor();
+
+        if(this.data.copy){
+            rtn.data=this.data.copy();
+        }
+        else{
+            rtn.data=Object.assign({},this.data);
+        }
+
+        rtn.fillStyle           = this.fillStyle;
+        rtn.strokeStyle         = this.strokeStyle;
+        rtn.lineWidth           = this.lineWidth;
+        rtn._transformMatrix     = Matrix2x2T.prototype.copy.call(this.transformMatrix);
+        rtn._worldToLocalM  = Matrix2x2T.prototype.copy.call(this._worldToLocalM);
+        
+        return rtn;
+    }
+    set transformMatrix(m){
+        this._transformMatrix=m.copy();
+        this._worldToLocalM=m.inverse();
+        return this._transformMatrix;
+    }
+    get transformMatrix(){
+        return this._transformMatrix;
     }
 }
 
