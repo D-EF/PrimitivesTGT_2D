@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-18 21:09:20
+ * @LastEditTime: 2021-10-18 21:32:09
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -607,9 +607,9 @@ class Rect_Data{
         }else if((f1)&&(!f2)){//a4
             if(f3&&f4){// a4 b1
                 min.x=(a.x>b.x)?(b.x):(a.x);
-                min.y=b.y;
+                min.y=a.y;
                 max.x=r;
-                max.y=a.y;
+                max.y=b.y;
             }if((!f3)&&(f4)){// a4 b2
                 min.x=b.x;
                 min.y=-r;
