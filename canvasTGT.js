@@ -495,8 +495,8 @@ class CanvasTGT_Group{
     constructor(){
         this.children=[];
         this._transformMatrix=createMatrix2x2T();
-        this._worldToLocalM=createMatrix2x2T();
-        this.type="CanvasTGT_Group";
+        this._worldToLocalM=undefined;
+        this.dataType="Group";
     }
     /**
      * 添加子项
@@ -532,17 +532,22 @@ class CanvasTGT_Group{
 
     /**
      * 拷贝函数
+     * 注意别把某个组放在自己的后代里
      * @param {CanvasTGT_Group}
      * @return {CanvasTGT_Group} 返回一个拷贝
      */
     static copy(tgt){
-        var rtn=new tgt.constructor();
-        for(var i=tgt.children.length-1;i>=0;--i){
-            rtn.children.push(tgt.children.copy);
+        if(tgt.dataType==="Group"){
+            var rtn=new CanvasTGT_Group();
+            for(var i=tgt.children.length-1;i>=0;--i){
+                rtn.children.push(CanvasTGT_Group.copy(tgt.children[i]));
+            }
+            rtn._transformMatrix=Matrix2x2T.copy(tgt._transformMatrix);
+            rtn._worldToLocalM=Matrix2x2T.copy(tgt._worldToLocalM);
+            return rtn;
+        }else{
+            return CanvasTGT.copy(tgt);
         }
-        rth._transformMatrix=Matrix2x2T.copy(tgt.transformMatrix);
-        rth._worldToLocalM=Matrix2x2T.copy(tgt._worldToLocalM);
-        return rtn;
     }
 
     /**
@@ -588,7 +593,6 @@ class CanvasTGT_Group{
         ctx.save();
         ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e,this.transformMatrix.f);
     
-        
         for(var i=this.children.length-1;i>=0;--i){
             this.children[i].render(ctx);
         }
