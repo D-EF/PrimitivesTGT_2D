@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-17 20:51:47
+ * @LastEditTime: 2021-10-18 14:00:53
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -235,6 +235,14 @@ class Rect_Data{
         this.w=w;
         this.h=h;
     }
+    static sopy(d){
+        return new Rect_Data(
+            d.x,
+            d.y,
+            d.w,
+            d.h
+        );
+    }
     copy(){
         return new Rect_Data(
             this.x,
@@ -323,8 +331,35 @@ class Rect_Data{
         this._max;
         this._min;
         // 访问器
+        if(startAngle)
         this.startAngle=startAngle;
+        if(endAngle)
         this.endAngle=endAngle;
+    }
+    
+    static copy(d){
+        return new Arc_Data(
+            d.c.x,
+            d.c.y,
+            d._r,
+            d._startAngle,
+            d._endAngle,
+            d._anticlockwise
+            );
+    }
+    /**
+     * 拷贝函数
+     * @returns {Arc_Data}
+     */
+    copy(){
+        return new Arc_Data(
+            this.c.x,
+            this.c.y,
+            this._r,
+            this._startAngle,
+            this._endAngle,
+            this._anticlockwise
+            );
     }
     /**弧形起点
      * @returns {Vector2}
@@ -441,21 +476,6 @@ class Rect_Data{
         var mm=this.get_min_A_max();
         this._max=mm.max;
         this._min=mm.min;
-    }
-
-    /**
-     * 拷贝函数
-     * @returns {Arc_Data}
-     */
-    copy(){
-        return new Arc_Data(
-            this.c.x,
-            this.c.y,
-            this.r,
-            this.startAngle,
-            this.endAngle,
-            this.anticlockwise
-            );
     }
     /**
      * 重新计算起点和重点的坐标 (相对于圆心)
@@ -962,6 +982,9 @@ class Rect_Data{
         this.c=c||0;
         this.d=d||1;
     }
+    static copy(m){
+        return new Matrix2x2(m.a,m.b,m.c,m.d);
+    }
     copy(){
         return new Matrix2x2(this.a,this.b,this.c,this.d);
     }
@@ -1117,6 +1140,11 @@ class Matrix2x2T extends Matrix2x2{
         this.e=e||0;    //tx
         this.f=f||0;    //ty
     }
+    
+    static copy(m){
+        if(m===undefined)return;
+        return new Matrix2x2T(m.a,m.b,m.c,m.d,m.e,m.f);
+    }
     copy(){
         return new Matrix2x2T(this.a,this.b,this.c,this.d,this.e,this.f);
     }
@@ -1200,19 +1228,22 @@ class Polygon{
             this.pushNodes(nodes);
         }
     }
-    copy(){
+    static copy(polygon){
         var ret=new Polygon();
-        if(this&&this.nodes){
+        if(polygon&&polygon.nodes){
             ret.nodes=[];
-            ret.min=Vector2.prototype.copy.call(this.min);
-            ret.max=Vector2.prototype.copy.call(this.max);
-            var l=this.nodes.length,i=0;
+            ret.min=Vector2.prototype.copy.call(polygon.min);
+            ret.max=Vector2.prototype.copy.call(polygon.max);
+            var l=polygon.nodes.length,i=0;
             for(;i<l;++i){
-                ret.pushNode(this.nodes[i]);
+                ret.pushNode(polygon.nodes[i]);
             }
         }
 
         return ret;
+    }
+    copy(){
+        return Polygon.copy(this);
     }
     /**
      * 刷新 最大xy 最小xy

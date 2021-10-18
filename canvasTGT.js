@@ -16,28 +16,35 @@ class CanvasTGT{
         this.want_to_closePath=false;
         this._transformMatrix=createMatrix2x2T();
         this._worldToLocalM;
+        /**
+         * tgt的 data的类型 用于将json实例化为 CanvasTGT
+         * @type {String}
+         */
+        this.dataType="Object";
+    }
+    /**
+     * 拷贝函数 注:json互相转化时,无法正常转换成json的类型 fillStyle strokeStyle 会丢失
+     * @param {CanvasTGT} tgt
+     * @return {CanvasTGT} 返回一个拷贝
+     */
+    static copy(tgt){
+        var rtn;
+        rtn=CanvasTGT.create_ByDataType[tgt.dataType](tgt.data);
+
+        rtn.fillStyle           = tgt.fillStyle;
+        rtn.strokeStyle         = tgt.strokeStyle;
+        rtn.lineWidth           = tgt.lineWidth;
+        rtn.transformMatrix     = Matrix2x2T.copy(tgt._transformMatrix);
+        rtn._worldToLocalM  = Matrix2x2T.copy(tgt._worldToLocalM);
+        
+        return rtn;
     }
     /**
      * 拷贝函数
      * @return {CanvasTGT} 返回一个拷贝
      */
     copy(){
-        var rtn=new this.constructor();
-
-        if(this.data.copy){
-            rtn.data=this.data.copy();
-        }
-        else{
-            rtn.data=Object.assign({},this.data);
-        }
-
-        rtn.fillStyle           = this.fillStyle;
-        rtn.strokeStyle         = this.strokeStyle;
-        rtn.lineWidth           = this.lineWidth;
-        rtn.transformMatrix     = Matrix2x2T.prototype.copy.call(this.transformMatrix);
-        rtn._worldToLocalM  = Matrix2x2T.prototype.copy.call(this._worldToLocalM);
-        
-        return rtn;
+        return CanvasTGT.copy(this);
     }
     /** 
      * 获取最小的(局部)坐标
@@ -192,7 +199,33 @@ class CanvasTGT{
                 }
             }
         }
-    }   //回调地狱 ('A'#)
+    }
+    /** 
+     * 根据数据类型创建
+     */
+    static create_ByDataType={
+        /**
+         * @param {Arc_Data} data 
+         * @returns {CanvasArcTGT}
+         */
+        "Arc_Data":function(data){
+            return new CanvasArcTGT(data.c.x,data.c.y,data._r,data._startAngle,data._endAngle);
+        },
+        /**
+         * @param {Rect_Data} data 
+         * @returns {CanvasRectTGT}
+         */
+        "Rect_Data":function(data){
+            return new CanvasRectTGT(data.x,data.y,data.w,data.h);
+        },
+        /**
+         * @param {Polygon} data 
+         * @returns {CanvasPolygonTGT}
+         */
+        "Polygon":function(data){
+            return new CanvasPolygonTGT(data);
+        }
+    }
 }
 
 /** 矩形
@@ -205,6 +238,7 @@ class CanvasRectTGT extends CanvasTGT{
     constructor(x,y,w,h){
         super();
         this.data=new Rect_Data(x,y,w,h);
+        this.dataType="Rect_Data";
     }
     createCanvasPath(ctx){
         ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
@@ -227,6 +261,7 @@ class CanvasArcTGT extends CanvasTGT{
     constructor(cx,cy,r,startAngle,endAngle){
         super();
         this.data=new Arc_Data(cx,cy,r,startAngle,endAngle);
+        this.dataType="Arc_Data";
     }
     createCanvasPath(ctx){
         ctx.arc(this.data.c.x,this.data.c.y,this.data.r,this.data.startAngle,this.data.endAngle,false);
@@ -250,8 +285,9 @@ class CanvasPolygonTGT extends CanvasTGT{
         /**
          * @type {Polygon}
          */
-        this.data=Polygon.prototype.copy.call(_polygon);
+        this.data=Polygon.copy(_polygon);
         if(this.data)this.data.reMinMax();
+        this.dataType="Polygon"
     }
     
     getPolygonProxy(){
@@ -460,19 +496,61 @@ class CanvasTGT_Group{
         this.children=[];
         this._transformMatrix=createMatrix2x2T();
         this._worldToLocalM=createMatrix2x2T();
+        this.type="CanvasTGT_Group";
     }
     /**
+     * 添加子项
+     * @param {CanvasTGT} tgt CanvasTGT对象
+     */
+    addChildren(tgt){
+        this.children.push(tgt);
+    }
+    /**
+     * 添加子项
+     * @param {Array<CanvasTGT>} tgt CanvasTGT对象
+     */
+    addChildrens(tgts){
+        this.children=this.children.concat(tgts);
+    }
+    /**
+     * 移除一个子项
+     * @param {Number} index 下标
+     */
+    removeChildrenByIndex(index){
+        this.children.splice(index,1);
+    }
+    /**
+     * 移除一个子项
+     * @param {CanvasTGT} tgt 必须是同一个子项
+     */
+    removeChildren(tgt){
+        for(var i=this.children.length-1;i>=0;--i){
+            if(this.children[i]===tgt)
+            this.children.splice(index,1);
+        }
+    }
+
+    /**
      * 拷贝函数
-     * @return {CanvasTGT} 返回一个拷贝
+     * @param {CanvasTGT_Group}
+     * @return {CanvasTGT_Group} 返回一个拷贝
+     */
+    static copy(tgt){
+        var rtn=new tgt.constructor();
+        for(var i=tgt.children.length-1;i>=0;--i){
+            rtn.children.push(tgt.children.copy);
+        }
+        rth._transformMatrix=Matrix2x2T.copy(tgt.transformMatrix);
+        rth._worldToLocalM=Matrix2x2T.copy(tgt._worldToLocalM);
+        return rtn;
+    }
+
+    /**
+     * 拷贝函数
+     * @return {CanvasTGT_Group} 返回一个拷贝
      */
     copy(){
-        var rtn=new this.constructor();
-        for(var i=this.children.length-1;i>=0;--i){
-            rtn.children.push(this.children.copy);
-        }
-        rth._transformMatrix=Matrix2x2T.prototype.copy.call(this.transformMatrix);
-        rth._worldToLocalM=Matrix2x2T.prototype.copy.call(this._worldToLocalM);
-        return rtn;
+        return CanvasTGT_Group.copy(this);
     }
     get transformMatrix(){
         return this._transformMatrix;
@@ -512,7 +590,7 @@ class CanvasTGT_Group{
     
         
         for(var i=this.children.length-1;i>=0;--i){
-            rtn.children.render(ctx);
+            this.children[i].render(ctx);
         }
 
         ctx.restore();

@@ -1,0 +1,42 @@
+<!--
+ * @LastEditors: Darth_Eternalfaith
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>touch 碰撞 test</title>
+</head>
+<body>
+    <canvas id="canvas" tabindex="0" width="500" height="500"></canvas>
+    <script src="../../basics/basics.js"></script>
+    <script src="../Math2d.js"></script>
+    <script src="../visual.js"></script>
+    <script src="../canvasTGT.js"></script>
+    <script src="../Sprites.js"></script>
+
+    <script type="text/javascript">
+    var s=new Sprites(10,10,"./SpritesMap.png");
+        var canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
+        
+        // var ctrlTGT=new CanvasPolygonTGT();
+        //     ctrlTGT.data=new Polygon([
+        //         {x:200,y:200},
+        //         {x:60,y:200},
+        //         {x:60,y:20},
+        //         {x:200,y:20}
+        //     ]);
+        // ctrlTGT.want_to_closePath=true;
+
+        var ctrlTGT=new CanvasRectTGT(0,0,150,150);
+        // var ctrlTGT=new CanvasArcTGT(20,100,50,0,180*Math.DEG);
+
+        var static_TGTs=new CanvasTGT_Group();
+        static_TGTs.addChildren(new CanvasArcTGT(20,100,50,0,120*Math.DEG));
+        static_TGTs.addChildren(new CanvasArcTGT(233,100,50,0,60*Math.DEG));
+        static_TGTs.addChildren(new CanvasArcTGT(20,10,50,0,180*Math.DEG));
+        static_TGTs.render(ctx);
+    </script>
+</body>
+</html>
