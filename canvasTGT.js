@@ -138,34 +138,6 @@ class CanvasTGT{
         ctx.restore();
     }
     /**
-     * 注册事件
-     * @param {Element} element     触发事件的html元素 , 一般是挂到canvas上
-     * @param {String} type         事件的类型 Event.type 
-     * @param {Function} listener   事件触发的函数
-     */
-    regEvent(element,type,listener){
-        if(!this[type+"Event"]){
-            this[type+"Event"]=[listener];
-        }
-        else{
-            this[type+"Event"].push(listener);
-        }
-        if(!element.eventTGTs){
-            element.eventTGTs={};
-        }
-        if(!element.eventTGTs[type]){
-            element.eventTGTs[type]=[this];
-            element.addEventListener(type,CanvasTGT.trigger);
-        }
-        else{
-            var flag;
-            for(var i=element.eventTGTs[type].length-1;i>=0;--i){
-                if(flag=element.eventTGTs[type][i]==this)break;
-            }
-            if(!flag)element.eventTGTs[type].push(this);
-        }
-    }
-    /**
      * 根据 tgt 的属性 创建用于绘制的路径
      * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
      */
@@ -178,7 +150,7 @@ class CanvasTGT{
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
-        rtn.setTransformMatrix(this.transformMatrix);
+        rtn.transformMatrix=(this.transformMatrix);
         return rtn;
     }
     /**
@@ -293,13 +265,6 @@ class CanvasPolygonTGT extends CanvasTGT{
     getPolygonProxy(){
         return this.data.copy();
     }
-    isInside(_x,_y){
-        var tv=this.worldToLocal(_x,_y);
-        var x=tv.x,y=tv.y;
-        if(this.data.min.x>x||this.data.max.x<x||this.data.min.y>y||this.data.max.y<y) return false;
-        return this.data.isInside(x,y,this.want_to_closePath);
-        
-    }
     createCanvasPath(){
         var i=this.data.nodes.length-1,
             nodes=this.data.nodes;
@@ -322,7 +287,7 @@ function _CanvasTGT_isInside(_x,_y){
 CanvasTGT.prototype.isInside=OlFunction.create();
 CanvasTGT.prototype.isInside.addOverload([Number,Number],_CanvasTGT_isInside);
 CanvasTGT.prototype.isInside.addOverload([Vector2],function(_v){
-    _CanvasTGT_isInside.call(this,_v.x,_v.y)
+    return _CanvasTGT_isInside.call(this,_v.x,_v.y)
 });
 
 // 局部坐标 to 世界坐标
@@ -331,19 +296,19 @@ function _CanvasTGT_localToWorld(v){
 }
 CanvasTGT.prototype.localToWorld=OlFunction.create();
 CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
-    _CanvasTGT_localToWorld(new Vector2(x,y));
+    return _CanvasTGT_localToWorld.call(this,new Vector2(x,y));
 });
 CanvasTGT.prototype.localToWorld.addOverload([Vector2],_CanvasTGT_localToWorld);
 
 // 世界坐标 to 局部坐标
-function _CanvasTGT_worldToLocal(x,y){
+function _CanvasTGT_worldToLocal(v){
     this.re_worldToLocalM();
-    var tm=this.transformMatrix.inverse();
+    var tm=this._worldToLocalM;
     return Vector2.beforeTranslate_linearMapping(v,tm);
 }
 CanvasTGT.prototype.worldToLocal=OlFunction.create();
 CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
-    _CanvasTGT_worldToLocal(new Vector2(x,y));
+    return _CanvasTGT_worldToLocal.call(this,new Vector2(x,y));
 });
 CanvasTGT.prototype.worldToLocal.addOverload([Vector2],_CanvasTGT_worldToLocal
 );
@@ -430,7 +395,7 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
     var i =tgt2.data.nodes.length-1,
         l=i;
     if(l<0)return false;
-
+    console.log(1)
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
     var t2d=Polygon.linearMapping(t2d1,tgt1._worldToLocalM,true);
         nodes=t2d.nodes;
@@ -477,12 +442,12 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasArcTGT],function(tgt1,tgt2
  * @param {CanvasArcTGT} tgt1 
  * @param {CanvasArcTGT} tgt2 
  */
-function isTouch_Arc_Polygon(tgt1,tgt2){
+function isTouch_Arc_Arc(tgt1,tgt2){
     var tgtt=tgt1.toPolygon();
     return isTouch_Arc_Polygon(tgt2,tgtt);
 }
 
-CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasArcTGT],isTouch_Arc_Polygon);
+CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasArcTGT],isTouch_Arc_Arc);
 
 
 // 组----------------------------------------------------------------------------------------------------------------------------------------------
@@ -575,13 +540,13 @@ class CanvasTGT_Group{
     }
     
     /** 
-     * 判断某一点是否在目标内部
+     * 获取点在某子项内部
      * @param {Number} _x    重载1的参数 世界坐标x
      * @param {Number} _y    重载1的参数 世界坐标y
      * @param {Vector2} _v   重载2的参数 世界坐标向量
-     * @returns {Boolean} 
+     * @returns {Number} 返回下标
     */
-    isInside(_x,_y){
+    inside_i(_x,_y){
         // 2个重载
     }
     
@@ -601,16 +566,20 @@ class CanvasTGT_Group{
     }
 }
 
-function _CanvasTGT_Group_isInside(_x,_y){
+function _CanvasTGT_Group_Inside_I(_x,_y){
     var v=this.worldToLocal(_x,_y);
     for(var i=this.children.length-1;i>=0;--i){
-        this.children.isInside(v);
+        if(this.children[i].isInside(v)){
+            console.log(i)
+            return i;
+        }
     }
+    return -1;
 }
-CanvasTGT_Group.prototype.isInside=OlFunction.create();
-CanvasTGT_Group.prototype.isInside.addOverload([Number,Number],_CanvasTGT_Group_isInside);
-CanvasTGT_Group.prototype.isInside.addOverload([Vector2],function(_v){
-    _CanvasTGT_Group_isInside.call(this,_v.x,_v.y);
+CanvasTGT_Group.prototype.inside_i=OlFunction.create();
+CanvasTGT_Group.prototype.inside_i.addOverload([Number,Number],_CanvasTGT_Group_Inside_I);
+CanvasTGT_Group.prototype.inside_i.addOverload([Vector2],function(_v){
+    return _CanvasTGT_Group_Inside_I.call(this,_v.x,_v.y);
 });
 // 此处直接使用了 CanvasTGT 的 重载函数对象
 CanvasTGT_Group.prototype.localToWorld=CanvasTGT.prototype.localToWorld;

@@ -9,9 +9,9 @@ class PPG{
     /** 渲染 */
     render(){
         var tempM=this.rotateBase.rotate(absRotate*pi)
-        ppg_blueprint.arc.setTransformMatrix(tempM);
+        ppg_blueprint.arc.transformMatrix=(tempM);
         ppg_blueprint.arc.render(ctext);
-        ppg_blueprint.solid.setTransformMatrix(tempM);
+        ppg_blueprint.solid.transformMatrix=(tempM);
         ppg_blueprint.solid.render(ctext);
     }
     /**
@@ -32,7 +32,7 @@ PPG.prototype.isTouch=OlFunction.create()
  */
  PPG.prototype.isTouch.addOverload([CanvasTGT],function(touchTGT){
     var tempM=this.rotateBase.rotate(absRotate*pi)
-    ppg_blueprint.arc.setTransformMatrix(tempM);
+    ppg_blueprint.arc.transformMatrix=(tempM);
     return CanvasTGT.isTouch(ppg_blueprint.arc,touchTGT);
 });
 /**
@@ -40,8 +40,8 @@ PPG.prototype.isTouch=OlFunction.create()
  * @param {PPG} touchTGT 碰撞对象
  */
  PPG.prototype.isTouch.addOverload([PPG],function(touchTGT){
-    var tempTGT1=ppg_blueprint.arc.copy().setTransformMatrix(touchTGT.rotateBase.rotate(absRotate*pi));
-    var tempTGT2=ppg_blueprint.arc.copy().setTransformMatrix(this.rotateBase.rotate(absRotate*pi));
+    var tempTGT1=ppg_blueprint.arc.copy().transformMatrix=(touchTGT.rotateBase.rotate(absRotate*pi));
+    var tempTGT2=ppg_blueprint.arc.copy().transformMatrix=(this.rotateBase.rotate(absRotate*pi));
     return CanvasTGT.isTouch(tempTGT2,tempTGT1);
 });
 /**
@@ -81,7 +81,7 @@ var ppgs=[];
 
 // 将要加入的单位
 var readyP={
-    tgt:new CanvasArcTGT(0,0,20,0,2*pi).setTransformMatrix(new Matrix2x2T().translate(250,750)),
+    tgt:new CanvasArcTGT(0,0,20,0,2*pi).transformMatrix=(new Matrix2x2T().translate(250,750)),
 }
 
 /**

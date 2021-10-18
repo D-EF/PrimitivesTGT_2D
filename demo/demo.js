@@ -90,7 +90,7 @@ class CanvasTGT_Group extends CanvasTGT{
     }
 }
 
-logoitem_base.setTransformMatrix(createMatrix2x2T().scale(4,4).rotate(Math.DEG*-90).translate(55.176627778208555,76.90110367884861));
+logoitem_base.transformMatrix=(createMatrix2x2T().scale(4,4).rotate(Math.DEG*-90).translate(55.176627778208555,76.90110367884861));
 
 logoitem_base.fillStyle="#000";
 

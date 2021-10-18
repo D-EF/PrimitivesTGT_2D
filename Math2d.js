@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-18 14:00:53
+ * @LastEditTime: 2021-10-18 20:36:30
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -311,10 +311,10 @@ class Rect_Data{
       * @param {Number} cx 圆心坐标
       * @param {Number} cy 圆心坐标
       * @param {Number} r  半径
-      * @param {Number} startAngle  弧形起点弧度
-      * @param {Number} endAngle    弧形终点弧度
+      * @param {Number} angle_A     弧形端点弧度
+      * @param {Number} angle_B     弧形端点弧度
       */
-    constructor(cx,cy,r,startAngle,endAngle){
+    constructor(cx,cy,r,angle_A,angle_B){
         /**圆心的坐标 */
         this.c=new Vector2(cx,cy);
         /**圆半径 */
@@ -331,10 +331,26 @@ class Rect_Data{
         this._max;
         this._min;
         // 访问器
-        if(startAngle)
-        this.startAngle=startAngle;
-        if(endAngle)
-        this.endAngle=endAngle;
+        this.setAngle_AB(angle_A,angle_B);
+    }
+    /**
+     * 重设两个端点的弧度
+     * @param {Number} angle_A     弧形端点弧度
+     * @param {Number} angle_B     弧形端点弧度
+     */
+    setAngle_AB(angle_A,angle_B){
+        this._startAngle=angle_A;
+        this._endAngle=angle_B;
+        this.reStartEnd_Angle();
+        this.re_onlyread();
+    }
+    /**刷新起点终点的弧度; 较大的数会作为end */
+    reStartEnd_Angle(){
+        if(this._startAngle>this._endAngle){
+            var ta=this._startAngle;
+            this._startAngle=this._endAngle;
+            this._endAngle=ta;
+        }
     }
     
     static copy(d){
@@ -344,7 +360,6 @@ class Rect_Data{
             d._r,
             d._startAngle,
             d._endAngle,
-            d._anticlockwise
             );
     }
     /**
@@ -358,7 +373,6 @@ class Rect_Data{
             this._r,
             this._startAngle,
             this._endAngle,
-            this._anticlockwise
             );
     }
     /**弧形起点
@@ -398,10 +412,7 @@ class Rect_Data{
     set startAngle(val){
         if(val.constructor===Number){
             this._startAngle=val;
-            if(this._startAngle>this._endAngle){
-                this._startAngle=this._endAngle;
-                this._endAngle=val;
-            }
+            this.reStartEnd_Angle();
             this.re_onlyread();
             return this._startAngle;
         }else{
@@ -415,10 +426,7 @@ class Rect_Data{
     set endAngle(val){
         if(val.constructor===Number){
             this._endAngle=val;
-            if(this._startAngle>this._endAngle){
-                this._endAngle=this._startAngle;
-                this._startAngle=val;
-            }
+            this.reStartEnd_Angle();
             this.re_onlyread();
             return this._endAngle;
         }else{
@@ -493,9 +501,6 @@ class Rect_Data{
      get_opv(){
         var tempAngle=this.startAngle;
         var r= this.r;
-        if(!this.anticlockwise){
-            tempAngle*=-1;
-        }
         
         return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
     }
@@ -506,9 +511,6 @@ class Rect_Data{
     get_edv(){
         var tempAngle=this.endAngle;
         var r= this.r;
-        if(!this.anticlockwise){
-            tempAngle*=-1;
-        }
         
         return (new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
     }
@@ -529,113 +531,101 @@ class Rect_Data{
             f3=b.x>=0,
             f4=b.y>=0,
             f5=f1===f3,
-            f6=f2===f4,
-            // f7 表示两个端点在象限是否相邻
-            f7=!!(f5^f6);
+            f6=f2===f4;
 
         var min=new Vector2(),
             max=new Vector2();
-        if(f7===false){
-            if(f6){// 在同一象限
-                if(f){// 大于半圆
-                    min.x=-r;
-                    min.y=-r;
-                    max.x=r;
-                    max.y=r;
-                }else{
-                    min.x=(a.x>b.x)?(b.x):(a.x);
-                    min.y=(a.y>b.y)?(b.y):(a.y);
-                    max.x=(a.x<b.x)?(b.x):(a.x);
-                    max.y=(a.y<b.y)?(b.y):(a.y);
-                }
 
+
+        if(f5&&f6){// 在同一象限
+            if(f){// 大于半圆
+                min.x=-r;
+                min.y=-r;
+                max.x=r;
+                max.y=r;
             }else{
-                if(f5){// 分别在 1,3 象限
-                    if(f1){// a在 1 象限
-                        min.x=b.x;
-                        min.y=a.y;
-                        max.x=r;
-                        max.y=r;
-                    }else{// a在 3 象限
-                        min.x=-r;
-                        min.y=-r;
-                        max.x=b.x;
-                        max.y=a.y;
-                    }
-                }else{// 2,4 象限
-                    if(f1){// a在 4 象限
-                        min.x=-r;
-                        min.y=b.y;
-                        max.x=a.x;
-                        max.y=r;
-                    }else{// a在 2 象限
-                        min.x=a.x;
-                        min.y=-r;
-                        max.x=r;
-                        max.y=b.y;
-                    }
-                }
+                min.x=(a.x>b.x)?(b.x):(a.x);
+                min.y=(a.y>b.y)?(b.y):(a.y);
+                max.x=(a.x<b.x)?(b.x):(a.x);
+                max.y=(a.y<b.y)?(b.y):(a.y);
             }
-        }else{
-            if(f6){// 横向相邻 (1,2) 或 (3,4)
-                if(f1){
-                    if(f2){// a在 1 象限
-                        min.x=-r;
-                        min.y=(a.y>b.y)?(b.y):(a.y);
-                        max.x=r;
-                        max.y=r;
-                    }else{// a在 4 象限
-                        min.x=b.x;
-                        min.y=(a.y>b.y)?(b.y):(a.y);
-                        max.x=a.x;
-                        max.y=r;
-                    }
-                }else{
-                    if(f2){// a在 2 象限
-                        min.x=a.x;
-                        min.y=-r;
-                        max.x=b.x;
-                        max.y=(a.y<b.y)?(b.y):(a.y);
-                    }else{// a在 3 象限
-                        min.x=-r;
-                        min.y=-r;
-                        max.x=r;
-                        max.y=(a.y<b.y)?(b.y):(a.y);
-                    }
-                }
+        }else if(f1&&f2){// a1
+            if((!f3)&&(f4)){// a1 b2
+                min.x=b.x;
+                min.y=(a.y>b.y)?(b.y):(a.y);
+                max.x=a.x;
+                max.y=r;
+            }else if((!f3)&&(!f4)){// a1 b3
+                min.x=-r;
+                min.y=b.y;
+                max.x=a.x;
+                max.y=r;
+            }else if((f3)&&(!f4)){// a1 b4
+                min.x=-r;
+                min.y=-r;
+                max.x=(a.x<b.x)?(b.x):(a.x);
+                max.y=r;
             }
-            else{// 纵向相邻 (1,4) 或 (3,2)
-                if(f1){
-                    if(f2){// a在 1 象限
-                        min.x=(a.x>b.x)?(b.x):(a.x);
-                        min.y=a.y;
-                        max.x=r;
-                        max.y=b.y;
-                    }else{// a在 4 象限
-                        min.x=-r;
-                        min.y=-r;
-                        max.x=(a.x<b.x)?(b.x):(a.x);
-                        max.y=r;
-                    }
-                }else{
-                    if(f2){// a在 2 象限
-                        min.x=(a.x>b.x)?(b.x):(a.x);
-                        min.y=-r;
-                        max.x=r;
-                        max.y=r;
-                    }else{// a在 3 象限
-                        min.x=-r;
-                        min.y=b.y;
-                        max.x=(a.x<b.x)?(b.x):(a.x);
-                        max.y=a.y;
-                    }
-                }
+        }else if((!f1)&&(f2)){//a2
+            if(f3&&f4){// a2 b1
+                min.x=a.x;
+                min.y=-r;
+                max.x=b.x;
+                max.y=(a.y<b.y)?(b.y):(a.y);
+            }else if((!f3)&&(!f4)){// a2 b3
+                min.x=-r;
+                min.y=b.y;
+                max.x=(a.x<b.x)?(b.x):(a.x);
+                max.y=a.y;
+            }else if((f3)&&(!f4)){// a2 b4
+                min.x=-r;
+                min.y=-r;
+                max.x=b.x;
+                max.y=r;
             }
-        }
+        }else if((!f1)&&(!f2)){//a3
+            if(f3&&f4){// a3 b1
+                min.x=-r;
+                min.y=-r;
+                max.x=b.x;
+                max.y=a.y;
+            }if((!f3)&&(f4)){// a3 b2
+                min.x=(a.x>b.x)?(b.x):(a.x);
+                min.y=-r;
+                max.x=r;
+                max.y=r;
+            }else if((f3)&&(!f4)){// a3 b4
+                min.x=-r;
+                min.y=-r;
+                max.x=b.x;
+                max.y=(a.y<b.y)?(b.y):(a.y);
+            }
+        }else if((f1)&&(!f2)){//a4
+            if(f3&&f4){// a4 b1
+                min.x=(a.x>b.x)?(b.x):(a.x);
+                min.y=b.y;
+                max.x=r;
+                max.y=a.y;
+            }if((!f3)&&(f4)){// a4 b2
+                min.x=b.x;
+                min.y=-r;
+                max.x=r;
+                max.y=r;
+            }else if((!f3)&&(!f4)){// a4 b3
+                min.x=-r;
+                min.y=a.y;
+                max.x=r;
+                max.y=r;
+            }
+        } 
         
+
+        // min.y*=-1;
+        // max.y*=-1;
+
         min.x+=this.c.x;
-        min.y+=this.c.y;
         max.x+=this.c.x;
+        min.y+=this.c.y;
         max.y+=this.c.y;
 
         return {
@@ -669,7 +659,10 @@ class Rect_Data{
             return false;
         }
         var r=this._r;
-        var x=_x-this.c.x,y=_y-this.c.y;
+        var x=_x-this.c.x,
+        // 因为坐标系是反的所以要置负
+        // y=this.c.y-_y;
+            y=_y-this.c.y;
         var arcA=this.angle;
         var tr=Math.sqrt(x*x+y*y);
         if(tr<=r){
@@ -690,11 +683,11 @@ class Rect_Data{
                 var ISF=Math2D.line_i_line(l1op,l1ed,l2op,l2ed);  //相交情况
                 if(arcA>=Math.PI){
                     // 大于半圆
-                    return !ISF;
+                    return ISF===0;
                 }
                 else{
                     // 小于半圆
-                    return ISF;
+                    return ISF!==0;
                 }
             }
         }
@@ -1356,6 +1349,8 @@ class Polygon{
     isInside(x,y,f){
         // 如果图形不是密封的, 直接返回否
         var _cf=this.isClosed();
+        if(this.min.x>x||this.max.x<x||this.min.y>y||this.max.y<y) return false;
+        
         if(!_cf){
             if(!f)
             return false;
