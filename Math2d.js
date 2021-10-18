@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-18 20:36:30
+ * @LastEditTime: 2021-10-18 21:09:20
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -122,13 +122,16 @@ class Math2D{
      * @param {Boolean} f 表示角度的大小是否大于半圆
      * @param {Boolean} f1 半圆时使用，表示是顺时针还是逆时针
      */
-    static in_angle_V(angle_op_V,angle_ed_V,tgtv,f,f1){
-        if(f){
-            if((Vector2.op(angle_op_V,tgtv)>=0)&&(Vector2.op(angle_ed_V,tgtv)<=0)){
+    static in_angle_V(angle_op_V,angle_ed_V,tgtv,f){
+        var v1=angle_op_V.copy(),v2=angle_ed_V.copy();
+        // v1.y*=-1;
+        // v2.y*=-1;
+        if(!f){
+            if((Vector2.op(v1,tgtv)>=0)&&(Vector2.op(v2,tgtv)<=0)){
                 return true;
             }
         }else{
-            if((Vector2.op(angle_op_V,tgtv)>=0)||(Vector2.op(angle_ed_V,tgtv)<=0)){
+            if((Vector2.op(v1,tgtv)>=0)||(Vector2.op(v2,tgtv)<=0)){
                 return true;
             }
         }
@@ -162,10 +165,11 @@ class Math2D{
      */
     static arc_i_line(arc,lop,led){
         var cis=Math2D.circle_i_line_V(lop,led,arc.c,arc.r);
-        var rtn=[];
+        var opv=arc.opv,edv=arc.edv;
+        
         var f=arc.angle>Math.PI;
         for(var i =cis.length-1;i>=0;--i){
-            if(Math2D.in_angle_V(arc.opv,arc.edv,cis[i].dif(arc.c),f)){
+            if(Math2D.in_angle_V(opv,edv,cis[i].dif(arc.c),f)){
                 return true;
             }
         }
