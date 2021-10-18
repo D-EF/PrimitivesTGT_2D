@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-18 21:32:09
+ * @LastEditTime: 2021-10-18 21:39:51
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -524,7 +524,10 @@ class Rect_Data{
      */
     get_min_A_max(){
         if(this.angle>=2*Math.PI){
-            return new Vector2(c.x-r,c.y-r);
+            return {
+                min:new Vector2(this.c.x-this.r,this.c.y-this.r),
+                max:new Vector2(this.c.x+this.r,this.c.y+this.r)
+            };
         }
         var r= this.r;
         var a=this.opv,
@@ -572,9 +575,9 @@ class Rect_Data{
             }
         }else if((!f1)&&(f2)){//a2
             if(f3&&f4){// a2 b1
-                min.x=a.x;
+                min.x=-r;
                 min.y=-r;
-                max.x=b.x;
+                max.x=r;
                 max.y=(a.y<b.y)?(b.y):(a.y);
             }else if((!f3)&&(!f4)){// a2 b3
                 min.x=-r;
