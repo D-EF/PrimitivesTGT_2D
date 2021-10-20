@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-18 21:39:51
+ * @LastEditTime: 2021-10-19 09:56:18
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -667,8 +667,6 @@ class Rect_Data{
         }
         var r=this._r;
         var x=_x-this.c.x,
-        // 因为坐标系是反的所以要置负
-        // y=this.c.y-_y;
             y=_y-this.c.y;
         var arcA=this.angle;
         var tr=Math.sqrt(x*x+y*y);
@@ -713,6 +711,50 @@ class Rect_Data{
         return rtn;
     }
 }
+
+// 扇形------------------------------------
+
+class Sector_Data extends Arc_Data{
+    
+     /**
+      * 旋转方向默认是顺时针, 并且 起点弧度 始终 会 小于 终点弧度
+      * @param {Number} cx 圆心坐标
+      * @param {Number} cy 圆心坐标
+      * @param {Number} r  半径
+      * @param {Number} angle_A     弧形端点弧度
+      * @param {Number} angle_B     弧形端点弧度
+      */
+    constructor(cx,cy,r,angle_A,angle_B){
+        super(cx,cy,r,angle_A,angle_B);
+    }
+    ceratePolygonProxy(_accuracy){
+        var rtn=Polygon.sector(this.r,this.startAngle,this.endAngle,_accuracy,_closeFlag);
+        rtn.translate(this.c);
+        return rtn;
+    }
+    isInside(_x,_y){
+        if((_x>this.max.x)||(_x<this.min.x)||(_y>this.max.y)||(_y<this.min.y)){
+            return false;
+        }
+        var r=this._r;
+        var x=_x-this.c.x,
+            y=_y-this.c.y;
+        var arcA=this.angle;
+        var tr=Math.sqrt(x*x+y*y);
+        if(tr<=r){
+            // 在半径内
+            if(Math.PI*2<=arcA){
+                return true;//圆形
+            }
+            else{
+                return Math2D.in_angle_V(this.opv,this.edv,new Vector2(x,y),arcA>Math.PI);
+            }
+        }
+        // 不在半径内直接判定为外
+        return false;
+    }
+}
+
 
 /* 向量------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -1486,6 +1528,12 @@ class Polygon{
         if(cyclesflag||_closeFlag){
             rtn.seal();
         }
+        return rtn;
+    }
+    static sector(r,_startAngle,_endAngle,_accuracy){
+        var rtn=Polygon.arc(r,_startAngle,_endAngle,_accuracy,false)
+        rtn.insert(0,new Vector2(0,0));
+        rtn.pushNode(new Vector2(0,0));
         return rtn;
     }
     
