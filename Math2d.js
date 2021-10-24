@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-24 21:27:49
+ * @LastEditTime: 2021-10-24 21:34:16
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -573,73 +573,77 @@ class Rect_Data{
                 max.x=(a.x<b.x)?(b.x):(a.x);
                 max.y=(a.y<b.y)?(b.y):(a.y);
             }
-        }else if(f1&&f2){// a1
-            if((!f3)&&(f4)){// a1 b2
-                min.x=b.x;
-                min.y=(a.y>b.y)?(b.y):(a.y);
-                max.x=a.x;
-                max.y=r;
-            }else if((!f3)&&(!f4)){// a1 b3
-                min.x=-r;
-                min.y=b.y;
-                max.x=a.x;
-                max.y=r;
-            }else if((f3)&&(!f4)){// a1 b4
-                min.x=-r;
-                min.y=-r;
-                max.x=(a.x<b.x)?(b.x):(a.x);
-                max.y=r;
+        }else if(f2){// a1 || a2
+            if(f1){
+                if((!f3)&&(f4)){// a1 b2
+                    min.x=b.x;
+                    min.y=(a.y>b.y)?(b.y):(a.y);
+                    max.x=a.x;
+                    max.y=r;
+                }else if((!f3)&&(!f4)){// a1 b3
+                    min.x=-r;
+                    min.y=b.y;
+                    max.x=a.x;
+                    max.y=r;
+                }else if((f3)&&(!f4)){// a1 b4
+                    min.x=-r;
+                    min.y=-r;
+                    max.x=(a.x<b.x)?(b.x):(a.x);
+                    max.y=r;
+                }
+            }else{//a2
+                if(f3&&f4){// a2 b1
+                    min.x=-r;
+                    min.y=-r;
+                    max.x=r;
+                    max.y=(a.y<b.y)?(b.y):(a.y);
+                }else if((!f3)&&(!f4)){// a2 b3
+                    min.x=-r;
+                    min.y=b.y;
+                    max.x=(a.x<b.x)?(b.x):(a.x);
+                    max.y=a.y;
+                }else if((f3)&&(!f4)){// a2 b4
+                    min.x=-r;
+                    min.y=-r;
+                    max.x=b.x;
+                    max.y=r;
+                }
             }
-        }else if((!f1)&&(f2)){//a2
-            if(f3&&f4){// a2 b1
-                min.x=-r;
-                min.y=-r;
-                max.x=r;
-                max.y=(a.y<b.y)?(b.y):(a.y);
-            }else if((!f3)&&(!f4)){// a2 b3
-                min.x=-r;
-                min.y=b.y;
-                max.x=(a.x<b.x)?(b.x):(a.x);
-                max.y=a.y;
-            }else if((f3)&&(!f4)){// a2 b4
-                min.x=-r;
-                min.y=-r;
-                max.x=b.x;
-                max.y=r;
-            }
-        }else if((!f1)&&(!f2)){//a3
-            if(f3&&f4){// a3 b1
-                min.x=-r;
-                min.y=-r;
-                max.x=b.x;
-                max.y=a.y;
-            }if((!f3)&&(f4)){// a3 b2
-                min.x=(a.x>b.x)?(b.x):(a.x);
-                min.y=-r;
-                max.x=r;
-                max.y=r;
-            }else if((f3)&&(!f4)){// a3 b4
-                min.x=-r;
-                min.y=-r;
-                max.x=b.x;
-                max.y=(a.y<b.y)?(b.y):(a.y);
-            }
-        }else if((f1)&&(!f2)){//a4
-            if(f3&&f4){// a4 b1
-                min.x=(a.x>b.x)?(b.x):(a.x);
-                min.y=a.y;
-                max.x=r;
-                max.y=b.y;
-            }if((!f3)&&(f4)){// a4 b2
-                min.x=b.x;
-                min.y=-r;
-                max.x=r;
-                max.y=r;
-            }else if((!f3)&&(!f4)){// a4 b3
-                min.x=-r;
-                min.y=a.y;
-                max.x=r;
-                max.y=r;
+        }else{  // a3 || a4
+            if(!f1){
+                if(f3&&f4){// a3 b1
+                    min.x=-r;
+                    min.y=-r;
+                    max.x=b.x;
+                    max.y=a.y;
+                }if((!f3)&&(f4)){// a3 b2
+                    min.x=(a.x>b.x)?(b.x):(a.x);
+                    min.y=-r;
+                    max.x=r;
+                    max.y=r;
+                }else if((f3)&&(!f4)){// a3 b4
+                    min.x=a.x;
+                    min.y=-r;
+                    max.x=b.x;
+                    max.y=(a.y<b.y)?(b.y):(a.y);
+                }
+            }else{//a4
+                if(f3&&f4){// a4 b1
+                    min.x=(a.x>b.x)?(b.x):(a.x);
+                    min.y=a.y;
+                    max.x=r;
+                    max.y=b.y;
+                }if((!f3)&&(f4)){// a4 b2
+                    min.x=b.x;
+                    min.y=-r;
+                    max.x=r;
+                    max.y=r;
+                }else if((!f3)&&(!f4)){// a4 b3
+                    min.x=-r;
+                    min.y=a.y;
+                    max.x=r;
+                    max.y=r;
+                }
             }
         } 
         
