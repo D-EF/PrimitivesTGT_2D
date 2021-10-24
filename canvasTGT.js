@@ -209,8 +209,11 @@ class CanvasTGT{
 class CanvasRectTGT extends CanvasTGT{
     constructor(x,y,w,h){
         super();
+        /**@type {Rect_Data} */
         this.data=new Rect_Data(x,y,w,h);
         this.dataType="Rect_Data";
+        /** 矩形一直是封闭图形 */
+        this.want_to_closePath=true;
     }
     createCanvasPath(ctx){
         ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
@@ -232,6 +235,7 @@ class CanvasArcTGT extends CanvasTGT{
      */
     constructor(cx,cy,r,startAngle,endAngle){
         super();
+        /**@type {Arc_Data} */
         this.data=new Arc_Data(cx,cy,r,startAngle,endAngle);
         this.dataType="Arc_Data";
     }
@@ -240,6 +244,34 @@ class CanvasArcTGT extends CanvasTGT{
         if(this.want_to_closePath){
             var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
             if((Math.PI*2>arcA)&&this.want_to_closePath){
+                ctx.closePath();
+            }
+        }
+    }
+}
+
+class CanvasSectorTGT extends CanvasTGT{
+    /**
+     * @param {Number} cx 圆心的坐标
+     * @param {Number} cy 圆心的坐标
+     * @param {Number} r  半径
+     * @param {Number} startAngle       起点的弧度
+     * @param {Number} endAngle         终点的弧度
+     */
+     constructor(cx,cy,r,startAngle,endAngle){
+        super();
+        /**@type {Sector_Data} */
+        this.data=new Sector_Data(cx,cy,r,startAngle,endAngle);
+        this.dataType="Arc_Data";
+        /** 扇形一直是封闭图形 */
+        this.want_to_closePath=true;
+    }
+    createCanvasPath(ctx){
+        ctx.arc(this.data.c.x,this.data.c.y,this.data.r,this.data.startAngle,this.data.endAngle,false);
+        if(this.want_to_closePath){
+            var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
+            ctx.lineTo(this.data.c.x,this.data.c.y)
+            if((Math.PI*2>arcA)){
                 ctx.closePath();
             }
         }
@@ -397,6 +429,7 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
     if(l<0)return false;
     console.log(1)
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    tgt1.re_worldToLocalM();
     var t2d=Polygon.linearMapping(t2d1,tgt1._worldToLocalM,true);
         nodes=t2d.nodes;
 
@@ -448,6 +481,86 @@ function isTouch_Arc_Arc(tgt1,tgt2){
 }
 
 CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasArcTGT],isTouch_Arc_Arc);
+
+// 扇形碰撞 --------------------------------------------------------------------------------------------
+
+/**
+ * 碰撞检测函数 矩形 扇形(圆形)
+ * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
+ * @param {CanvasSectorTGT}  tgt2 进行碰撞检测的对象
+ */
+ function isTouch_Rect_Sector(tgt1,tgt2){
+    var t1=tgt1.toPolygon();
+    return isTouch_Sector_Polygon(tgt2,t1);
+}
+CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasSectorTGT],isTouch_Rect_Sector);
+CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasRectTGT],function(tgt1,tgt2){
+    return isTouch_Rect_Sector(tgt2,tgt1);
+});
+
+/**
+ * 碰撞检测函数 扇形(圆形) 多边形
+ * @param {CanvasSectorTGT} tgt1 
+ * @param {CanvasPolygonTGT} tgt2 
+ */
+ function isTouch_Sector_Polygon(tgt1,tgt2){
+    var i =tgt2.data.nodes.length-1,
+        l=i;
+    if(l<0)return false;
+    console.log(1)
+    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    tgt1.re_worldToLocalM();
+    var t2d=Polygon.linearMapping(t2d1,tgt1._worldToLocalM,true);
+        nodes=t2d.nodes;
+
+    for(;i>0;--i){
+        if(Math2D.sector_i_line(tgt1.data,nodes[i],nodes[i-1])){
+            return true;
+        }
+    }
+    if((l>1&&tgt2.want_to_closePath)&&(!tgt2.data.isClosed())){
+        // 规定闭合路径的多边形, 多算一次
+        if(Math2D.sector_i_line(tgt1.data,nodes[0],nodes[l])){
+            return true;
+        }
+    }
+    if(tgt2.want_to_closePath||tgt2.data.isClosed()){
+        return t2d.isInside(tgt1.data.c.x,tgt1.data.c.y,true);
+    }
+    return false;
+}
+
+CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasPolygonTGT],isTouch_Sector_Polygon);
+CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasSectorTGT],function(tgt1,tgt2){
+    return isTouch_Sector_Polygon(tgt2,tgt1)
+});
+
+/**
+ * 碰撞检测函数 扇形(圆形) 弧形
+ * @param {CanvasSectorTGT} tgt1 
+ * @param {CanvasArcTGT} tgt2 
+ */
+ function isTouch_Sector_Arc(tgt1,tgt2){
+    var tgtt=tgt1.toPolygon();
+    return isTouch_Arc_Polygon(tgt2,tgtt);
+}
+
+CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasArcTGT],isTouch_Sector_Arc);
+CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasSectorTGT],function(tgt1,tgt2){
+    return isTouch_Sector_Arc(tgt2,tgt1)
+});
+
+/**
+ * 碰撞检测函数 扇形(圆形) 弧形
+ * @param {CanvasSectorTGT} tgt1 
+ * @param {CanvasSectorTGT} tgt2 
+ */
+ function isTouch_Sector_Sector(tgt1,tgt2){
+    var tgtt=tgt1.toPolygon();
+    return isTouch_Sector_Polygon(tgt2,tgtt);
+}
+
+CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasSectorTGT],isTouch_Sector_Sector);
 
 
 // 组----------------------------------------------------------------------------------------------------------------------------------------------

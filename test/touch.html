@@ -17,17 +17,19 @@
     var s=new Sprites(10,10,"./SpritesMap.png");
         var canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
         
-        // var ctrlTGT=new CanvasPolygonTGT();
-        //     ctrlTGT.data=new Polygon([
-        //         {x:200,y:200},
-        //         {x:60,y:200},
-        //         {x:60,y:20},
-        //         {x:200,y:20}
-        //     ]);
+        var ctrlTGT=new CanvasPolygonTGT();
+            ctrlTGT.data=new Polygon([
+                {x:200,y:200},
+                {x:60,y:200},
+                {x:60,y:20},
+                {x:200,y:20}
+            ]);
         // ctrlTGT.want_to_closePath=true;
 
-        var ctrlTGT=new CanvasRectTGT(0,0,150,150);
+        // var ctrlTGT=new CanvasRectTGT(0,0,150,150);
+        
         // var ctrlTGT=new CanvasArcTGT(20,100,50,0,180*Math.DEG);
+
             ctrlTGT.transformMatrix=(createMatrix2x2T().translate(200,200));
             
         // var staticTGT1 = ctrlTGT.copy();
@@ -43,7 +45,7 @@
         staticTGT1.transformMatrix=createMatrix2x2T().translate(200,400).rotate(Math.PI*0.25);
         var staticTGT2 = new CanvasRectTGT(0,0,50,500);
         // canvas 弧形 弧度 从x正方向为 0
-        var staticTGT3 = new CanvasArcTGT(200,200,50,0,120*Math.DEG);
+        var staticTGT3 = new CanvasSectorTGT(200,200,50,0,120*Math.DEG);
         staticTGT3.transformMatrix=(createMatrix2x2T().scale(2,1))
         staticTGT1.fillStyle="#ff0";
         // staticTGT1.fillStyle=staticTGT1.createSpritesFillStyle(s,2,2,1,1);

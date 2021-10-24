@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-19 09:56:18
+ * @LastEditTime: 2021-10-24 21:16:41
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -167,6 +167,7 @@ class Math2D{
         var cis=Math2D.circle_i_line_V(lop,led,arc.c,arc.r);
         var opv=arc.opv,edv=arc.edv;
         
+        if(arc.angle>=2*Math.PI)return true;
         var f=arc.angle>Math.PI;
         for(var i =cis.length-1;i>=0;--i){
             if(Math2D.in_angle_V(opv,edv,cis[i].dif(arc.c),f)){
@@ -174,6 +175,22 @@ class Math2D{
             }
         }
         return false;
+    }
+
+    /**
+     * 扇形与线段是否相交
+     * @param {Sector_Data} sector     弧形数据
+     * @param {Vector2} lop     线段端点
+     * @param {Vector2} led     线段端点
+     * @returns {Boolean} 相交情况
+     */
+    static sector_i_line(sector,lop,led){
+        if(Math2D.arc_i_line(sector,lop,led)){
+            return true
+        }
+        return( Math2D.line_i_line(lop,led,sector.c.add(sector.opv),sector.c)||
+                Math2D.line_i_line(lop,led,sector.c.add(sector.edv),sector.c)
+        );
     }
 
     /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
@@ -714,8 +731,10 @@ class Rect_Data{
 
 // 扇形------------------------------------
 
+/**
+ * 扇形的数据
+ */
 class Sector_Data extends Arc_Data{
-    
      /**
       * 旋转方向默认是顺时针, 并且 起点弧度 始终 会 小于 终点弧度
       * @param {Number} cx 圆心坐标
@@ -728,7 +747,7 @@ class Sector_Data extends Arc_Data{
         super(cx,cy,r,angle_A,angle_B);
     }
     ceratePolygonProxy(_accuracy){
-        var rtn=Polygon.sector(this.r,this.startAngle,this.endAngle,_accuracy,_closeFlag);
+        var rtn=Polygon.sector(this.r,this.startAngle,this.endAngle,_accuracy);
         rtn.translate(this.c);
         return rtn;
     }
@@ -752,6 +771,22 @@ class Sector_Data extends Arc_Data{
         }
         // 不在半径内直接判定为外
         return false;
+    }
+    get_min_A_max(){
+        var d=super.get_min_A_max();
+        if(d.min.x>0){
+            d.min.x=0;
+        }
+        if(d.min.y>0){
+            d.min.y=0;
+        }
+        if(d.max.x<0){
+            d.max.x=0;
+        }
+        if(d.max.y<0){
+            d.max.y=0;
+        }
+        return d;
     }
 }
 
