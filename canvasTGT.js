@@ -708,20 +708,6 @@ function isTouch_Group_Group(){
 /**
  * 碰撞检测函数 组 矩形
  */
-function isTouch_Group_Rect(){
-    
-}
-
-/**
- * 碰撞检测函数 组 弧形(多边形)
- */
-function isTouch_Group_Arc(){
-    
-}
-
-/**
- * 碰撞检测函数 组 多边形
- */
-function isTouch_Group_Polygon(){
+function isTouch_Group_tgt(){
     
 }

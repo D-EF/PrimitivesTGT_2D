@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-24 21:16:41
+ * @LastEditTime: 2021-10-24 21:27:49
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -774,17 +774,18 @@ class Sector_Data extends Arc_Data{
     }
     get_min_A_max(){
         var d=super.get_min_A_max();
-        if(d.min.x>0){
-            d.min.x=0;
+        c=this.c;
+        if(d.min.x>c.x){
+            d.min.x=c.x;
         }
-        if(d.min.y>0){
-            d.min.y=0;
+        if(d.min.y>c.y){
+            d.min.y=c.y;
         }
-        if(d.max.x<0){
-            d.max.x=0;
+        if(d.max.x<c.x){
+            d.max.x=c.x;
         }
-        if(d.max.y<0){
-            d.max.y=0;
+        if(d.max.y<c.y){
+            d.max.y=c.y;
         }
         return d;
     }
