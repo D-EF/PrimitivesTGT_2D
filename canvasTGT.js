@@ -10,7 +10,7 @@
 class CanvasTGT{
     constructor(){
         this.data;
-        this.fillStyle="#fff";
+        this.fillStyle="#fff0";
         this.strokeStyle="#000";
         this.lineWidth=1;
         this.want_to_closePath=false;
@@ -32,10 +32,12 @@ class CanvasTGT{
         rtn=CanvasTGT.create_ByDataType[tgt.dataType](tgt.data);
 
         rtn.fillStyle           = tgt.fillStyle;
+        console.log('rtn.fillStyle :>> ', rtn.fillStyle);
         rtn.strokeStyle         = tgt.strokeStyle;
         rtn.lineWidth           = tgt.lineWidth;
         rtn.transformMatrix     = Matrix2x2T.copy(tgt._transformMatrix);
-        rtn._worldToLocalM  = Matrix2x2T.copy(tgt._worldToLocalM);
+        rtn._worldToLocalM      = Matrix2x2T.copy(tgt._worldToLocalM);
+        rtn.want_to_closePath   = tgt.want_to_closePath;
         
         return rtn;
     }
@@ -573,8 +575,13 @@ CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasSectorTGT],isTouch_Sector_S
  * canvas tgt 组
  */
 class CanvasTGT_Group{
-    constructor(){
-        this.children=[];
+    /**
+     * 
+     * @param {Array<CanvasTGT>} tgts 
+     */
+    constructor(tgts){
+        /**@type {Array<CanvasTGT>} */
+        this.children=[].concat(tgts);
         this._transformMatrix=createMatrix2x2T();
         this._worldToLocalM=undefined;
         this.dataType="Group";
@@ -667,6 +674,20 @@ class CanvasTGT_Group{
     }
     
     /** 
+     * 获取点是否在子项内部
+     * @param {Number} _x    重载1的参数 世界坐标x
+     * @param {Number} _y    重载1的参数 世界坐标y
+     * @param {Vector2} _v   重载2的参数 世界坐标向量
+     * @returns {Boolean} 返回是否在子项内
+     */
+    isInside(_x,_y){
+        var i;
+        if(_x.constructor===Vector2) i=this.inside_i(_x)
+        else i=this.inside_i(_x,_y);
+        return i!==-1;
+    }
+    
+    /** 
      * 渲染图形 
      * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
     */
@@ -707,10 +728,13 @@ CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
  * @param {CanvasTGT_Group} group2
  */
 function isTouch_Group_Group(group1,group2){
-    var i=group1.children.length-1,j;
+    var i=group1.children.length-1,j,
+        tgt_a,tgt_b;
     for(;i>=0;--i){ 
         for(j=group2.children.length-1;j>=0;--j){
-            if(CanvasTGT.isTouch(group1.children[i],group2.children[j])){
+            tgt_a = group1.children[i].transformMatrix;
+            tgt_b = group2.children[j].transformMatrix;
+            if(CanvasTGT.isTouch()){
                 return true;
             }
         }
@@ -732,3 +756,8 @@ function isTouch_Group_tgt(group,tgt){
     }
     return false;
 }
+
+CanvasTGT.isTouch.addOverload([CanvasTGT_Group,CanvasTGT],isTouch_Group_tgt);
+CanvasTGT.isTouch.addOverload([CanvasTGT,CanvasTGT_Group],function (tgt,group){
+    return isTouch_Group_tgt(group,tgt);
+});

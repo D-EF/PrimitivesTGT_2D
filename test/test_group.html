@@ -105,8 +105,9 @@
         tgt16.want_to_closePath=true;
         canvas.addEventListener("click",function(e){
             var x=e.clientX,y=e.clientY;
-            if(static_TGTs.inside_i(x,y)!==-1){
-                console.log("is click staticTGTs!",static_TGTs);
+            var i=static_TGTs.inside_i(x,y);
+            if(i!==-1){
+                console.log("is click staticTGTs!",static_TGTs,i);
             }
         });
         var trect=new CanvasRectTGT();

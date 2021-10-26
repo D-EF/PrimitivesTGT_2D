@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-26 11:37:17
+ * @LastEditTime: 2021-10-26 22:58:33
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -1169,6 +1169,7 @@ class Sector_Data extends Arc_Data{
  */
 Matrix2x2.create={
     /**
+     * 旋转
      * @param {Number} theta 顺时针 旋转角弧度
      */
     rotate:function(theta){
@@ -1177,6 +1178,7 @@ Matrix2x2.create={
         return new Matrix2x2(c,s,-s,c);
     },
     /**
+     * 缩放
      * @param {Number} x x 轴方向上的缩放系数
      * @param {Number} y y 轴方向上的缩放系数
      */
@@ -1275,7 +1277,23 @@ class Matrix2x2T extends Matrix2x2{
         rtn.f=0;
         return rtn;
     }
+    
+    /**
+     * 齐次矩阵 乘 齐次矩阵
+     * @param {Matrix2x2T} m
+     */
+    linearMapping(m){
+        var v=new Vector2(this.x,this.y);
+        v.linearMapping(m);
+        var rtn=this.multiplication(m);
+        rtn.e=v.x;
+        rtn.f=v.y;
+        console.log('m.x,m.y :>> ', m.e,m.f);
+        return rtn
+        // todo
+    }
 }
+
 /**
  * 创建一个新的2x2t矩阵
  * @for Matrix2x2T
@@ -1283,6 +1301,7 @@ class Matrix2x2T extends Matrix2x2{
 function createMatrix2x2T(){
     return new Matrix2x2T(1,0,0,1,0,0);
 }
+ 
 
 /* 多边形 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
