@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-24 21:34:16
+ * @LastEditTime: 2021-10-26 11:37:17
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -606,7 +606,7 @@ class Rect_Data{
                     min.x=-r;
                     min.y=-r;
                     max.x=b.x;
-                    max.y=r;
+                    max.y=a.y;
                 }
             }
         }else{  // a3 || a4
@@ -778,7 +778,7 @@ class Sector_Data extends Arc_Data{
     }
     get_min_A_max(){
         var d=super.get_min_A_max();
-        c=this.c;
+        var c=this.c;
         if(d.min.x>c.x){
             d.min.x=c.x;
         }
@@ -1437,11 +1437,10 @@ class Polygon{
      */
     isInside(x,y,f){
         // 如果图形不是密封的, 直接返回否
-        var _cf=this.isClosed();
+        var _cf=this.isClosed()||f;
         if(this.min.x>x||this.max.x<x||this.min.y>y||this.max.y<y) return false;
         
         if(!_cf){
-            if(!f)
             return false;
         }
 

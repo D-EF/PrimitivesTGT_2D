@@ -368,7 +368,10 @@ function isTouch_base(canvasTGT1,canvasTGT2){
     tgt1.data.reMinMax();
     tgt2.data.reMinMax();
     
-    return Polygon.getImpactFlag(tgt1.data,tgt2.data);
+    if(Polygon.getImpactFlag(tgt1.data,tgt2.data)){
+        return true;                                         
+    }
+    return canvasTGT1.isInside(canvasTGT2.localToWorld(canvasTGT2.data.nodes[0]))||canvasTGT2.isInside(canvasTGT1.localToWorld(canvasTGT1.data.nodes[0]));
 }
 
 /**
@@ -700,14 +703,32 @@ CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
 
 /**
  * 碰撞检测函数 组 组
+ * @param {CanvasTGT_Group} group1
+ * @param {CanvasTGT_Group} group2
  */
-function isTouch_Group_Group(){
-    
+function isTouch_Group_Group(group1,group2){
+    var i=group1.children.length-1,j;
+    for(;i>=0;--i){ 
+        for(j=group2.children.length-1;j>=0;--j){
+            if(CanvasTGT.isTouch(group1.children[i],group2.children[j])){
+                return true;
+            }
+        }
+    }
+    return false;
 }
+CanvasTGT.isTouch.addOverload([CanvasTGT_Group,CanvasTGT_Group],isTouch_Group_Group);
 
 /**
- * 碰撞检测函数 组 矩形
+ * 碰撞检测函数 组 对象
+ * @param {CanvasTGT_Group} group
+ * @param {CanvasTGT}   tgt
  */
-function isTouch_Group_tgt(){
-    
+function isTouch_Group_tgt(group,tgt){
+    for(var i=group.children.length-1;i>=0;--i){
+        if(CanvasTGT.isTouch(tgt,group.children[i])){
+            return true;
+        }
+    }
+    return false;
 }
