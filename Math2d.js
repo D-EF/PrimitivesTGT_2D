@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-26 22:58:33
+ * @LastEditTime: 2021-10-27 22:46:51
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -1278,20 +1278,20 @@ class Matrix2x2T extends Matrix2x2{
         return rtn;
     }
     
-    /**
-     * 齐次矩阵 乘 齐次矩阵
-     * @param {Matrix2x2T} m
-     */
-    linearMapping(m){
-        var v=new Vector2(this.x,this.y);
-        v.linearMapping(m);
-        var rtn=this.multiplication(m);
-        rtn.e=v.x;
-        rtn.f=v.y;
-        console.log('m.x,m.y :>> ', m.e,m.f);
-        return rtn
-        // todo
-    }
+    // /**
+    //  * 齐次矩阵 乘 齐次矩阵
+    //  * @param {Matrix2x2T} m
+    //  */
+    // linearMapping(m){
+    //     var v=new Vector2(this.x,this.y);
+    //     v.linearMapping(m);
+    //     var rtn=this.multiplication(m);
+    //     rtn.e=v.x;
+    //     rtn.f=v.y;
+    //     console.log('m.x,m.y :>> ', m.e,m.f);
+    //     return rtn
+    //     // todo
+    // }
 }
 
 /**

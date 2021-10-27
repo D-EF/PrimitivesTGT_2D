@@ -6,7 +6,6 @@
 
 // data
 
-
 class CanvasTGT{
     constructor(){
         this.data;
@@ -701,6 +700,13 @@ class CanvasTGT_Group{
 
         ctx.restore();
     }
+    /**
+     * 生成世界坐标的多边形集合
+     * @return {Array<Polygon>}
+     */
+    create_worldPolygons(){
+        // todo
+    }
 }
 
 function _CanvasTGT_Group_Inside_I(_x,_y){
@@ -728,6 +734,7 @@ CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
  * @param {CanvasTGT_Group} group2
  */
 function isTouch_Group_Group(group1,group2){
+    // todo
     var i=group1.children.length-1,j,
         tgt_a,tgt_b;
     for(;i>=0;--i){ 
