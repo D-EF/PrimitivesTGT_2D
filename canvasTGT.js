@@ -6,6 +6,9 @@
 
 // data
 
+/** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */
+var def_accuracy=20;
+
 class CanvasTGT{
     constructor(){
         this.data;
@@ -145,14 +148,37 @@ class CanvasTGT{
     createCanvasPath(ctx){
         // 在派生类中实现
     }
-    /** 转换成多边形 */
-    toPolygon(){
+    /** 转换成多边形
+     * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
+     * @returns {CanvasPolygonTGT}
+     */
+    toPolygon(_accuracy=def_accuracy){
         var rtn = new CanvasPolygonTGT(this.data.ceratePolygonProxy(...arguments));
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
         rtn.transformMatrix=(this.transformMatrix);
         return rtn;
+    }
+    
+    /**
+     * 生成世界坐标的多边形集合
+     * @param {Boolean} f 是否作拷贝 默认 true, 为 false 时会影响 this
+     * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
+     * @returns {Array<CanvasPolygonTGT>} 因为只有一个tgt所以是 length 为 1 的数组
+     */
+    create_worldPolygons(f,_accuracy=def_accuracy){
+        /** @type {CanvasPolygonTGT} */
+        var rtn;
+        if((!f)&&(rtn instanceof CanvasPolygonTGT)){
+            rtn=this;
+        }
+        else{
+            rtn=this.toPolygon(_accuracy);
+        }
+
+        rtn.nodesToWorld(true);
+        return [rtn];
     }
     /**
      * 碰撞检测 有多个重载, 在class外面实现
@@ -294,6 +320,19 @@ class CanvasPolygonTGT extends CanvasTGT{
         if(this.data)this.data.reMinMax();
         this.dataType="Polygon"
     }
+
+    /**
+     * 将局部坐标系的 nodes 转换到世界坐标系
+     * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
+     */
+    nodesToWorld(clear_tfm_f=true){
+        for(var i=this.data.nodes.length-1;i>=0;--i){
+            this.data.nodes[i]=this.localToWorld(this.data.nodes[i]);
+        }
+        if(clear_tfm_f){
+            this.transformMatrix=new Matrix2x2T();
+        }
+    }   
     
     getPolygonProxy(){
         return this.data.copy();
@@ -580,7 +619,13 @@ class CanvasTGT_Group{
      */
     constructor(tgts){
         /**@type {Array<CanvasTGT>} */
-        this.children=[].concat(tgts);
+        this.children;
+        if(tgts!==undefined){
+            this.children=[].concat(tgts);
+        }
+        else{
+            this.children=[]
+        }
         this._transformMatrix=createMatrix2x2T();
         this._worldToLocalM=undefined;
         this.dataType="Group";
@@ -702,10 +747,23 @@ class CanvasTGT_Group{
     }
     /**
      * 生成世界坐标的多边形集合
-     * @return {Array<Polygon>}
+     * @param {Boolean} f 组的该方法中的是无用的属性
+     * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
+     * @returns {Array<Polygon>}
      */
-    create_worldPolygons(){
-        // todo
+    create_worldPolygons(f,_accuracy=def_accuracy){
+        /**@type {Array<CanvasPolygonTGT>}  */
+        var rtn=[];
+        var i = this.children.length-1;
+        for(;i>=0;--i){
+            rtn=rtn.concat(this.children[i].create_worldPolygons(true,_accuracy));
+        }
+        console.log('rtn :>> ', rtn);
+        for(i=rtn.length-1;i>=0;--i){
+            rtn[i].transformMatrix=this.transformMatrix;
+            rtn[i].nodesToWorld();
+        }
+        return rtn;
     }
 }
 

@@ -101,3 +101,19 @@ function reRender(val){
 }
 
 render();
+
+// var doc_hidden_flag=false,
+//     then=this;
+// document.addEventListener("visibilitychange", () => { 
+//     if(document.hidden) {
+//         // 页面被挂起
+//         doc_hidden_flag=true
+//     }
+//     else {
+//         // 页面呼出
+//         if(doc_hidden_flag){
+//             doc_hidden_flag
+//             then.k_next();
+//         }
+//     }
+// });

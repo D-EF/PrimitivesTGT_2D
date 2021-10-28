@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-27 22:46:51
+ * @LastEditTime: 2021-10-29 01:41:09
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -930,7 +930,7 @@ class Sector_Data extends Arc_Data{
                 this.x+=m.e;
             }
             if(m.f){
-                this.x+=m.f;
+                this.y+=m.f;
             }
         }
     }
@@ -1514,8 +1514,8 @@ class Polygon{
     /**
      * 线性变换
      * @param {Matrix2x2T} m    矩阵
-     * @param {Boolean} fln     矩阵后乘向量 还是 矩阵前乘向量
-     * @param {Boolean} translate_befroeOrAfter 先变换还是先平移
+     * @param {Boolean} fln     矩阵后乘向量 还是 矩阵前乘向量 默认true
+     * @param {Boolean} translate_befroeOrAfter 先变换还是先平移 默认false
      */
     linearMapping(m,fln=true,translate_befroeOrAfter=false){
         for(var i=this.nodes.length-1;i>=0;--i){

@@ -43,7 +43,7 @@
             ]);
         // = new CanvasRectTGT(0,0,50,50);
         
-        staticTGT1.transformMatrix=createMatrix2x2T().translate(200,400).scale(1,2);
+        staticTGT1.transformMatrix=createMatrix2x2T().translate(200,400).scale(2,1).rotate(Math.DEG*15);
         // var staticTGT2 = new CanvasRectTGT(0,0,50,500);
         // canvas 弧形 弧度 从x正方向为 0
         var staticTGT3 = new CanvasSectorTGT(200,200,50,0,120*Math.DEG);
@@ -60,8 +60,6 @@
         // test
         var staticTGT2=new CanvasTGT_Group([staticTGT1.copy()]);
         staticTGT2.transformMatrix=(createMatrix2x2T().scale(2,1).rotate(Math.DEG*15));
-
-        var tm=staticTGT1.transformMatrix.linearMapping(staticTGT2.transformMatrix);
 
 
         var staticTGTs=[
@@ -127,13 +125,6 @@
         canvas.addEventListener("click",function(e){
             var x=e.clientX,y=e.clientY;
             var i=0;
-            ctx.save();
-            ctx.transform(tm.a,tm.b,tm.c,tm.d,tm.e,tm.f);
-            ctx.beginPath();
-            ctx.arc(x,y,2,0,7);
-            ctx.fillStyle="#000";
-            ctx.fill();
-            ctx.restore();
             for(;i<staticTGTs.length;++i){
                 if(staticTGTs[i].isInside(x,y)){
                     console.log("is click staticTGTs!",staticTGTs[i]);
