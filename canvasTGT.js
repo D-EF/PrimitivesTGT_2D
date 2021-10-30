@@ -73,6 +73,7 @@ class CanvasTGT{
         var vMax=this.getMax();
         return _sprites.createPattern(sx,sy,sw,sh,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
     }
+    /** 不要直接修改矩阵的参数 */
     set transformMatrix(m){
         this._transformMatrix=m.copy();
         this._worldToLocalM=undefined;
@@ -80,6 +81,10 @@ class CanvasTGT{
     }
     get transformMatrix(){
         return this._transformMatrix;
+    }
+    get worldToLocalM(){
+        this.re_worldToLocalM();
+        return this._worldToLocalM;
     }
     // 这是个有多个重载的函数 , 在class定义的外面实现
     /**
@@ -185,7 +190,7 @@ class CanvasTGT{
      * @param {CanvasTGT} canvasTGT1 需要检测碰撞的对象
      * @param {CanvasTGT} canvasTGT2 需要检测碰撞的对象
      */
-    static isTouch(){}
+    static isTouch(canvasTGT1,canvasTGT2){}
     /**
      * 根据鼠标xy触发内部tgt事件
      */
@@ -326,6 +331,7 @@ class CanvasPolygonTGT extends CanvasTGT{
      * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
      */
     nodesToWorld(clear_tfm_f=true){
+        // this.data.linearMapping(this.transformMatrix,true)
         for(var i=this.data.nodes.length-1;i>=0;--i){
             this.data.nodes[i]=this.localToWorld(this.data.nodes[i]);
         }
@@ -374,8 +380,7 @@ CanvasTGT.prototype.localToWorld.addOverload([Vector2],_CanvasTGT_localToWorld);
 
 // 世界坐标 to 局部坐标
 function _CanvasTGT_worldToLocal(v){
-    this.re_worldToLocalM();
-    var tm=this._worldToLocalM;
+    var tm=this.worldToLocalM;
     return Vector2.beforeTranslate_linearMapping(v,tm);
 }
 CanvasTGT.prototype.worldToLocal=OlFunction.create();
@@ -472,8 +477,7 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
     if(l<0)return false;
     console.log(1)
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
-    tgt1.re_worldToLocalM();
-    var t2d=Polygon.linearMapping(t2d1,tgt1._worldToLocalM,true);
+    var t2d=Polygon.linearMapping(t2d1,tgt1.worldToLocalM,true);
         nodes=t2d.nodes;
 
     for(;i>0;--i){
@@ -552,8 +556,7 @@ CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasRectTGT],function(tgt1,tgt2
     if(l<0)return false;
     console.log(1)
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
-    tgt1.re_worldToLocalM();
-    var t2d=Polygon.linearMapping(t2d1,tgt1._worldToLocalM,true);
+    var t2d=Polygon.linearMapping(t2d1,tgt1.worldToLocalM,true);
         nodes=t2d.nodes;
 
     for(;i>0;--i){
@@ -697,6 +700,10 @@ class CanvasTGT_Group{
         this._worldToLocalM=undefined;
         return this._transformMatrix;
     }
+    get worldToLocalM(){
+        this.re_worldToLocalM();
+        return _worldToLocalM;
+    }
     /**
      * 刷新逆变换矩阵
      */
@@ -749,7 +756,7 @@ class CanvasTGT_Group{
      * 生成世界坐标的多边形集合
      * @param {Boolean} f 组的该方法中的是无用的属性
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {Array<Polygon>}
+     * @returns {Array<CanvasPolygonTGT>}
      */
     create_worldPolygons(f,_accuracy=def_accuracy){
         /**@type {Array<CanvasPolygonTGT>}  */
@@ -787,42 +794,54 @@ CanvasTGT_Group.prototype.localToWorld=CanvasTGT.prototype.localToWorld;
 CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
 
 /**
- * 碰撞检测函数 组 组
- * @param {CanvasTGT_Group} group1
- * @param {CanvasTGT_Group} group2
+ * 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
+ * @param {Array<CanvasPolygonTGT>} _tgts 多边形对象数组 不要加矩阵
+ * @param {CanvasTGT_Group} g 组
+ * @param {CanvasTGT_Group} pg g的父组
  */
-function isTouch_Group_Group(group1,group2){
-    // todo
-    var i=group1.children.length-1,j,
-        tgt_a,tgt_b;
-    for(;i>=0;--i){ 
-        for(j=group2.children.length-1;j>=0;--j){
-            tgt_a = group1.children[i].transformMatrix;
-            tgt_b = group2.children[j].transformMatrix;
-            if(CanvasTGT.isTouch()){
-                return true;
+function isTouch_noTransformPolygons_Group(_tgts,g,pg){
+    var tgts=_tgts;
+    var i,j,t_nodes;
+    // 将顶点数据转换到 pg 的局部坐标系
+    if(pg){
+        for(i=tgts.lengthi;i>=0;--i){
+            tgts[i]=tgts[i].copy();
+            t_nodes=tgts[i].data.nodes;
+            for(j=t_nodes.length-1;j>=0;--j){
+                t_nodes[j]=pg.worldToLocal(t_nodes[j]);
+            }
+        }
+    }
+    for(i=tgts.length-1;i>=0;--i){
+        tgts[i].transformMatrix=g.transformMatrix;
+        for(j=g.children.length-1;j>=0;--j){
+            if(g.children[j] instanceof CanvasTGT_Group){
+                if(isTouch_noTransformPolygons_Group(tgts,g.children[j],g)){
+                    return true;
+                }
+            }else{
+                if(CanvasTGT.isTouch(tgts[i],g.children[j])){
+                    return true;
+                }
             }
         }
     }
     return false;
 }
+/**
+ * 碰撞检测函数 组 组
+ * @param {CanvasTGT_Group} group1
+ * @param {CanvasTGT_Group} group2
+ */
+function isTouch_Group_Group(group1,group2){
+    var g1_Polygons=group1.create_worldPolygons();
+    return isTouch_noTransformPolygons_Group(g1_Polygons,group2);
+}
 CanvasTGT.isTouch.addOverload([CanvasTGT_Group,CanvasTGT_Group],isTouch_Group_Group);
 
-/**
- * 碰撞检测函数 组 对象
- * @param {CanvasTGT_Group} group
- * @param {CanvasTGT}   tgt
- */
-function isTouch_Group_tgt(group,tgt){
-    for(var i=group.children.length-1;i>=0;--i){
-        if(CanvasTGT.isTouch(tgt,group.children[i])){
-            return true;
-        }
-    }
-    return false;
-}
-
-CanvasTGT.isTouch.addOverload([CanvasTGT_Group,CanvasTGT],isTouch_Group_tgt);
+CanvasTGT.isTouch.addOverload([CanvasTGT_Group,CanvasTGT],function (group,tgt){
+    return isTouch_noTransformPolygons_Group([tgt],group);
+});
 CanvasTGT.isTouch.addOverload([CanvasTGT,CanvasTGT_Group],function (tgt,group){
-    return isTouch_Group_tgt(group,tgt);
+    return isTouch_noTransformPolygons_Group([tgt],group);
 });

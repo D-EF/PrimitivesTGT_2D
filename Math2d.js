@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-29 01:41:09
+ * @LastEditTime: 2021-10-29 02:07:22
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -1517,7 +1517,7 @@ class Polygon{
      * @param {Boolean} fln     矩阵后乘向量 还是 矩阵前乘向量 默认true
      * @param {Boolean} translate_befroeOrAfter 先变换还是先平移 默认false
      */
-    linearMapping(m,fln=true,translate_befroeOrAfter=false){
+    linearMapping(m,fln=true,translate_befroeOrAfter=true){
         for(var i=this.nodes.length-1;i>=0;--i){
             this.nodes[i].linearMapping(m,fln,translate_befroeOrAfter);
         }

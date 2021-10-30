@@ -116,7 +116,7 @@
     
             canvas.addEventListener("click",function(e){
                 var x=e.clientX,y=e.clientY;
-                                for(;i<staticTGTs.length;++i){
+                                for(var i=0;i<staticTGTs.length;++i){
                     if(staticTGTs[i].isInside(x,y)){
                         console.log("is click staticTGTs!",staticTGTs[i]);
                     }
