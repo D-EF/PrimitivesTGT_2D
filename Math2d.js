@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-29 02:07:22
+ * @LastEditTime: 2021-10-31 08:38:30
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -10,9 +10,8 @@
  * 放了一点2d静态函数
  */
 class Math2D{
-
     /**
-     * 两个圆形是否相交
+     * 判断两个圆形是否相交
      * @param {Vector2} c1  圆1 圆心坐标
      * @param {Number} r1   圆1 半径
      * @param {Vector2} c2  圆2 圆心坐标
@@ -30,7 +29,7 @@ class Math2D{
     }
 
     /**
-     * 两个圆形的交点
+     * 获得两个圆形的交点
      * @param {Vector2} c1  圆1 圆心坐标
      * @param {Number} r1   圆1 半径
      * @param {Vector2} c2  圆2 圆心坐标
@@ -83,7 +82,7 @@ class Math2D{
     }
 
     /**
-     * 圆形和线段 的 交点 坐标
+     * 获得圆形和线段 的 交点 坐标
      * @param {Vector2} lop 线段起点
      * @param {Vector2} led 线段终点
      * @param {Vector2} c   圆心
@@ -139,7 +138,7 @@ class Math2D{
         return false;
     }
     /**
-     * 计算弧形与线段的交点
+     * 获得弧形与线段的交点
      * @param {Arc_Data} arc    弧形数据
      * @param {Vector2} lop     线段端点
      * @param {Vector2} led     线段端点
@@ -157,7 +156,7 @@ class Math2D{
         return rtn;
     }
     /**
-     * 弧形与线段是否相交
+     * 判断弧形与线段是否相交
      * @param {Arc_Data} arc    弧形数据
      * @param {Vector2} lop     线段端点
      * @param {Vector2} led     线段端点
@@ -193,12 +192,13 @@ class Math2D{
         );
     }
 
-    /** 判断两条线段是否相交, 仅供 getImpactCount 使用 相撞时有两种结果
+    /** 
+     * 判断两条线段相交情况
      * @param {Vector2} l1op    线段1的起点
      * @param {Vector2} l1ed    线段1的终点
      * @param {Vector2} l2op    线段2的起点
      * @param {Vector2} l2ed    线段2的终点
-     * @return {Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上; 
+     * @returns{Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上; 
      */
     static line_i_line(l1op,l1ed,l2op,l2ed){
         var temp1=Vector2.dif(l1ed,l1op),
@@ -264,6 +264,10 @@ class Rect_Data{
             d.h
         );
     }
+    /**
+     * 拷贝函数
+     * @returns {Rect_Data} 返回一个当前对象的拷贝
+     */
     copy(){
         return new Rect_Data(
             this.x,
@@ -272,7 +276,9 @@ class Rect_Data{
             this.h
         );
     }
-    
+    /**
+     * @returns {Vector2} 返回图形最靠近 {0,0} 的顶点
+     */
     getMin(){
         var rtnx,rtny;
         if(this.w>=0){
@@ -289,6 +295,9 @@ class Rect_Data{
         return new Vector2(rtnx,rtny);
     }
     
+    /**
+     * @returns {Vector2} 返回图形最远离 {0,0} 的顶点
+     */
     getMax(){
         var rtnx,rtny;
         if(this.w<=0){
@@ -305,9 +314,9 @@ class Rect_Data{
         return new Vector2(rtnx,rtny);
     }
     /**
-     * 是否在内部
-     * @param {Number} x 
-     * @param {Number} y 
+     * 判断点是否在内部
+     * @param {Number} x 点的x坐标
+     * @param {Number} y 点的y坐标
      * @returns {Boolean} 返回 点是否在内部
      */
     isInside(x,y){
@@ -317,6 +326,7 @@ class Rect_Data{
     }
     /**
      * 获取代理用的多边形
+     * @returns {Polygon} 返回一个多边形
      */
     ceratePolygonProxy(){
         return Polygon.rect(this.x,this.y,this.w,this.h);
@@ -340,7 +350,6 @@ class Rect_Data{
         this.c=new Vector2(cx,cy);
         /**圆半径 */
         this._r=r;
-        /**弧形的起点弧度 */
         this._startAngle=0;
         this._endAngle=0;
 
@@ -349,8 +358,8 @@ class Rect_Data{
         this._opv;
         this._edv;
         this._angle;
-        this._max;
         this._min;
+        this._max;
         // 访问器
         this.setAngle_AB(angle_A,angle_B);
     }
@@ -837,14 +846,14 @@ class Sector_Data extends Arc_Data{
         this.x=this.y=0;
     }
     /**拷贝向量
-     * @return {Vector2} 
+     * @returns {Vector2} 
      */
     copy(){
         return new Vector2(this.x,this.y);
     }
     /**
 	 * @brief 求模
-     * @return {Number} 
+     * @returns {Number} 
 	*/
 	mag() {
 		return Math.sqrt(this.x*this.x+this.y*this.y);
@@ -866,40 +875,40 @@ class Sector_Data extends Arc_Data{
     }
     
     /**判断向量是不是零向量
-     * @return {Boolean}
+     * @returns{Boolean}
      */
     judgeZero(){return !(this.x||this.y);}
     
     /**取反
-     * @return {Vector2} 返回新的向量
+     * @returns{Vector2} 返回新的向量
      */
     instead(){return new Vector2(-1*this.x,-1*this.y);}
 
     /**向量和
      * @param {Vector2} v2
-     * @return {Vector2} 返回新的向量
+     * @returns{Vector2} 返回新的向量
      */
     add(v2){return new Vector2(this.x+v2.x,this.y+v2.y);}
     /**数字乘向量 
      * @param {Number} n
      * @param {Vector2} v
-     * @return {Vector2} 返回新的向量
+     * @returns{Vector2} 返回新的向量
     */
     np(n){return new Vector2(this.x*n,this.y*n);}
     /**向量差
      * @param {Vector2} v2 减
-     * @return {Vector2} 返回新的向量
+     * @returns{Vector2} 返回新的向量
      */
     dif(v2){return new Vector2(this.x-v2.x,this.y-v2.y);}
     /**
      * 向量内积
      * @param {Vector2} v2
-     * @return {Number} 
+     * @returns{Number} 
      */
     ip(v2){return this.x*v2.x+this.y*v2.y;}
     /**向量外积
      * @param {Vector2} v2 
-     * @return {Number} 
+     * @returns{Number} 
      */
     op(v2){return this.x*v2.y-this.y*v2.x;}
     
@@ -938,13 +947,13 @@ class Sector_Data extends Arc_Data{
     /**向量和
      * @param {Vector2} v1
      * @param {Vector2} v2
-     * @return {Vector2}
+     * @returns{Vector2}
      */
      static add(v1,v2){return new Vector2(v1.x+v2.x,v1.y+v2.y);}
     /**向量差1-2
      * @param {Vector2} v1
      * @param {Vector2} v2
-     * @return {Vector2}
+     * @returns{Vector2}
      */
     static dif(v1,v2){return new Vector2(v1.x-v2.x,v1.y-v2.y);}
     
@@ -952,13 +961,13 @@ class Sector_Data extends Arc_Data{
      * 向量内积
      * @param {Vector2} v1
      * @param {Vector2} v2
-     * @return {Number}
+     * @returns{Number}
      */
     static ip(v1,v2){return v1.x*v2.x+v1.y*v2.y;}
     /**向量外积
      * @param {Vector2} v1
      * @param {Vector2} v2
-     * @return {Number}
+     * @returns{Number}
      */
     static op(v1,v2){return v1.x*v2.y-v1.y*v2.x;}
     
@@ -1096,7 +1105,7 @@ class Sector_Data extends Arc_Data{
     }
     /**
      * 矩阵的行列式
-     * @return {Number} 行列式
+     * @returns{Number} 行列式
      */
     det(){
         return this.a*this.d-this.b*this.c;
@@ -1598,7 +1607,7 @@ class Polygon{
     /** 获取两个多边形的相交次数
      * @param   {Polygon}   _polygon1
      * @param   {Polygon}   _polygon2
-     * @return  {Number}    相交的次数
+     * @returns {Number}    相交的次数
      */
     static getImpactCount(_polygon1,_polygon2){
         // TODO: 当两个多边形的角碰到角的时候，会出现两次计算，会比预算结果多1
@@ -1616,7 +1625,7 @@ class Polygon{
     /** 获取两个多边形是否相交
      * @param   {Polygon}   _polygon1
      * @param   {Polygon}   _polygon2
-     * @return  {Boolean}   是否相交
+     * @returns {Boolean}   是否相交
      */
     static getImpactFlag(_polygon1,_polygon2){
         if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return false;
