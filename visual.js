@@ -61,7 +61,12 @@ function colorToRGBA(str) {
 
 
 class AnimationCtrl{
-    constructor(){
+    /**
+     * 
+     * @param {Function} frameCallback 
+     * @param {Function} stopCallback 
+     */
+    constructor(frameCallback,stopCallback){
         /**@type {Boolean}表示是否正在进行动作*/
         this._keepGo=false;
         /**@type {Number}开始的时间*/
@@ -69,18 +74,18 @@ class AnimationCtrl{
         /**@type {Number} 用于表示时间长度, 值为 1/时间长度 */
         this.timeD;
         
-        /**@type {Array<Funciton>} 结束时的回调 后序执行 stopCallback[i](this)*/
-        this.stopCallbacks=[];
-
-        /**@type {Array<Funciton>} 每次进行动作的回调 后序执行 frameCallback[i](t,this)*/
-        this.frameCallbacks=[];
+        /**@type {Function} 每次进行动作的回调 frameCallback(t,this)*/
+        this.frameCallback=frameCallback;
+        /**@type {Function} 结束时的回调 stopCallback(this)*/
+        this.stopCallback=stopCallback;
     }
     /**
      * 开始动作
      * @param {Number} time 动作时长 单位毫秒
      */
     start(time){
-        this.stop();
+        window.cancelAnimationFrame(this.animationID);
+        this._keepGo=false;
         this.timeD=1/time;
         this._keepGo=true;
         this._startTime=performance.now();
@@ -92,9 +97,7 @@ class AnimationCtrl{
     stop(){
         window.cancelAnimationFrame(this.animationID);
         this._keepGo=false;
-        for(var i=this.stopCallbacks.length-1;i>=0;--i){
-            this.stopCallbacks[i](t,this);
-        }
+        if(this.stopCallback instanceof Function) this.stopCallback(this);
     }
     /**
      * 申请动作在 requestAnimationFrame
@@ -107,19 +110,14 @@ class AnimationCtrl{
                 var t=(performance.now()-that._startTime)*that.timeD;
                 if(t>=1){
                     t=1;
+                    if(that.frameCallback instanceof Function) that.frameCallback(t,this);
+                    that.r_frame();
                     that.stop();
+                    return;
                 }
-                that.touch_frameCallbacks(t);
+                if(that.frameCallback instanceof Function) that.frameCallback(t,this);
                 that.r_frame();
             }
         )
-    }
-    /**
-     * @param {Number} t 权值 0为刚开始 1为完成
-     */
-    touch_frameCallbacks(t){
-        for(var i=this.frameCallbacks.length-1;i>=0;--i){
-            this.frameCallbacks[i](t,this);
-        }
     }
 }

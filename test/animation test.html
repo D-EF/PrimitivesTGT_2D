@@ -1,0 +1,84 @@
+<!--
+ * @LastEditors: Darth_Eternalfaith
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>touch 碰撞 test</title>
+</head>
+<body>
+    <canvas id="canvas" tabindex="0" width="500" height="500" style="position:absolute;left:0;top:0"></canvas>
+    <script src="../../basics/basics.js"></script>
+    <script src="../Math2d.js"></script>
+    <script src="../visual.js"></script>
+    <script src="../canvasTGT.js"></script>
+    <script src="../Sprites.js"></script>
+
+    <script type="text/javascript">
+    var s=new Sprites(10,10,"./SpritesMap.png");
+        var canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
+        
+        var ctrlTGT=new CanvasPolygonTGT();
+            ctrlTGT.data=new Polygon([
+                {x:200,y:200},
+                {x:60,y:200},
+                {x:60,y:20},
+                {x:200,y:20}
+            ]);
+        ctrlTGT.want_to_closePath=true;
+
+        ctrlTGT.fillStyle='#f00';
+
+        var start,end;
+
+        var animation=new AnimationCtrl();
+
+        function e_change(t){
+            ctrlTGT.transformMatrix.e=start+(end-start)*t;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctrlTGT.render(ctx);
+        }
+        function f_change(t){
+                ctrlTGT.transformMatrix.f=start+(end-start)*t;
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctrlTGT.render(ctx);
+        }
+
+        function f1(ani){
+            start=0;
+            end=200;
+            animation.frameCallback=e_change;
+            ani.stopCallback=f2;
+            ani.start(800);
+        }
+        
+        function f2(ani){
+            start=0;
+            end=200;
+            ani.start(800);
+            animation.frameCallback=f_change;
+            ani.stopCallback=f3;
+        }
+        
+        function f3(ani){
+            start=200;
+            end=0;
+            animation.frameCallback=e_change;
+            ani.stopCallback=f4;
+            ani.start(800);
+        }
+        
+        function f4(ani){
+            start=200;
+            end=0;
+            animation.frameCallback=f_change;
+            ani.stopCallback=f1;
+            ani.start(800);
+        }
+        f1(animation)
+
+    </script>
+</body>
+</html>
