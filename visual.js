@@ -1,3 +1,6 @@
+/*
+ * @LastEditors: Darth_Eternalfaith
+ */
 
 /**把色卡(#xxx)变成rgba的格式 */
 function colorToRGBA(str) {
@@ -53,5 +56,70 @@ function colorToRGBA(str) {
             rgbass[3] = 1;
         }
         return "rgba(" + rgbass.join(',') + ")";
+    }
+}
+
+
+class AnimationCtrl{
+    constructor(){
+        /**@type {Boolean}表示是否正在进行动作*/
+        this._keepGo=false;
+        /**@type {Number}开始的时间*/
+        this._startTime=0;
+        /**@type {Number} 用于表示时间长度, 值为 1/时间长度 */
+        this.timeD;
+        
+        /**@type {Array<Funciton>} 结束时的回调 后序执行 stopCallback[i](this)*/
+        this.stopCallbacks=[];
+
+        /**@type {Array<Funciton>} 每次进行动作的回调 后序执行 frameCallback[i](t,this)*/
+        this.frameCallbacks=[];
+    }
+    /**
+     * 开始动作
+     * @param {Number} time 动作时长 单位毫秒
+     */
+    start(time){
+        this.stop();
+        this.timeD=1/time;
+        this._keepGo=true;
+        this._startTime=performance.now();
+        this.r_frame();
+    }
+    /**
+     * 停下动作
+     */
+    stop(){
+        window.cancelAnimationFrame(this.animationID);
+        this._keepGo=false;
+        for(var i=this.stopCallbacks.length-1;i>=0;--i){
+            this.stopCallbacks[i](t,this);
+        }
+    }
+    /**
+     * 申请动作在 requestAnimationFrame
+     */
+     r_frame(){
+        var that=this;
+        if(this._keepGo)
+        this.animationID=requestAnimationFrame(
+            function(){
+                var t=(performance.now()-that._startTime)*that.timeD;
+                if(t>=1){
+                    t=1;
+                    that.stop();
+                }
+                that.touch_frameCallbacks(t);
+                that.r_frame();
+            }
+        )
+    }
+    /**
+     * @param {Number} t 权值 0为刚开始 1为完成
+     */
+    touch_frameCallbacks(t){
+        for(var i=this.frameCallbacks.length-1;i>=0;--i){
+            this.frameCallbacks[i](t,this);
+        }
     }
 }

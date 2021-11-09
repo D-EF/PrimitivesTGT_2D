@@ -11,6 +11,7 @@ class Sprites{
     constructor(_SpritesX, _SpritesY, imgUrl){
         this.SpritesX = Number(_SpritesX);
         this.SpritesY = Number(_SpritesY);
+        this.imgUrl=imgUrl;
         this.img = new Image();
         this.img.src = imgUrl;
         if(thisEnvironment.createMatrix2x2T&&!Sprites.Matrix)Sprites.Matrix = createMatrix2x2T();
@@ -20,6 +21,16 @@ class Sprites{
         else if(thisEnvironment.Document){
             Sprites.nullCtx=document.createElement("canvas").getContext("2d");
         }
+    }
+    /**
+     * @param {Sprites} tgt 
+     * @returns {Sprites} 返回拷贝
+     */
+    static copy(tgt){
+        return new Sprites(tgt.SpritesX,tgt.SpritesY,tgt.imgUrl);
+    }
+    copy(){
+        return Sprites.copy(this);
     }
     /**
      * 图像显示的尺寸 (铺满)
@@ -287,5 +298,24 @@ Sprites_Animation.prototype={
                 }
             }
         },F_Speeds);
+    }
+}
+
+class Sprites_loop{
+    /**
+     * @param {Sprites} sprites Sprites 实例
+     * @param {Number} _min_x 最小的x, 单位是 Sprites 的格
+     * @param {Number} _max_x 最大的x, 单位是 Sprites 的格
+     * @param {Number} _min_y 最小的y, 单位是 Sprites 的格
+     * @param {Number} _max_y 最大的y, 单位是 Sprites 的格
+     */
+    constructor(sprites,_min_x,_max_x,_min_y,_max_y){
+        var max_x=_max_x===undefined?sprites.SpritesX:max_x,
+            min_x=_min_x||0,
+            min_y=_min_y||0,
+            max_y=_max_y===undefined?sprites.SpritesX:max_y;
+        this.sprites=sprites;
+        this._sectionX=new Stepper(max_x,min_x);
+        this._sectionY=new Stepper(max_y,min_y);
     }
 }
