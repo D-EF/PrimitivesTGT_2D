@@ -121,3 +121,45 @@ class AnimationCtrl{
         )
     }
 }
+
+/**
+ * 动画中向量使用的函数
+ * @param {Number} start 起点
+ * @param {Number} end   终点
+ * @param {Number}  t    权值
+ * @returns {Number} 返回对应的点
+ */
+function valueAnimtion(start,end,t){
+    return start+(end-start)*t;
+}
+
+/**
+ * 动画中向量使用的函数
+ * @param {Vectoe2} start 起点
+ * @param {Vectoe2} end   终点
+ * @param {Number}  t     权值
+ * @returns {Vector2} 返回对应的点
+ */
+function v2Animation(start,end,t){
+    return new Vector2(
+        start.x+(end.x-start.x)*t,
+        start.y+(end.y-start.y)*t);
+}
+
+/**
+ * 动画中矩阵使用的函数
+ * @param {Matrix2x2T} start 起点
+ * @param {Matrix2x2T} end   终点
+ * @param {Number}  t     权值
+ * @returns {Matrix2x2T} 返回对应矩阵
+ */
+ function m2tAnimation(start,end,t){
+    return new Matrix2x2T(
+        start.a+(end.a-start.a)*t,
+        start.b+(end.b-start.b)*t,
+        start.c+(end.c-start.c)*t,
+        start.d+(end.d-start.d)*t,
+        start.e+(end.e-start.e)*t,
+        start.f+(end.f-start.f)*t,
+    )
+}

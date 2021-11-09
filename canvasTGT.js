@@ -34,7 +34,6 @@ class CanvasTGT{
         rtn=CanvasTGT.create_ByDataType[tgt.dataType](tgt.data);
 
         rtn.fillStyle           = tgt.fillStyle;
-        console.log('rtn.fillStyle :>> ', rtn.fillStyle);
         rtn.strokeStyle         = tgt.strokeStyle;
         rtn.lineWidth           = tgt.lineWidth;
         rtn.transformMatrix     = Matrix2x2T.copy(tgt._transformMatrix);
@@ -73,7 +72,7 @@ class CanvasTGT{
         var vMax=this.getMax();
         return _sprites.createPattern(sx,sy,sw,sh,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
     }
-    /** 不要直接修改矩阵的参数 */
+    /** 如果需要使用逆变换矩阵的话,不要直接修改矩阵的参数 */
     set transformMatrix(m){
         this._transformMatrix=m.copy();
         this._worldToLocalM=undefined;
