@@ -35,13 +35,18 @@
 
         var animation=new AnimationCtrl();
 
+        var timeBezier =new UnitBezier(1,0,0,1);
+        function tv(t){
+            return start+(end-start)*timeBezier.sampleCurveY(t);
+        }
+
         function e_change(t){
-            ctrlTGT.transformMatrix.e=start+(end-start)*t;
+            ctrlTGT.transformMatrix.e=tv(t);
             ctx.clearRect(0,0,canvas.width,canvas.height);
             ctrlTGT.render(ctx);
         }
         function f_change(t){
-                ctrlTGT.transformMatrix.f=start+(end-start)*t;
+                ctrlTGT.transformMatrix.f=tv(t);
                 ctx.clearRect(0,0,canvas.width,canvas.height);
                 ctrlTGT.render(ctx);
         }
