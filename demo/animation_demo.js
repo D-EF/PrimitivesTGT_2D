@@ -46,9 +46,12 @@ var tgt_group=new CanvasTGT_Group([
     tgt_group0,
     tgt_group1,
     tgt_group2
-])
-var fillScale=128/6;
-tgt_group.transformMatrix=new Matrix2x2T().scale(fillScale,fillScale).translate(0,360);
+]);
+
+var text_group=new CanvasTGT_Group();
+text_group.transformMatrix=new Matrix2x2T().scale(2,2).translate(400,200);
+var fillScale=100/6;
+tgt_group.transformMatrix=new Matrix2x2T().scale(fillScale,fillScale).translate(0,200);
 
 itemTGT0._transformMatrix=new Matrix2x2T().rotate(90*Math.DEG).translate(60,0);
 itemTGT1._transformMatrix=itemTGT0.transformMatrix;
@@ -57,6 +60,7 @@ itemTGT2._transformMatrix=itemTGT0.transformMatrix;
 function ctxRender(){
     bg.render(ctx);
     tgt_group.render(ctx);
+    text_group.render(ctx);
 }
 
 ctxRender();
@@ -64,7 +68,7 @@ ctxRender();
 var animation1=new AnimationCtrl();
 var om=new Matrix2x2T();
 var gm=tgt_group.transformMatrix,
-    gm_end=new Matrix2x2T().scale(4,4).translate(300,360);
+    gm_end=new Matrix2x2T().scale(4,4).translate(231.8221983093764,231.8221983093764);
 
 var animation_curve=new UnitBezier(0.4, 1.02, 0.46, 1.03);
 /**
@@ -98,9 +102,9 @@ function logoScale(t){
  */
 function logoItemShow(t){
     var t=animation_curve.sampleCurveY(t);
-    tgt_group0._transformMatrix=new Matrix2x2T().rotate(valueAnimtion(0, 45,t)*Math.DEG);
-    tgt_group1._transformMatrix=new Matrix2x2T().rotate(valueAnimtion(0,165,t)*Math.DEG);
-    tgt_group2._transformMatrix=new Matrix2x2T().rotate(valueAnimtion(0,285,t)*Math.DEG);
+    tgt_group0._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0, 45,t)*Math.DEG);
+    tgt_group1._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,165,t)*Math.DEG);
+    tgt_group2._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,285,t)*Math.DEG);
     ctxRender();
 }
 
@@ -116,7 +120,180 @@ function a2(animation){
 }
 function a3(animation){
     animation.frameCallback=logoItemShow;
-    animation.stopCallback=undefined;
+    animation.stopCallback=function(){
+        atd1();
+    };
     animation.start(200);
 }
 a1(animation1);
+
+
+
+var textPolygonD=new Polygon([
+    new Vector2(), //0
+    new Vector2(), //1
+    new Vector2(), //2
+    new Vector2(), //3
+    new Vector2(), //4
+    new Vector2(), //5
+]);
+var textTGT_D=new CanvasPolygonTGT();
+textTGT_D.data=textPolygonD;
+text_group.addChildren(textTGT_D);
+
+var textPolygonE1=new Polygon([
+    new Vector2(), //0
+    new Vector2(), //1
+    new Vector2(), //2
+    new Vector2(), //3
+    new Vector2(), //4
+]);
+var textTGT_E1=new CanvasPolygonTGT();
+textTGT_E1.data=textPolygonE1;
+text_group.addChildren(textTGT_E1);
+textTGT_E1.transformMatrix=new Matrix2x2T().translate(100,0)
+
+var textPolygonE2=new Polygon([
+    new Vector2(),
+    new Vector2(),
+]);
+var textTGT_E2=new CanvasPolygonTGT();
+textTGT_E2.data=textPolygonE2;
+text_group.addChildren(textTGT_E2);
+textTGT_E2.transformMatrix=new Matrix2x2T().translate(100,0)
+
+var textPolygonF1=new Polygon([
+    new Vector2(),
+    new Vector2(),
+    new Vector2(),
+    new Vector2(),
+]);
+var textTGT_F1=new CanvasPolygonTGT();
+textTGT_F1.data=textPolygonF1;
+text_group.addChildren(textTGT_F1);
+textTGT_F1.transformMatrix=new Matrix2x2T().translate(200,0)
+
+var textTGT_F2=textTGT_E2.copy();
+textTGT_F2.transformMatrix=new Matrix2x2T().translate(200,0)
+text_group.addChildren(textTGT_F2);
+
+var animation2=new AnimationCtrl();
+function animation_D1f(t){
+    var end=valueAnimation(0,50,t);
+    textPolygonD.nodes[0].y=
+    textPolygonD.nodes[1].y=
+    textPolygonD.nodes[2].y=end;
+    textPolygonD.nodes[3].y=
+    textPolygonD.nodes[4].y=
+    textPolygonD.nodes[5].y=-end;
+    ctxRender();
+}
+function animation_D2f(t){
+    var end=valueAnimation(0,50,t);
+    textPolygonD.nodes[0].x=
+    textPolygonD.nodes[1].x=end;
+    textPolygonD.nodes[4].x=
+    textPolygonD.nodes[5].x=end;
+    ctxRender();
+}
+function animation_D3f(t){
+    var end=v2Animation({x:50,y:50},{x:100,y:0},t);
+    textPolygonD.nodes[0].x=end.x;
+    textPolygonD.nodes[0].y=end.y;
+    textPolygonD.nodes[5].x=end.x;
+    textPolygonD.nodes[5].y=-end.y;
+    ctxRender();
+}
+
+function animation_E1f(t){
+    var end=v2Animation({x:0,y:0},{x:50,y:50},t);
+    var end1=valueAnimation(0,100,t);
+    textPolygonE1.nodes[0].x=
+    textPolygonE1.nodes[1].x=end.x;
+
+    textPolygonE1.nodes[0].y=
+    textPolygonE1.nodes[1].y=end.y;
+
+    textPolygonE1.nodes[4].x=
+    textPolygonE1.nodes[3].x=end.x;
+    textPolygonE1.nodes[4].y=
+    textPolygonE1.nodes[3].y=-end.y;
+
+    textPolygonE2.nodes[1].x=end1;
+    ctxRender();
+}
+function animation_E2F1f(t){
+    var end=valueAnimation(50,100,t);
+    var end1=valueAnimation(0,100,t);
+    var end2=valueAnimation(0,50,t);
+    textPolygonE1.nodes[0].x=end;
+    textPolygonE1.nodes[4].x=end;
+    textTGT_F2.data.nodes[1].x=end1;
+
+    textPolygonF1.nodes[0].y=end2;
+    textPolygonF1.nodes[2].x=
+    textPolygonF1.nodes[3].x=end2;
+    textPolygonF1.nodes[2].y=
+    textPolygonF1.nodes[3].y=-end2;
+
+    ctxRender();
+}
+function animation_F2f(t){
+    var end=valueAnimation(50,100,t);
+
+    textPolygonF1.nodes[3].x=end;
+
+    ctxRender();
+}
+
+
+function atd1(){
+    textTGT_D.lineWidth=2;
+    textTGT_D.strokeStyle="#fff";
+    textTGT_D.fillStyle="#fff0";
+
+    animation2.frameCallback=animation_D1f;
+    animation2.stopCallback=atd2;
+    animation2.start(100);
+}
+function atd2(){
+    animation2.frameCallback=animation_D2f;
+    animation2.stopCallback=atd3;
+    animation2.start(100);
+}
+function atd3(){
+    animation2.frameCallback=animation_D3f;
+    animation2.stopCallback=ate1;
+    animation2.start(100);
+}
+function ate1(){
+    textTGT_E1.lineWidth=2;
+    textTGT_E1.strokeStyle="#fff";
+    textTGT_E1.fillStyle="#fff0";
+    
+    textTGT_E2.lineWidth=2;
+    textTGT_E2.strokeStyle="#fff";
+    textTGT_E2.fillStyle="#fff0";
+
+    animation2.frameCallback=animation_E1f;
+    animation2.stopCallback=ate2f1;
+    animation2.start(100);
+}
+function ate2f1(){
+    
+    textTGT_F1.lineWidth=2;
+    textTGT_F1.strokeStyle="#fff";
+    textTGT_F1.fillStyle="#fff0";
+    textTGT_F2.lineWidth=2;
+    textTGT_F2.strokeStyle="#fff";
+    textTGT_F2.fillStyle="#fff0";
+
+    animation2.frameCallback=animation_E2F1f;
+    animation2.stopCallback=atf2;
+    animation2.start(100);
+}
+function atf2(){
+    animation2.frameCallback=animation_F2f;
+    animation2.stopCallback=undefined;
+    animation2.start(100);
+}

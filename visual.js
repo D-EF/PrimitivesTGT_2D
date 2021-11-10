@@ -129,14 +129,14 @@ class AnimationCtrl{
  * @param {Number}  t    权值
  * @returns {Number} 返回对应的点
  */
-function valueAnimtion(start,end,t){
+function valueAnimation(start,end,t){
     return start+(end-start)*t;
 }
 
 /**
  * 动画中向量使用的函数
- * @param {Vectoe2} start 起点
- * @param {Vectoe2} end   终点
+ * @param {Vector2} start 起点
+ * @param {Vector2} end   终点
  * @param {Number}  t     权值
  * @returns {Vector2} 返回对应的点
  */
