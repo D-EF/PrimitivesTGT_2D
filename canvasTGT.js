@@ -253,7 +253,6 @@ class CanvasRectTGT extends CanvasTGT{
     }
 }
 
-
 /**
  * 弧形
  * 需要注意旋转方向因为坐标系不同而有所变动
@@ -611,9 +610,7 @@ CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasSectorTGT],function(tgt1,tgt2)
 
 CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasSectorTGT],isTouch_Sector_Sector);
 
-
 // 组----------------------------------------------------------------------------------------------------------------------------------------------
-
 
 /**
  * canvas tgt 组

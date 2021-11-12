@@ -27,7 +27,6 @@ var d1start =new Vector2(12.06794919,0),
     d1end   =new Vector2(6.033974595,10.9807621),
     d2end   =new Vector2(6.033974595,53.66025405);
 
-
 var itemTGT0=new CanvasPolygonTGT();
 itemTGT0.fillStyle="#fff"
 itemTGT0.strokeStyle="#0000"
@@ -245,7 +244,6 @@ function animation_F2f(t){
 
     ctxRender();
 }
-
 
 function atd1(){
     textTGT_D.lineWidth=2;

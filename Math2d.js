@@ -569,7 +569,6 @@ class Rect_Data{
         var min=new Vector2(),
             max=new Vector2();
 
-
         if(f5&&f6){// 在同一象限
             if(f){// 大于半圆
                 min.x=-r;
@@ -803,7 +802,6 @@ class Sector_Data extends Arc_Data{
         return d;
     }
 }
-
 
 /* 向量------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -1656,7 +1654,6 @@ class Polygon{
 
 // 函数重载 -------------------------------------------------------------------------------------------
 
-
 Vector2.baseLinearMapping=OlFunction.create();
 /**
  * 行向量后乘矩阵
@@ -1679,7 +1676,6 @@ Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
     return rtn;
 },"矩阵后乘列向量");
 
-
 Polygon.EX_linearMapping=OlFunction.create();
 Polygon.EX_linearMapping.addOverload([Polygon,Matrix2x2,Boolean],function(p,m,f){
     var i=0,
@@ -1697,8 +1693,6 @@ Polygon.EX_linearMapping.addOverload([Matrix2x2,Polygon,Boolean],function(m,p,f)
     }
     return rtn;
 });
-
-
 
 Polygon.EX_linearMapping_nt=OlFunction.create();
 Polygon.EX_linearMapping_nt.addOverload([Polygon,Matrix2x2,Boolean],function(p,m,f){

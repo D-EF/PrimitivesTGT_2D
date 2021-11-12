@@ -61,7 +61,6 @@
         var staticTGT2=new CanvasTGT_Group([staticTGT1.copy()]);
         staticTGT2.transformMatrix=(createMatrix2x2T().scale(2,1).rotate(Math.DEG*15));
 
-
         var staticTGTs=[
         staticTGT1,
         staticTGT2,
@@ -75,7 +74,6 @@
             staticTGT2.render(ctx);
             staticTGT3.render(ctx);
         }
-
 
         addKeyEvent(canvas,1,38,function(e){
             ctrlTGT.transformMatrix=(ctrlTGT.transformMatrix.translate(0,-2));

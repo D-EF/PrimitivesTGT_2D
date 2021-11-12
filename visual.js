@@ -59,7 +59,6 @@ function colorToRGBA(str) {
     }
 }
 
-
 class AnimationCtrl{
     /**
      * 
