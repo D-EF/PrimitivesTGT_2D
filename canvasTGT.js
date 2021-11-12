@@ -11,11 +11,13 @@ var def_accuracy=20;
 
 class CanvasTGT{
     constructor(){
+        /**@type {Object} */
         this.data;
         this.fillStyle="#fff0";
         this.strokeStyle="#000";
         this.lineWidth=1;
         this.want_to_closePath=false;
+        /**@type {Matrix2x2T} */
         this._transformMatrix=createMatrix2x2T();
         this._worldToLocalM;
         /**
@@ -280,7 +282,9 @@ class CanvasArcTGT extends CanvasTGT{
         }
     }
 }
-
+/**
+ * 扇形
+ */
 class CanvasSectorTGT extends CanvasTGT{
     /**
      * @param {Number} cx 圆心的坐标
@@ -617,10 +621,10 @@ CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasSectorTGT],isTouch_Sector_S
 class CanvasTGT_Group{
     /**
      * 
-     * @param {Array<CanvasTGT>} tgts 
+     * @param {Array<CanvasTGT,CanvasTGT_Group>} tgts 
      */
     constructor(tgts){
-        /**@type {Array<CanvasTGT>} */
+        /**@type {Array<CanvasTGT,CanvasTGT_Group>} */
         this.children;
         if(tgts!==undefined){
             this.children=[].concat(tgts);

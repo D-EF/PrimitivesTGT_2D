@@ -125,9 +125,9 @@ function a3(animation){
     };
     animation.start(200);
 }
-a1(animation1);
-
-
+setTimeout(() => {
+    a1(animation1);
+}, 200);
 
 var textPolygonD=new Polygon([
     new Vector2(), //0

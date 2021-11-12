@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-10-31 08:38:30
+ * @LastEditTime: 2021-11-12 13:10:40
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -911,7 +911,6 @@ class Sector_Data extends Arc_Data{
      * @returns{Number} 
      */
     op(v2){return this.x*v2.y-this.y*v2.x;}
-    
     /**
      * 
      * @param {Matrix2x2T}  m   变换矩阵
@@ -1319,8 +1318,6 @@ function createMatrix2x2T(){
  *  这个文件依赖于 Vector2.js 和 Matrix2x2_mod.js
  *  用途主要是在 html canvas 
  */
-
-
 
 class Polygon{
     /** 多边形
