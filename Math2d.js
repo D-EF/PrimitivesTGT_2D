@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-11-12 13:10:40
+ * @LastEditTime: 2021-11-23 18:29:36
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -861,17 +861,13 @@ class Sector_Data extends Arc_Data{
 	*/
 	normalize() {
         if(this.x==0&&this.y==0)return;
-		var magSq = this.vectorMag(),oneOverMag=0;
+		var magSq = this.mag(),oneOverMag=0;
 		if (magSq>0) {
 			oneOverMag = 1.0/magSq;
 			this.x *= oneOverMag;
 			this.y *= oneOverMag;
 		}
     }
-    getXY(){
-        return [this.x,this.y];
-    }
-    
     /**判断向量是不是零向量
      * @returns{Boolean}
      */
@@ -884,7 +880,7 @@ class Sector_Data extends Arc_Data{
 
     /**向量和
      * @param {Vector2} v2
-     * @returns{Vector2} 返回新的向量
+     * @returns {Vector2} 返回新的向量
      */
     add(v2){return new Vector2(this.x+v2.x,this.y+v2.y);}
     /**数字乘向量 
@@ -1094,10 +1090,8 @@ class Sector_Data extends Arc_Data{
      */
     transposed(){
         var rtn=this.copy();
-        rtn.a=this.a;
         rtn.b=this.c;
         rtn.c=this.b;
-        rtn.d=this.d
         return rtn;
     }
     /**
