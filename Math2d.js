@@ -843,6 +843,9 @@ class Sector_Data extends Arc_Data{
     zero(){
         this.x=this.y=0;
     }
+    static copy(tgt){
+        return new Vector2(tgt.x,tgt.y);
+    }
     /**拷贝向量
      * @returns {Vector2} 
      */
@@ -1701,3 +1704,122 @@ Polygon.EX_linearMapping_nt.addOverload([Matrix2x2,Polygon,Boolean],function(m,p
     }
     return p;
 });
+
+
+class Bezier_Node{
+    /**
+     * @param {Vector2} node
+     * @param {Vector2} hand1
+     * @param {Vector2} hand2
+     */
+    constructor(node,hand1,hand2) {
+        /**
+         * @type {Vector2} 顶点 p1 兼 p4
+         */
+        this.node=node;
+        /** 
+         * @type {Vector2} 前驱控制点 p2
+         */
+        this.hand1=hand1;
+        /** 
+         * @type {Vector2} 后置控制点 p3
+         */
+        this.hand2=hand2;
+    }
+    static copy(tgt){
+        return new Bezier_Node(
+            Vector2.copy(tgt.node),
+            Vector2.copy(tgt.hand1),
+            Vector2.copy(tgt.hand2)
+        )
+    }
+    copy(){
+        return Bezier_Node.copy(this);
+    }
+}
+
+class Bezier_Polygon{
+    /**
+     * @param {Array<Vector2>} nodes  
+     * @param {Array<Vector2>} hand1s 
+     * @param {Array<Vector2>} hand2s 
+     */
+    constructor(nodes,hand1s,hand2s){
+        this.nodes=[];
+        if(nodes)
+        for(var i=0;i<nodes.length;i++){
+            this.nodes.push(new Bezier_Node(nodes[i],hand1s[i],hand2s[i]));
+        }
+    }
+    static copy(tgt){
+        var rtn=new Bezier_Polygon();
+        for(var i=0;i<tgt.nodes.length;++i){
+            rtn.nodes.push(Bezier_Node.copy(tgt.nodes[i]));
+        }
+        return rtn;
+    }
+    copy(){
+        return Bezier_Polygon.copy(this);
+    }
+    /**
+     * 追加顶点
+     * @param {Bezier_Node} bezierNode  要追加的顶点
+     */
+    pushNode(bezierNode){
+        this.nodes.push(Bezier_Node.copy(bezierNode));
+    }
+    /**
+     * 追加顶点数组
+     * @param {Array<Bezier_Node>} bezierNodes  装着顶点的数组
+     */
+    pushNodes(bezierNodes){
+        for(var i=0;i<nodes.length;++i){
+            this.pushNode(bezierNodes[i]);
+        }
+    }
+    /**
+     * 插入顶点
+     * @param {Number} index    要插入的顶点的下标
+     * @param {Array<Bezier_Node>} bezierNodes 要插入的顶点
+     */
+    insert(index,bezierNode){
+        this.nodes.splice(index,0,bezierNode.copy());
+    }
+    /**
+     * 移除顶点
+     * @param {Number} index 要删除的顶点的下标
+     */
+    remove(index){
+        this.nodes.splice(index,1);
+    }
+    /**
+     * 分割贝塞尔曲线
+     * @param {Number} index 下标
+     * @param {Number} z     t参数 
+     */
+    cut(index,z){
+        if(this.nodes[index]===undefined||this.nodes[index+1]===undefined)return;
+        var points=[
+            this.nodes[index].node,
+            this.nodes[index].hand2,
+            this.nodes[index+1].hand1,
+            this.nodes[index+1].node
+        ];
+        var newPoints=Bezier3Cut(points,z);
+
+        var newNode=Bezier_Node.copy(
+            {
+                node: newPoints[0][3],
+                hand1:newPoints[0][2],
+                hand2:newPoints[1][1],
+            }
+        );
+        console.log(newPoints)
+        this.nodes[index].hand2.x=newPoints[0][1].x;
+        this.nodes[index].hand2.y=newPoints[0][1].y;
+        this.nodes[index+1].hand1.x=newPoints[1][2].x;
+        this.nodes[index+1].hand1.y=newPoints[1][2].y;
+
+        this.nodes.splice(index+1,0,newNode);
+    }
+}
