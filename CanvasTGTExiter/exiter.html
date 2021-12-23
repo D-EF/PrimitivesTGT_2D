@@ -5,8 +5,27 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="../../../css/index.css">
+    <link rel="stylesheet" href="./exiter.css">
 </head>
 <body>
-    
+
+    <canvas id="MainCanvas"></canvas>
+
+    <div id="createToolBox">
+        <ul>
+            <li name="rect"    class="iconSpritesSvg iconSpritesSvg-rect    "></li>
+            <li name="arc"     class="iconSpritesSvg iconSpritesSvg-arc     "></li>
+            <li name="sector"  class="iconSpritesSvg iconSpritesSvg-sector  "></li>
+            <li name="polygon" class="iconSpritesSvg iconSpritesSvg-polygon "></li>
+            <li name="bezier"  class="iconSpritesSvg iconSpritesSvg-bezier  "></li>
+        </ul>
+    </div>
+    <div id="stateBox"></div>
+
+    <script src="../../basics/Basics.js"></script>
+    <script src="../Math2d.js"></script>
+    <script src="../canvasTGT.js"></script>
+    <script src="./exiter.js"></script>
 </body>
 </html>

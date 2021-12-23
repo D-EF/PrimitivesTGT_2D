@@ -236,6 +236,38 @@ class Math2D{
         }
         return 0;
     }
+    
+    /**
+     * 求线段交点坐标
+     * @param {Number} x1 线段a端点1 x坐标
+     * @param {Number} y1 线段a端点1 y坐标
+     * @param {Number} x2 线段a端点2 x坐标
+     * @param {Number} y2 线段a端点2 y坐标
+     * @param {Number} x3 线段a端点1 x坐标
+     * @param {Number} y3 线段a端点1 y坐标
+     * @param {Number} x4 线段a端点2 x坐标
+     * @param {Number} y4 线段a端点2 y坐标
+     * @returns {x:Number,y:Number} 如果返回 Infinity 或 -Infinity 则为未相交
+     */
+     static line_i_line_v(x1,y1,x2,y2,x3,y3,x4,y4){
+        var bx=x2-x1,
+            by=y2-y1,
+            dx=x4-x3,
+            dy=y4-y3;
+        var t=binaryLinearEquation(x1,bx,x3,dx,y1,by,y3,dy);
+        // console.log(t);
+        if(isNaN(t.x)||isNaN(t.x)){
+            // 共线时为 NaN, 未相交时为 Infinity
+            // 暂不处理共线，视作未相交
+            return {x:Infinity,y:Infinity};
+        }
+        if(t.x<=1&&t.x>=0&&t.y<=1&&t.y>=0){
+            return {x:t.x*bx+x1,y:t.x*by+y1};
+        }else{
+            return {x:Infinity,y:Infinity};
+        }
+        return {x:t.x*bx+x1,y:t.x*by+y1};
+    }
 }
 
 /* 基础图形------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
