@@ -41,7 +41,8 @@ d.want_to_closePath=true;
 d.render(ctx);
 
 var d1=d.copy();
-d1.strokeStyle="#f00"
+d1.strokeStyle="#f00";
 d1.transformMatrix=new Matrix2x2T().translate(100,100);
+
 d1.data.cut(0,0.5);
 d1.render(ctx);

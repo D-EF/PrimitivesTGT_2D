@@ -135,7 +135,7 @@ class CanvasTGT{
     render(ctx){
         ctx.save();
         ctx.beginPath();
-        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e,this.transformMatrix.f);
+        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e||0,this.transformMatrix.f||0);
         ctx.fillStyle=this.fillStyle;
         ctx.strokeStyle=this.strokeStyle;
         ctx.lineWidth=this.lineWidth;

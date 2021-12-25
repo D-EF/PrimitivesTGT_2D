@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-11-23 18:29:36
+ * @LastEditTime: 2021-12-25 15:35:36
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -902,6 +902,7 @@ class Sector_Data extends Arc_Data{
 			this.x *= oneOverMag;
 			this.y *= oneOverMag;
 		}
+        return this;
     }
     /**判断向量是不是零向量
      * @returns{Boolean}
@@ -1096,10 +1097,10 @@ class Sector_Data extends Arc_Data{
  */
  class Matrix2x2{
     constructor(a,b,c,d){
-        this.a=a||1;
-        this.b=b||0;
-        this.c=c||0;
-        this.d=d||1;
+        this.a= a===undefined ? 1 : a;
+        this.b= b===undefined ? 0 : b;
+        this.c= c===undefined ? 0 : c;
+        this.d= d===undefined ? 1 : d;
     }
     static copy(m){
         return new Matrix2x2(m.a,m.b,m.c,m.d);
@@ -1196,6 +1197,13 @@ class Sector_Data extends Arc_Data{
         return this.multiplication(
             Matrix2x2.create.shear(axis,k)
         )
+    }
+    /**
+     * 根据向量生成 等比缩放&旋转 矩阵
+     * @param {Vector2} v 
+     */
+    static createFromVector2(v){
+        return new Matrix2x2(v.x,v.y,-1*v.y,v.x);
     }
 }
 
@@ -1312,7 +1320,16 @@ class Matrix2x2T extends Matrix2x2{
         rtn.f=0;
         return rtn;
     }
-    
+    /**
+     * 将线段作为局部坐标系x轴正方向单位生成矩阵
+     * @param {Vector2} v1 线段的起点
+     * @param {Vector2} v2 线段的终点
+     */
+    static createFromLine(v1,v2){
+        var v3={x:v2.x-v1.x,y:v2.y-v1.y};
+        return new Matrix2x2T(v3.x,v3.y,-1*v3.y,v3.x,v1.x,v1.y);
+    }
+
     // /**
     //  * 齐次矩阵 乘 齐次矩阵
     //  * @param {Matrix2x2T} m
@@ -1846,7 +1863,7 @@ class Bezier_Polygon{
                 hand2:newPoints[1][1],
             }
         );
-        console.log(newPoints)
+        // console.log(newPoints)
         this.nodes[index].hand2.x=newPoints[0][1].x;
         this.nodes[index].hand2.y=newPoints[0][1].y;
         this.nodes[index+1].hand1.x=newPoints[1][2].x;
@@ -1854,4 +1871,141 @@ class Bezier_Polygon{
 
         this.nodes.splice(index+1,0,newNode);
     }
+}
+
+class Bezier2Curve{
+    /**
+     * 
+     * @param {Vector2} p1 二阶贝塞尔曲线控制点 1 (起点)
+     * @param {Vector2} p2 二阶贝塞尔曲线控制点 2 
+     * @param {Vector2} p3 二阶贝塞尔曲线控制点 3 (终点)
+     */
+    constructor(p1,p2,p3){
+        this.c=p3;
+        this.b=2*(p2-p3);
+        this.a=p1-p2-p2-p3;
+    }
+    sampleCurveX(t){
+        return (this.ax * t + this.bx) * t + this.cx;
+    }
+    sampleCurveY(t){
+        return (this.ay * t + this.by) * t + this.cy;
+    }
+    sampleCurve(t){
+        return new Vector2(this.sampleCurveX(t),this.sampleCurveY(t));
+    }
+}
+
+class Bezier3Curve{
+    /**
+     * 三阶贝塞尔曲线
+     * @param {Vector2} p1 控制点1 (起点)
+     * @param {Vector2} p2 控制点2
+     * @param {Vector2} p3 控制点3
+     * @param {Vector2} p4 控制点4 (终点)
+     */
+    constructor(p1,p2,p3,p4){
+        var temp=3*(p3.x-p2.x);
+        this.dx  = p4.x;
+        this.cx = 3*(p2.x-p1.x);
+        this.bx = temp-this.c;
+        this.ax = -1*temp+p4.x+p1.x;
+        
+        temp    = 3*(p3.y-p2.y);
+        this.dy  = p4.y;
+        this.cy = 3*(p2.y-p1.y);
+        this.by = temp-this.c;
+        this.ay = -1*temp+p4.y+p1.y;
+    }
+    
+    sampleCurveX(t){
+        return ((this.ax * t + this.bx) * t + this.cx) * t + this.dx;
+    }
+    
+    sampleCurveY(t){
+        return ((this.ay * t + this.by) * t + this.cy) * t + this.dy;
+    }
+
+    sampleCurve(t){
+        return new Vector2(this.sampleCurveX(t),this.sampleCurveY(t));
+    }
+}
+
+/**
+ * 求贝塞尔曲线的导函数的控制点
+ * @param {Array<{x:Number,y:Number}>} points 原曲线的控制点集合 
+ * @returns {Array<{x:Number,y:Number}>} 导函数的控制点
+ */
+function bezierDerivatives(points){
+    var n=points.length-1;
+    var rtn=new Array(n);
+    if(n<=1)return {x:0,y:0}
+    var nd=n-1;;
+
+    for(var i=n-1;i>=0;--i){
+        rtn[i]={
+            x:n*(points[i+1].x)-nd*points[i].x,
+            y:n*(points[i+1].y)-nd*points[i].y
+        }
+    }
+    return rtn;
+}
+
+/**
+ * 分割3阶bezier曲线 计算方式来自 https://pomax.github.io/bezierinfo/zh-CN/index.html
+ * @param {Array<{x:Number,y:Number}>} points 控制点集合
+ * @param {Number} z t 参数
+ * @returns {Array<Array<{x:Number,y:Number}>>} 返回新的两组贝塞尔曲线的点
+ */
+ function Bezier3Cut(points,z){
+    // var q1=[
+    //     [1,         0,          0,          0],
+    //     [td,        t,          0,          0],
+    //     [td*td,     -2*td*t,    tt,         0],
+    //     [-td*tdq,   3*tdq*t,    -3*td*tt,   tt*t]
+    // ];
+    
+    var z2=z*z,
+        z3=z2*z,
+        zd=z-1,
+        zdz=zd*z,
+        zd2=zd*zd,
+        zd3=zd2*zd,
+        zd2z=zd2*z,
+        zdz2=zdz*z;
+    var x1=points[0].x,
+        x2=points[1].x,
+        x3=points[2].x,
+        x4=points[3].x,
+        y1=points[0].y,
+        y2=points[1].y,
+        y3=points[2].y,
+        y4=points[3].y;
+    console.log(JSON.stringify(points));
+    return [
+        [
+            {x:x1,                                 y:y1                                 },
+            {x:x2*z-x1*zd,                         y:y2*z-y1*zd                         },
+            {x:x3*z2-2*x2*zdz+zd2*x1,              y:y3*z2-2*y2*zdz+zd2*y1              },
+            {x:x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y:y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   }
+        ],
+        [
+            {x:x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y:y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   },
+            {x:x4*z2-2*x3*zdz+zd2*x2,              y:y4*z2-2*y3*zdz+zd2*y2              },
+            {x:x4*z-x3*zd,                         y:y4*z-y3*zd                         },
+            {x:x4,                                 y:y4                                 },
+        ]
+    ]
+    // [
+    //     new Vector2(x1,                                 y1                                 ),
+    //     new Vector2(x2*z-x1*zd,                         y2*z-y1*zd                         ),
+    //     new Vector2(x3*z2-2*x2*zdz+zd2*x1,              y3*z2-2*y2*zdz+zd2*y1              ),
+    //     new Vector2(x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   )
+    // ],
+    // [
+    //     new Vector2(x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   ),
+    //     new Vector2(x4*z2-2*x3*zdz+zd2*x2,              y4*z2-2*y3*zdz+zd2*y2              ),
+    //     new Vector2(x4*z-x3*zd,                         y4*z-y3*zd                         ),
+    //     new Vector2(x4,                                 y4                                 ),
+    // ]
 }
