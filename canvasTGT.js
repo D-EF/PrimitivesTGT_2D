@@ -4,7 +4,51 @@
  *  canvas 是向量后乘矩阵再偏移
  */
 
-// data
+/**
+ * temp
+ */
+ class CtrlCanvas2d{
+     /**
+      * 
+      * @param {CanvasRenderingContext2D} ctx 2d渲染上下文 
+      * @param {Vector2} v 位置坐标
+      * @param {Number} r  半径
+      * @param {String} s_color #f00
+      * @param {String} f_color #000
+      */
+    static dot(ctx,v,r=2,f_color="#f00",s_color="#000"){
+        ctx.beginPath();
+        ctx.arc(v.x,v.y,r,0,2*Math.PI);
+        ctx.fillStyle=f_color;
+        ctx.strokeStyle=s_color;
+        ctx.fill();
+        ctx.stroke();
+    }
+    
+    /**
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {Bezier2Curve} b2c 
+     */
+    static bezier2(ctx,b2c){
+        ctx.beginPath();
+        ctx.moveTo(b2c.p1.x,b2c.p1.y);
+        ctx.quadraticCurveTo(b2c.p2.x,b2c.p2.y,b2c.p3.x,b2c.p3.y);
+        ctx.stroke();
+    }
+    /**
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {Array<Vector2>} vs 
+     */
+    static line(ctx,vs){
+        
+        ctx.beginPath();
+        ctx.moveTo(vs[0].x,vs[0].y);
+        ctx.lineTo(vs[1].x,vs[1].y);
+        ctx.stroke();
+    }
+}
 
 /** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */
 var def_accuracy=20;

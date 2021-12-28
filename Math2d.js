@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-12-25 15:35:36
+ * @LastEditTime: 2021-12-28 15:38:36
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -947,7 +947,7 @@ class Sector_Data extends Arc_Data{
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
      */ 
-    linearMapping(m,fln=true,f=false){
+    linearMapping(m,fln=false,f=false){
         if(f){
             if(m.e){
                 this.x+=m.e;
@@ -956,12 +956,14 @@ class Sector_Data extends Arc_Data{
                 this.x+=m.f;
             }
         }
+        var tempx=this.x;
+        var tempy=this.y;
         if(fln){   
-            this.x=this.x*m.a+this.y*m.c;
-            this.y=this.x*m.b+this.y*m.d;
+            this.x=tempx*m.a+tempy*m.c;
+            this.y=tempx*m.b+tempy*m.d;
         }else{
-            this.x=this.x*m.a+this.y*m.b;
-            this.y=this.x*m.c+this.y*m.d;
+            this.x=tempx*m.a+tempy*m.b;
+            this.y=tempx*m.c+tempy*m.d;
         }
         if(!f){
             if(m.e){
@@ -1202,7 +1204,7 @@ class Sector_Data extends Arc_Data{
      * 根据向量生成 等比缩放&旋转 矩阵
      * @param {Vector2} v 
      */
-    static createFromVector2(v){
+    static createByVector2(v){
         return new Matrix2x2(v.x,v.y,-1*v.y,v.x);
     }
 }
@@ -1251,6 +1253,7 @@ Matrix2x2.create={
         return new Matrix2x2(1,0,0,1);
     }
 }
+Matrix2x2.rotate90=new Matrix2x2(0,1,-1,0);
 
 /**
  * 2*2矩阵 + 平移
@@ -1325,7 +1328,7 @@ class Matrix2x2T extends Matrix2x2{
      * @param {Vector2} v1 线段的起点
      * @param {Vector2} v2 线段的终点
      */
-    static createFromLine(v1,v2){
+    static createByLine(v1,v2){
         var v3={x:v2.x-v1.x,y:v2.y-v1.y};
         return new Matrix2x2T(v3.x,v3.y,-1*v3.y,v3.x,v1.x,v1.y);
     }
@@ -1873,62 +1876,89 @@ class Bezier_Polygon{
     }
 }
 
-class Bezier2Curve{
+class BezierCurve{
     /**
-     * 
-     * @param {Vector2} p1 二阶贝塞尔曲线控制点 1 (起点)
-     * @param {Vector2} p2 二阶贝塞尔曲线控制点 2 
-     * @param {Vector2} p3 二阶贝塞尔曲线控制点 3 (终点)
+     * @param {Array<Vector2>} points 控制点们 Vector2
      */
-    constructor(p1,p2,p3){
-        this.c=p3;
-        this.b=2*(p2-p3);
-        this.a=p1-p2-p2-p3;
+    constructor(points){
+        /**@type {Array<Vector2>}*/
+        this.points;
+        /**@type {Array<Vector2>}*/
+        this.coefficient=[];
+        /**@type {BezierCurve}*/
+        this._derivatives=null;
+        this.reset(points);
     }
-    sampleCurveX(t){
-        return (this.ax * t + this.bx) * t + this.cx;
-    }
-    sampleCurveY(t){
-        return (this.ay * t + this.by) * t + this.cy;
-    }
-    sampleCurve(t){
-        return new Vector2(this.sampleCurveX(t),this.sampleCurveY(t));
-    }
-}
 
-class Bezier3Curve{
     /**
-     * 三阶贝塞尔曲线
-     * @param {Vector2} p1 控制点1 (起点)
-     * @param {Vector2} p2 控制点2
-     * @param {Vector2} p3 控制点3
-     * @param {Vector2} p4 控制点4 (终点)
+     * 使用 Bezier_Node 创建
+     * @param {Bezier_Node} node1
+     * @param {Bezier_Node} node2
      */
-    constructor(p1,p2,p3,p4){
-        var temp=3*(p3.x-p2.x);
-        this.dx  = p4.x;
-        this.cx = 3*(p2.x-p1.x);
-        this.bx = temp-this.c;
-        this.ax = -1*temp+p4.x+p1.x;
+     static createBy_BezierNode(node1,node2){
+        return new Bezier3Curve(node1.node,node1.hand2,node2.hand1,node2.node);
+    }
+    
+    /**
+     * 重新设置控制点
+     * @param {Vector2} points 控制点们 Vector2
+     */
+    reset(points){
+        this.points=new Array(points.length);
+        for(var i=points.length-1;i>=0;--i){
+            this.points[i]=Vector2.copy(points[i]);
+        }
+        this.reload();
+    }
+    /**
+     * 设置控制点之后 重新加载 各次幂的倍数
+     */
+    reload(){
         
-        temp    = 3*(p3.y-p2.y);
-        this.dy  = p4.y;
-        this.cy = 3*(p2.y-p1.y);
-        this.by = temp-this.c;
-        this.ay = -1*temp+p4.y+p1.y;
     }
-    
+    /**
+     * 获取 x 坐标
+     * @param {Number} t t 参数
+     * @returns {Number}
+     */
     sampleCurveX(t){
-        return ((this.ax * t + this.bx) * t + this.cx) * t + this.dx;
+        var rtn=0;
+        for(var i = this.coefficient_X.length-1;i>=0;--i){
+            rtn*=t;
+            rtn+=this.coefficient_X[i];
+        }
+        return rtn;
     }
-    
+    /**
+     * 获取 y 坐标
+     * @param {Number} t t 参数
+     * @returns {Number}
+     */
     sampleCurveY(t){
-        return ((this.ay * t + this.by) * t + this.cy) * t + this.dy;
+        var rtn=0;
+        for(var i = this.coefficient_Y.length-1;i>=0;--i){
+            rtn*=t;
+            rtn+=this.coefficient_Y[i];
+        }
+        return rtn;
     }
-
+    /**
+     * 获取坐标
+     * @param {Number} t t 参数
+     * @returns {Vector2}
+     */
     sampleCurve(t){
         return new Vector2(this.sampleCurveX(t),this.sampleCurveY(t));
     }
+    /**
+     * 导函数 低一阶的贝塞尔曲线
+     */
+    get derivatives(){
+        if(this._derivatives===null){
+            this._derivatives=new BezierCurve(bezierDerivatives(this.points));
+        }
+        return this._derivatives;
+    }   
 }
 
 /**
@@ -1940,7 +1970,7 @@ function bezierDerivatives(points){
     var n=points.length-1;
     var rtn=new Array(n);
     if(n<=1)return {x:0,y:0}
-    var nd=n-1;;
+    var nd=n-1;
 
     for(var i=n-1;i>=0;--i){
         rtn[i]={
