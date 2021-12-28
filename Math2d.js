@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-12-28 15:38:36
+ * @LastEditTime: 2021-12-28 21:42:21
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -2038,4 +2038,31 @@ function bezierDerivatives(points){
     //     new Vector2(x4*z-x3*zd,                         y4*z-y3*zd                         ),
     //     new Vector2(x4,                                 y4                                 ),
     // ]
+}
+/**
+ * 计算贝塞尔曲线分割时使用的 Q 矩阵
+ * @param {Number} n  n阶贝塞尔曲线
+ * @param {Number} t  t参数 0~1
+ */
+function BezierCutMatrix_Q(n,t){
+    var i,j,k;
+    var rtn=new Array(n+1);
+    for(i=n;i>=0;--i){
+        rtn[i]=Pascals_Triangle[i].concat();
+    }
+    var temp=t,
+        td=t-1;
+    // i 是行下标, j 是列下标
+    for(i=1;i<=n;++i,temp*=t){
+        for(j=i;j<=n;++j){
+            rtn[j][i]*=temp;
+        }
+    }
+    temp=-td;
+    for(i=n-1;i>=0;--i,temp*=-td){
+        for(j=i,k=n;j>=0;--j,--k){
+            rtn[k][j]*=temp;
+        }
+    }
+    return rtn;
 }
