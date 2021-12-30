@@ -69,7 +69,11 @@ var om=new Matrix2x2T();
 var gm=tgt_group.transformMatrix,
     gm_end=new Matrix2x2T().scale(4,4).translate(231.8221983093764,231.8221983093764);
 
-var animation_curve=new UnitBezier(0.4, 1.02, 0.46, 1.03);
+// 因为这个UnitBezier是图形学的,这个x坐标并不是时间轴t的控制点.
+// 如果要还原css的 Bezier 时间曲线，需要使用x坐标得到t然后用这个t得到y(值)坐标, 而不是直接使用t参数得到y坐标
+// 这样的话控制点的x坐标取值范围就必须是在0到1，不然某x对应的t就有可能有多个
+var animation_curve=new UnitBezier(0, 1.2, 0, 1.03);
+
 /**
  * 把看上去是矩形的东西变成一块logo
  */

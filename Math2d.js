@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-12-28 21:42:21
+ * @LastEditTime: 2021-12-30 11:32:15
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -34,7 +34,7 @@ class Math2D{
      * @param {Number} r1   圆1 半径
      * @param {Vector2} c2  圆2 圆心坐标
      * @param {Number} r2   圆2 半径
-     * @returns {Array<Vector2>} 返回交点
+     * @returns {Vector2[]} 返回交点
      */
     static circular_i_circular_V(c1,r1,c2,r2){
         var d=Vector2.dif(c2,c1).mag(),
@@ -87,7 +87,7 @@ class Math2D{
      * @param {Vector2} led 线段终点
      * @param {Vector2} c   圆心
      * @param {Number}  r   圆形的半径
-     * @returns {Array<Vector2>} 长度最多为2的数组，两个交点的坐标
+     * @returns {Vector2[]} 长度最多为2的数组，两个交点的坐标
      */
     static circle_i_line_V(lop,led,c,r) {
         var d=Vector2.dif(led,lop);
@@ -142,7 +142,7 @@ class Math2D{
      * @param {Arc_Data} arc    弧形数据
      * @param {Vector2} lop     线段端点
      * @param {Vector2} led     线段端点
-     * @returns {Array<Vector2>} 弧形与线段的交点
+     * @returns {Vector2[]} 弧形与线段的交点
      */
     static arc_i_line_V(arc,lop,led){
         var cis=Math2D.circle_i_line_V(lop,led,arc.c,arc.r);
@@ -249,7 +249,7 @@ class Math2D{
      * @param {Number} y4 线段a端点2 y坐标
      * @returns {x:Number,y:Number} 如果返回 Infinity 或 -Infinity 则为未相交
      */
-     static line_i_line_v(x1,y1,x2,y2,x3,y3,x4,y4){
+    static line_i_line_v(x1,y1,x2,y2,x3,y3,x4,y4){
         var bx=x2-x1,
             by=y2-y1,
             dx=x4-x3,
@@ -268,6 +268,52 @@ class Math2D{
         }
         return {x:t.x*bx+x1,y:t.x*by+y1};
     }
+    
+    /**
+     * 求贝塞尔曲线的导函数的控制点
+     * @param {{x:Number,y:Number}[]} points 原曲线的控制点集合 
+     * @returns {{x:Number,y:Number}[]} 导函数的控制点
+     */
+    static bezierDerivatives_points(points){
+        var n=points.length-2;
+        var rtn=new Array(n);
+        if(n<0)return {x:0,y:0}
+        for(var i=n;i>=0;--i){
+            rtn[i]={
+                x:n*(points[i+1].x-points[i].x),
+                y:n*(points[i+1].y-points[i].y)
+            }
+        }
+        return rtn;
+    }
+
+    /**
+     * 二维中的贝塞尔曲线分割
+     * @param {Vector2[]} points 控制点集合
+     * @param {Number} t t时间参数
+     * @return {Vector2[][]} 返回新的两组贝塞尔曲线的点
+     */
+    static BezierCut(points,t){
+        var l=points.length,
+            q=createBezierCutMatrix_Q(l-1,t),
+            points_x=new Array(l),
+            points_y=new Array(l);
+        for(var i = l-1;i>=0;--i){
+            points_x[i]=points[i].x;
+            points_y[i]=points[i].y;
+        }
+        return [
+            Vector2.createByArray(
+                bezierCut_By_Matrix(points_x,q),
+                bezierCut_By_Matrix(points_y,q)
+            ),
+            Vector2.createByArray(
+                bezierCut_By_Matrix(points_x,q,true),
+                bezierCut_By_Matrix(points_y,q,true)
+            )
+        ];
+    }
+
 }
 
 /* 基础图形------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -875,6 +921,19 @@ class Sector_Data extends Arc_Data{
     zero(){
         this.x=this.y=0;
     }
+    /**
+     * 使用x坐标和y坐标的数组创建向量
+     * @param {Number[]} x_arr x坐标的集合
+     * @param {Number[]} y_arr y坐标的集合
+     * @return {Vector2[]} 返回坐标向量集合
+     */
+    static createByArray(x_arr,y_arr){
+        var rtn=new Array(x_arr.length);
+        for(var i = x_arr.length-1;i>=0;--i){
+            rtn[i]=new Vector2(x_arr[i],y_arr[i]);
+        }
+        return rtn
+    }
     static copy(tgt){
         return new Vector2(tgt.x,tgt.y);
     }
@@ -1368,10 +1427,10 @@ function createMatrix2x2T(){
 
 class Polygon{
     /** 多边形
-     * @param {Array<Vector2>} nodes 装着顶点的数组
+     * @param {Vector2[]} nodes 装着顶点的数组
      */
     constructor(nodes){
-        /** @type {Array<Vector2>}  存放 向量 的列表  */
+        /** @type {Vector2[]}  存放 向量 的列表  */
         this.nodes=[];
         /** @type {Vectro2} 能正好包住多边形的矩形的x和y最小的顶点 */
         this.min    =new Vector2();
@@ -1761,10 +1820,10 @@ Polygon.EX_linearMapping_nt.addOverload([Matrix2x2,Polygon,Boolean],function(m,p
 class Bezier_Node{
     /**
      * @param {Vector2} node
-     * @param {Vector2} hand1
-     * @param {Vector2} hand2
+     * @param {Vector2} hand_before
+     * @param {Vector2} hand_after
      */
-    constructor(node,hand1,hand2) {
+    constructor(node,hand_before,hand_after) {
         /**
          * @type {Vector2} 顶点 p1 兼 p4
          */
@@ -1772,17 +1831,17 @@ class Bezier_Node{
         /** 
          * @type {Vector2} 前驱控制点 p2
          */
-        this.hand1=hand1;
+        this.hand_before=hand_before;
         /** 
          * @type {Vector2} 后置控制点 p3
          */
-        this.hand2=hand2;
+        this.hand_after=hand_after;
     }
     static copy(tgt){
         return new Bezier_Node(
             Vector2.copy(tgt.node),
-            Vector2.copy(tgt.hand1),
-            Vector2.copy(tgt.hand2)
+            Vector2.copy(tgt.hand_before),
+            Vector2.copy(tgt.hand_after)
         )
     }
     copy(){
@@ -1792,15 +1851,15 @@ class Bezier_Node{
 
 class Bezier_Polygon{
     /**
-     * @param {Array<Vector2>} nodes  
-     * @param {Array<Vector2>} hand1s 
-     * @param {Array<Vector2>} hand2s 
+     * @param {Vector2[]} nodes  
+     * @param {Vector2[]} hand_befores 
+     * @param {Vector2[]} hand_afters 
      */
-    constructor(nodes,hand1s,hand2s){
+    constructor(nodes,hand_befores,hand_afters){
         this.nodes=[];
         if(nodes)
         for(var i=0;i<nodes.length;i++){
-            this.nodes.push(new Bezier_Node(nodes[i],hand1s[i],hand2s[i]));
+            this.nodes.push(new Bezier_Node(nodes[i],hand_befores[i],hand_afters[i]));
         }
     }
     static copy(tgt){
@@ -1822,7 +1881,7 @@ class Bezier_Polygon{
     }
     /**
      * 追加顶点数组
-     * @param {Array<Bezier_Node>} bezierNodes  装着顶点的数组
+     * @param {Bezier_Node[]} bezierNodes  装着顶点的数组
      */
     pushNodes(bezierNodes){
         for(var i=0;i<nodes.length;++i){
@@ -1832,7 +1891,7 @@ class Bezier_Polygon{
     /**
      * 插入顶点
      * @param {Number} index    要插入的顶点的下标
-     * @param {Array<Bezier_Node>} bezierNodes 要插入的顶点
+     * @param {Bezier_Node[]} bezierNodes 要插入的顶点
      */
     insert(index,bezierNode){
         this.nodes.splice(index,0,bezierNode.copy());
@@ -1853,24 +1912,24 @@ class Bezier_Polygon{
         if(this.nodes[index]===undefined||this.nodes[index+1]===undefined)return;
         var points=[
             this.nodes[index].node,
-            this.nodes[index].hand2,
-            this.nodes[index+1].hand1,
+            this.nodes[index].hand_after,
+            this.nodes[index+1].hand_before,
             this.nodes[index+1].node
         ];
-        var newPoints=Bezier3Cut(points,z);
+        var newPoints=Math2D.BezierCut(points,z);
 
         var newNode=Bezier_Node.copy(
             {
                 node: newPoints[0][3],
-                hand1:newPoints[0][2],
-                hand2:newPoints[1][1],
+                hand_before:newPoints[0][2],
+                hand_after:newPoints[1][1],
             }
         );
         // console.log(newPoints)
-        this.nodes[index].hand2.x=newPoints[0][1].x;
-        this.nodes[index].hand2.y=newPoints[0][1].y;
-        this.nodes[index+1].hand1.x=newPoints[1][2].x;
-        this.nodes[index+1].hand1.y=newPoints[1][2].y;
+        this.nodes[index].hand_after.x=newPoints[0][1].x;
+        this.nodes[index].hand_after.y=newPoints[0][1].y;
+        this.nodes[index+1].hand_before.x=newPoints[1][2].x;
+        this.nodes[index+1].hand_before.y=newPoints[1][2].y;
 
         this.nodes.splice(index+1,0,newNode);
     }
@@ -1878,25 +1937,27 @@ class Bezier_Polygon{
 
 class BezierCurve{
     /**
-     * @param {Array<Vector2>} points 控制点们 Vector2
+     * @param {Vector2[]} points 控制点们 Vector2
      */
     constructor(points){
-        /**@type {Array<Vector2>}*/
+        /**@type {Vector2[]}*/
         this.points;
-        /**@type {Array<Vector2>}*/
-        this.coefficient=[];
+        /**@type {Number[]}*/
+        this.coefficient_X;
+        /**@type {Number[]}*/
+        this.coefficient_Y;
         /**@type {BezierCurve}*/
         this._derivatives=null;
         this.reset(points);
     }
 
     /**
-     * 使用 Bezier_Node 创建
+     * 使用 Bezier_Node 创建 (三阶贝塞尔曲线)
      * @param {Bezier_Node} node1
      * @param {Bezier_Node} node2
      */
      static createBy_BezierNode(node1,node2){
-        return new Bezier3Curve(node1.node,node1.hand2,node2.hand1,node2.node);
+        return new BezierCurve([node1.node,node1.hand_after,node2.hand_before,node2.node]);
     }
     
     /**
@@ -1911,10 +1972,24 @@ class BezierCurve{
         this.reload();
     }
     /**
-     * 设置控制点之后 重新加载 各次幂的倍数
+     * 设置控制点之后 重新加载 各次幂的系数
      */
     reload(){
-        
+        var points=this.points,
+            n=points.length-1,
+            m=get_Bezier_Matrix(n);
+        this.coefficient_X=new Array(points.length);
+        this.coefficient_Y=new Array(points.length);
+        var i,j,tempx,tempy;
+        for(i=n;i>=0;--i){
+            tempx=tempy=0;
+            for(j=i;j>=0;--j){
+                tempx+=m[i][j]*points[j].x;
+                tempy+=m[i][j]*points[j].y;
+            }
+            this.coefficient_X[i]=tempx;
+            this.coefficient_Y[i]=tempy;
+        }
     }
     /**
      * 获取 x 坐标
@@ -1955,114 +2030,78 @@ class BezierCurve{
      */
     get derivatives(){
         if(this._derivatives===null){
-            this._derivatives=new BezierCurve(bezierDerivatives(this.points));
+            this._derivatives=new BezierCurve(Math2D.bezierDerivatives_points(this.points));
         }
         return this._derivatives;
-    }   
-}
-
-/**
- * 求贝塞尔曲线的导函数的控制点
- * @param {Array<{x:Number,y:Number}>} points 原曲线的控制点集合 
- * @returns {Array<{x:Number,y:Number}>} 导函数的控制点
- */
-function bezierDerivatives(points){
-    var n=points.length-1;
-    var rtn=new Array(n);
-    if(n<=1)return {x:0,y:0}
-    var nd=n-1;
-
-    for(var i=n-1;i>=0;--i){
-        rtn[i]={
-            x:n*(points[i+1].x)-nd*points[i].x,
-            y:n*(points[i+1].y)-nd*points[i].y
-        }
     }
-    return rtn;
-}
-
-/**
- * 分割3阶bezier曲线 计算方式来自 https://pomax.github.io/bezierinfo/zh-CN/index.html
- * @param {Array<{x:Number,y:Number}>} points 控制点集合
- * @param {Number} z t 参数
- * @returns {Array<Array<{x:Number,y:Number}>>} 返回新的两组贝塞尔曲线的点
- */
- function Bezier3Cut(points,z){
-    // var q1=[
-    //     [1,         0,          0,          0],
-    //     [td,        t,          0,          0],
-    //     [td*td,     -2*td*t,    tt,         0],
-    //     [-td*tdq,   3*tdq*t,    -3*td*tt,   tt*t]
-    // ];
+    /**
+     * 获取当前点的移动方向
+     * @param {Number} t 时间参数 t
+     * @returns {Vector2[]} 返回曲线上的点和导数的绝对坐标
+     */
+    tangent(t){
+        var pt=this.sampleCurve(t),
+            d=Vector2.add(pt,this.derivatives.sampleCurve(t));
+        return [pt,d];
+    }
+    /**
+     * 当前点的法线
+     * @param {Number} 时间参数 t
+     * @param {Vector2} 返回曲线上的点和法向的绝对坐标
+     */
+    abs_normal(t){
+        var pt=this.sampleCurve(t),
+            d=Vector2.add(pt,this.normal(t));
+        return [pt,d];
+    }
+    /**
+     * 当前点的法向
+     * @param {Number} 时间参数 t
+     * @param {Vector2} 返回一个相对坐标
+     */
+    normal(t){
+        var d=this.derivatives.sampleCurve(t);
+        return new Vector2(
+            d.y,
+            -d.x
+        )
+    }
+    /**
+     * 获取当前点的导数
+     * @param {Number} t 时间参数 t
+     * @returns {Vector2} 返回一个相对坐标
+     */
+    derivative(t){
+        return this.derivatives.sampleCurve(t);
+    }
     
-    var z2=z*z,
-        z3=z2*z,
-        zd=z-1,
-        zdz=zd*z,
-        zd2=zd*zd,
-        zd3=zd2*zd,
-        zd2z=zd2*z,
-        zdz2=zdz*z;
-    var x1=points[0].x,
-        x2=points[1].x,
-        x3=points[2].x,
-        x4=points[3].x,
-        y1=points[0].y,
-        y2=points[1].y,
-        y3=points[2].y,
-        y4=points[3].y;
-    console.log(JSON.stringify(points));
-    return [
-        [
-            {x:x1,                                 y:y1                                 },
-            {x:x2*z-x1*zd,                         y:y2*z-y1*zd                         },
-            {x:x3*z2-2*x2*zdz+zd2*x1,              y:y3*z2-2*y2*zdz+zd2*y1              },
-            {x:x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y:y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   }
-        ],
-        [
-            {x:x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y:y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   },
-            {x:x4*z2-2*x3*zdz+zd2*x2,              y:y4*z2-2*y3*zdz+zd2*y2              },
-            {x:x4*z-x3*zd,                         y:y4*z-y3*zd                         },
-            {x:x4,                                 y:y4                                 },
-        ]
-    ]
-    // [
-    //     new Vector2(x1,                                 y1                                 ),
-    //     new Vector2(x2*z-x1*zd,                         y2*z-y1*zd                         ),
-    //     new Vector2(x3*z2-2*x2*zdz+zd2*x1,              y3*z2-2*y2*zdz+zd2*y1              ),
-    //     new Vector2(x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   )
-    // ],
-    // [
-    //     new Vector2(x4*z3-3*x3*zdz2+3*x2*zd2z-x1*zd3,   y4*z3-3*y3*zdz2+3*y2*zd2z-y1*zd3   ),
-    //     new Vector2(x4*z2-2*x3*zdz+zd2*x2,              y4*z2-2*y3*zdz+zd2*y2              ),
-    //     new Vector2(x4*z-x3*zd,                         y4*z-y3*zd                         ),
-    //     new Vector2(x4,                                 y4                                 ),
-    // ]
 }
+
 /**
- * 计算贝塞尔曲线分割时使用的 Q 矩阵
- * @param {Number} n  n阶贝塞尔曲线
- * @param {Number} t  t参数 0~1
+ * 求根
+ * @param {BezierCurve} bezierCurve 
+ * @return {Vector2[]} 根的集合
  */
-function BezierCutMatrix_Q(n,t){
-    var i,j,k;
-    var rtn=new Array(n+1);
-    for(i=n;i>=0;--i){
-        rtn[i]=Pascals_Triangle[i].concat();
+function bezier_Root(bezierCurve){
+    if(bezierCurve.points.length<3)return NaN;
+    var n=bezierCurve.points.length-1;
+    switch(n){
+        case 2:
+            return [new Vector2(
+                -0.5*bezierCurve.coefficient_X[1]/bezierCurve.coefficient_X[2],
+                -0.5*bezierCurve.coefficient_Y[1]/bezierCurve.coefficient_Y[2]
+            )];
+        break;
+        case 3:
+            return [new Vector2(
+                -0.5*bezierCurve.derivatives.coefficient_X[1]/bezierCurve.derivatives.coefficient_X[2],
+                -0.5*bezierCurve.derivatives.coefficient_Y[1]/bezierCurve.derivatives.coefficient_Y[2]
+            )].concat(
+                // Vector2.createByArray(
+                //     monotonicityOfCubic(bezierCurve.coefficient_X[3],bezierCurve.coefficient_X[2],bezierCurve.coefficient_X[1]),
+                //     monotonicityOfCubic(bezierCurve.coefficient_Y[3],bezierCurve.coefficient_Y[2],bezierCurve.coefficient_Y[1])
+                // )
+            );
+        break;
     }
-    var temp=t,
-        td=t-1;
-    // i 是行下标, j 是列下标
-    for(i=1;i<=n;++i,temp*=t){
-        for(j=i;j<=n;++j){
-            rtn[j][i]*=temp;
-        }
-    }
-    temp=-td;
-    for(i=n-1;i>=0;--i,temp*=-td){
-        for(j=i,k=n;j>=0;--j,--k){
-            rtn[k][j]*=temp;
-        }
-    }
-    return rtn;
 }

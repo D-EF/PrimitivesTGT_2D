@@ -28,21 +28,20 @@
     /**
      * 
      * @param {CanvasRenderingContext2D} ctx 
-     * @param {Bezier2Curve} b2c 
+     * @param {BezierCurve} bc 
      */
-    static bezier2(ctx,b2c){
+    static bezier2(ctx,bc){
         ctx.beginPath();
-        ctx.moveTo(b2c.p1.x,b2c.p1.y);
-        ctx.quadraticCurveTo(b2c.p2.x,b2c.p2.y,b2c.p3.x,b2c.p3.y);
+        ctx.moveTo(bc.points[0].x,bc.points[0].y);
+        ctx.quadraticCurveTo(bc.points[1].x,bc.points[1].y,bc.points[2].x,bc.points[2].y);
         ctx.stroke();
     }
     /**
      * 
      * @param {CanvasRenderingContext2D} ctx 
-     * @param {Array<Vector2>} vs 
+     * @param {Vector2[]} vs 
      */
     static line(ctx,vs){
-        
         ctx.beginPath();
         ctx.moveTo(vs[0].x,vs[0].y);
         ctx.lineTo(vs[1].x,vs[1].y);
@@ -215,7 +214,7 @@ class CanvasTGT{
      * 生成世界坐标的多边形集合
      * @param {Boolean} f 是否作拷贝 默认 true, 为 false 时会影响 this
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {Array<CanvasPolygonTGT>} 因为只有一个tgt所以是 length 为 1 的数组
+     * @returns {CanvasPolygonTGT[]} 因为只有一个tgt所以是 length 为 1 的数组
      */
     create_worldPolygons(f,_accuracy=def_accuracy){
         /** @type {CanvasPolygonTGT} */
@@ -665,10 +664,10 @@ CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasSectorTGT],isTouch_Sector_S
 class CanvasTGT_Group{
     /**
      * 
-     * @param {Array<CanvasTGT,CanvasTGT_Group>} tgts 
+     * @param {CanvasTGT,CanvasTGT_Group[]} tgts 
      */
     constructor(tgts){
-        /**@type {Array<CanvasTGT,CanvasTGT_Group>} */
+        /**@type {CanvasTGT,CanvasTGT_Group[]} */
         this.children;
         if(tgts!==undefined){
             this.children=[].concat(tgts);
@@ -689,7 +688,7 @@ class CanvasTGT_Group{
     }
     /**
      * 添加子项
-     * @param {Array<CanvasTGT>} tgt CanvasTGT对象
+     * @param {CanvasTGT[]} tgt CanvasTGT对象
      */
     addChildrens(tgts){
         this.children=this.children.concat(tgts);
@@ -803,10 +802,10 @@ class CanvasTGT_Group{
      * 生成世界坐标的多边形集合
      * @param {Boolean} f 组的该方法中的是无用的属性
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {Array<CanvasPolygonTGT>}
+     * @returns {CanvasPolygonTGT[]}
      */
     create_worldPolygons(f,_accuracy=def_accuracy){
-        /**@type {Array<CanvasPolygonTGT>}  */
+        /**@type {CanvasPolygonTGT[]}  */
         var rtn=[];
         var i = this.children.length-1;
         for(;i>=0;--i){
@@ -842,7 +841,7 @@ CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
 
 /**
  * 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
- * @param {Array<CanvasPolygonTGT>} _tgts 多边形对象数组 不要加矩阵
+ * @param {CanvasPolygonTGT[]} _tgts 多边形对象数组 不要加矩阵
  * @param {CanvasTGT_Group} g 组
  * @param {CanvasTGT_Group} pg g的父组
  */
@@ -913,8 +912,8 @@ class CanvasBezierTGT extends CanvasTGT{
            // this.data.linearMapping(this.transformMatrix,true)
            for(var i=this.data.nodes.length-1;i>=0;--i){
                this.data.nodes[i].node=this.localToWorld(this.data.nodes[i].node);
-               this.data.nodes[i].hand1=this.localToWorld(this.data.nodes[i].hand1);
-               this.data.nodes[i].hand2=this.localToWorld(this.data.nodes[i].hand2);
+               this.data.nodes[i].hand_before=this.localToWorld(this.data.nodes[i].hand_before);
+               this.data.nodes[i].hand_after=this.localToWorld(this.data.nodes[i].hand_after);
            }
            if(clear_tfm_f){
                this.transformMatrix=new Matrix2x2T();
@@ -928,11 +927,11 @@ class CanvasBezierTGT extends CanvasTGT{
            ctx.moveTo(nodes[i].node.x,nodes[i].node.y);
 
            for(i=1;i<this.data.nodes.length;++i){
-               ctx.bezierCurveTo(nodes[i-1].hand2.x,nodes[i-1].hand2.y,nodes[i].hand1.x,nodes[i].hand1.y,nodes[i].node.x,nodes[i].node.y);
+               ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[i].hand_before.x,nodes[i].hand_before.y,nodes[i].node.x,nodes[i].node.y);
            }
            if(this.want_to_closePath){
             //    ctx.closePath();
-            ctx.bezierCurveTo(nodes[i-1].hand2.x,nodes[i-1].hand2.y,nodes[0].hand1.x,nodes[0].hand1.y,nodes[0].node.x,nodes[0].node.y);
+            ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[0].hand_before.x,nodes[0].hand_before.y,nodes[0].node.x,nodes[0].node.y);
            }
        }
 }
@@ -947,12 +946,12 @@ class CanvasBezierTGT extends CanvasTGT{
 //  */
 // function bezier_i_bezier(curve1d1,curve1d2,curve2d1,curve2d2){
 //     var p0=curve1d1.node,
-//         p1=curve1d1.hand2.dif(p0),
-//         p2=curve1d2.hand1.dif(p0),
+//         p1=curve1d1.hand_after.dif(p0),
+//         p2=curve1d2.hand_before.dif(p0),
 //         p3=curve1d2.node,
 //         q0=curve2d1.node,
-//         q1=curve2d1.hand2.dif(q0),
-//         q2=curve2d2.hand1.dif(q0),
+//         q1=curve2d1.hand_after.dif(q0),
+//         q2=curve2d2.hand_before.dif(q0),
 //         q3=curve2d2.node;
 
 //     var ps=p3.dif(p0),
