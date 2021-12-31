@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-12-30 11:32:15
+ * @LastEditTime: 2021-12-31 16:41:34
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -275,10 +275,11 @@ class Math2D{
      * @returns {{x:Number,y:Number}[]} 导函数的控制点
      */
     static bezierDerivatives_points(points){
-        var n=points.length-2;
-        var rtn=new Array(n);
+        var n=points.length-1,
+            i=n-1,
+            rtn=new Array(i);
         if(n<0)return {x:0,y:0}
-        for(var i=n;i>=0;--i){
+        for(;i>=0;--i){
             rtn[i]={
                 x:n*(points[i+1].x-points[i].x),
                 y:n*(points[i+1].y-points[i].y)
@@ -1941,14 +1942,14 @@ class BezierCurve{
      */
     constructor(points){
         /**@type {Vector2[]}*/
-        this.points;
+        this._points=null;
         /**@type {Number[]}*/
-        this.coefficient_X;
+        this._coefficient_X=null;
         /**@type {Number[]}*/
-        this.coefficient_Y;
+        this._coefficient_Y=null;
         /**@type {BezierCurve}*/
         this._derivatives=null;
-        this.reset(points);
+        if(points) this.reset_points(points);
     }
 
     /**
@@ -1964,17 +1965,52 @@ class BezierCurve{
      * 重新设置控制点
      * @param {Vector2} points 控制点们 Vector2
      */
-    reset(points){
-        this.points=new Array(points.length);
-        for(var i=points.length-1;i>=0;--i){
-            this.points[i]=Vector2.copy(points[i]);
+    reset_points(points){
+        this._derivatives=null;
+        if(points&&points.length){
+            this._points=new Array(points.length);
+            for(var i=points.length-1;i>=0;--i){
+                this._points[i]=Vector2.copy(points[i]);
+            }
+            this.reload_coefficient();
         }
-        this.reload();
+    }
+    set points(points){
+        this.reset_points(points);
+    }
+    get points(){
+        if(this._points===null){
+            this.reload_points();
+        }
+        return this._points;
+    }
+    /**
+     * 重新设置系数
+     * @param {Number[]} coefficient_X X系数
+     * @param {Number[]} coefficient_Y Y系数
+     */
+    reset_coefficient(coefficient_X,coefficient_Y){
+        this._coefficient_X=coefficient_X.concat();
+        this._coefficient_Y=coefficient_Y.concat();
+    }
+    set coefficient_Y(coefficient_Y){
+        this._coefficient_Y=coefficient_Y;
+        this._points=null;
+    }
+    set coefficient_X(coefficient_X){
+        this._coefficient_X=coefficient_X;
+        this._points=null;
+    }
+    get coefficient_Y(){
+        return this._coefficient_Y;
+    }
+    get coefficient_X(){
+        return this._coefficient_X;
     }
     /**
      * 设置控制点之后 重新加载 各次幂的系数
      */
-    reload(){
+    reload_coefficient(){
         var points=this.points,
             n=points.length-1,
             m=get_Bezier_Matrix(n);
@@ -1990,6 +2026,15 @@ class BezierCurve{
             this.coefficient_X[i]=tempx;
             this.coefficient_Y[i]=tempy;
         }
+    }
+    /**
+     * 设置系数后 重新加载 控制点坐标
+     */
+    reload_points(){
+        this._points=Vector2.createByArray(
+            coefficientToPoints(this.coefficient_X),
+            coefficientToPoints(this.coefficient_Y)
+        );
     }
     /**
      * 获取 x 坐标
@@ -2030,7 +2075,12 @@ class BezierCurve{
      */
     get derivatives(){
         if(this._derivatives===null){
-            this._derivatives=new BezierCurve(Math2D.bezierDerivatives_points(this.points));
+            // this._derivatives=new BezierCurve(Math2D.bezierDerivatives_points(this.points));
+            this._derivatives=new BezierCurve();
+            this._derivatives.reset_coefficient(
+                derivative(this.coefficient_X),
+                derivative(this.coefficient_Y)
+            );
         }
         return this._derivatives;
     }
@@ -2073,35 +2123,5 @@ class BezierCurve{
      */
     derivative(t){
         return this.derivatives.sampleCurve(t);
-    }
-    
-}
-
-/**
- * 求根
- * @param {BezierCurve} bezierCurve 
- * @return {Vector2[]} 根的集合
- */
-function bezier_Root(bezierCurve){
-    if(bezierCurve.points.length<3)return NaN;
-    var n=bezierCurve.points.length-1;
-    switch(n){
-        case 2:
-            return [new Vector2(
-                -0.5*bezierCurve.coefficient_X[1]/bezierCurve.coefficient_X[2],
-                -0.5*bezierCurve.coefficient_Y[1]/bezierCurve.coefficient_Y[2]
-            )];
-        break;
-        case 3:
-            return [new Vector2(
-                -0.5*bezierCurve.derivatives.coefficient_X[1]/bezierCurve.derivatives.coefficient_X[2],
-                -0.5*bezierCurve.derivatives.coefficient_Y[1]/bezierCurve.derivatives.coefficient_Y[2]
-            )].concat(
-                // Vector2.createByArray(
-                //     monotonicityOfCubic(bezierCurve.coefficient_X[3],bezierCurve.coefficient_X[2],bezierCurve.coefficient_X[1]),
-                //     monotonicityOfCubic(bezierCurve.coefficient_Y[3],bezierCurve.coefficient_Y[2],bezierCurve.coefficient_Y[1])
-                // )
-            );
-        break;
     }
 }
