@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-12-31 16:41:34
+ * @LastEditTime: 2021-12-31 17:33:06
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -1953,6 +1953,27 @@ class BezierCurve{
     }
 
     /**
+     * 拷贝函数
+     * @param {BezierCurve} bezierCurve 
+     * @returns {BezierCurve}
+     */
+    static copy(bezierCurve){
+        var rtn=new BezierCurve();
+        if(bezierCurve._points&&bezierCurve._points.length){
+            rtn._points=new Array(bezierCurve._points.length);
+            for(var i=rtn._points.length-1;i>=0;--i){
+                rtn._points[i]=Vector2.copy(bezierCurve._points[i])
+            }
+        }
+        rtn.coefficient_X=bezierCurve.coefficient_X;
+        rtn.coefficient_Y=bezierCurve.coefficient_Y;
+        rtn.coefficient_Y=BezierCurve.copy(bezierCurve._derivatives);
+        return rtn;
+    }
+    copy(){
+        return BezierCurve.copy(this);
+    }
+    /**
      * 使用 Bezier_Node 创建 (三阶贝塞尔曲线)
      * @param {Bezier_Node} node1
      * @param {Bezier_Node} node2
@@ -2123,5 +2144,12 @@ class BezierCurve{
      */
     derivative(t){
         return this.derivatives.sampleCurve(t);
+    }
+    /**
+     * 获取曲线的根，
+     * 目前只能得到四阶以下曲线的根
+     */
+    get_root(){
+
     }
 }
