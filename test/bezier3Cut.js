@@ -1,7 +1,7 @@
 /*
  * @Date: 2021-12-21 14:49:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-12-29 20:12:38
+ * @LastEditTime: 2022-01-04 16:35:57
  * @FilePath: \def-web\js\visual\test\bezier3Cut.js
  */
 var canvas=document.getElementById("canvas");
@@ -50,13 +50,13 @@ d.lineWidth=1;
 d.render(ctx);
 
 var bd=BezierCurve.createBy_BezierNode(d.data.nodes[0],d.data.nodes[1]);
-CtrlCanvas2d.bezier2(ctx,bd.derivatives);
-CtrlCanvas2d.line(ctx,bd.derivatives.derivatives.points);
+// CtrlCanvas2d.bezier2(ctx,bd.derivatives);
+// CtrlCanvas2d.line(ctx,bd.derivatives.derivatives.points);
 
 
-var d1=d.copy();
-d1.strokeStyle="#f00";
-d1.transformMatrix=new Matrix2x2T().translate(200,200);
+// var d1=d.copy();
+// d1.strokeStyle="#f00";
+// d1.transformMatrix=new Matrix2x2T().translate(200,200);
 
-d1.data.cut(0,0.5);
-d1.render(ctx);
+// d1.data.cut(0,0.5);
+// d1.render(ctx);

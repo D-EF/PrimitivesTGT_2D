@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2021-12-31 17:33:06
+ * @LastEditTime: 2022-01-04 17:58:20
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -334,6 +334,13 @@ class Rect_Data{
         this.y=y;
         this.w=w;
         this.h=h;
+    }
+    static createByVector2(v1,v2){
+        return new Rect_Data(
+            v1.x,v1.y,
+            v2.x-v1.x,
+            v2.y-v1.y
+        );
     }
     static sopy(d){
         return new Rect_Data(
@@ -1006,14 +1013,20 @@ class Sector_Data extends Arc_Data{
      * @param {Matrix2x2T}  m   变换矩阵
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
+     * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      */ 
-    linearMapping(m,fln=false,f=false){
+    linearMapping(m,fln=false,f=false,anchorPoint){
+        if(anchorPoint){
+            this.x-=anchorPoint.x
+            this.y-=anchorPoint.y
+        }
+
         if(f){
             if(m.e){
                 this.x+=m.e;
             }
             if(m.f){
-                this.x+=m.f;
+                this.y+=m.f;
             }
         }
         var tempx=this.x;
@@ -1033,6 +1046,11 @@ class Sector_Data extends Arc_Data{
                 this.y+=m.f;
             }
         }
+        if(anchorPoint){
+            this.x+=anchorPoint.x
+            this.y+=anchorPoint.y
+        }
+        return this;
     }
 
     /**向量和
@@ -1265,7 +1283,7 @@ class Sector_Data extends Arc_Data{
      * @param {Vector2} v 
      */
     static createByVector2(v){
-        return new Matrix2x2(v.x,v.y,-1*v.y,v.x);
+        return new this(v.x,v.y,-1*v.y,v.x);
     }
 }
 
@@ -1311,6 +1329,14 @@ Matrix2x2.create={
      */
     identity:function(){
         return new Matrix2x2(1,0,0,1);
+    },
+    /**
+     * 使用向量方向设置旋转矩阵
+     * @param {Vector2} _v 向量
+     */
+    rotate_v(_v){
+        var v=Vector2.copy(_v).normalize();
+        return new Matrix2x2(v.x,v.y,-v.y,v.x)
     }
 }
 Matrix2x2.rotate90=new Matrix2x2(0,1,-1,0);
@@ -1629,10 +1655,11 @@ class Polygon{
      * @param {Matrix2x2T} m    矩阵
      * @param {Boolean} fln     矩阵后乘向量 还是 矩阵前乘向量 默认true
      * @param {Boolean} translate_befroeOrAfter 先变换还是先平移 默认false
+     * @param {Boolean} anchorPoint 变换锚点的坐标
      */
-    linearMapping(m,fln=true,translate_befroeOrAfter=true){
+    linearMapping(m,fln=true,translate_befroeOrAfter=true,anchorPoint){
         for(var i=this.nodes.length-1;i>=0;--i){
-            this.nodes[i].linearMapping(m,fln,translate_befroeOrAfter);
+            this.nodes[i].linearMapping(m,fln,translate_befroeOrAfter,anchorPoint);
         }
     }
     /** 获取代理用的多边形
@@ -1949,6 +1976,12 @@ class BezierCurve{
         this._coefficient_Y=null;
         /**@type {BezierCurve}*/
         this._derivatives=null;
+        /**@type {BezierCurve} 对齐后的曲线的代理 用于求紧包围框*/
+        this._align_proxy=null;
+        /**@type {Matrix2x2} 对齐曲线使用的矩阵 用于求紧包围框*/
+        this._align_matrix=null;
+        /**@type {Matrix2x2} 对齐曲线使用的矩阵的逆矩阵 用于求紧包围框*/
+        this._align_matrix_i=null;
         if(points) this.reset_points(points);
     }
 
@@ -1974,6 +2007,24 @@ class BezierCurve{
         return BezierCurve.copy(this);
     }
     /**
+     * 生成 BezierNode (当前曲线的应该是三阶或二阶曲线才能正常使用)
+     * @returns {Bezier_Node[]}  BezierNode
+     */
+    toBezierNode(){
+        var l=this.points.length-1;
+        return [
+            new Bezier_Node(this.points[0],
+                this.points[0].add(this.points[0].dif(this.points[1])),
+                this.points[1]
+                ),
+            new Bezier_Node(this.points[0],
+                this.points[l-1],
+                this.points[l].add(this.points[l].dif(this.points[l-1]))
+                ),                
+        ]
+
+    }
+    /**
      * 使用 Bezier_Node 创建 (三阶贝塞尔曲线)
      * @param {Bezier_Node} node1
      * @param {Bezier_Node} node2
@@ -1995,6 +2046,7 @@ class BezierCurve{
             }
             this.reload_coefficient();
         }
+        this._align_proxy=null;
     }
     set points(points){
         this.reset_points(points);
@@ -2029,14 +2081,39 @@ class BezierCurve{
         return this._coefficient_X;
     }
     /**
+     * @return {BezierCurve} 返回一条对齐到x轴后的曲线
+     */
+    get align_proxy(){
+        if(this._align_proxy===null){
+            this.reload_align();
+        }
+        return this._align_proxy;
+    }
+
+    reload_align(){
+        var i=this.points.length-1,
+            d=this.points[i].dif(this.points[0]),
+            nd=d.copy().normalize();
+            // var m=new Matrix2x2T().setTranslate(di.x,di.y),
+        var m=Matrix2x2T.createByVector2(nd).setTranslate(-this.points[0].x,-this.points[0].y),
+            np=new Array(i+1);
+            this._align_matrix=m;
+            this._align_matrix_i=m.inverse();
+        for(;i>=0;--i){
+            np[i]=Vector2.copy(this.points[i]).linearMapping(this._align_matrix,false,true);
+        }
+        this._align_proxy=new BezierCurve(np);
+    }
+
+    /**
      * 设置控制点之后 重新加载 各次幂的系数
      */
     reload_coefficient(){
         var points=this.points,
             n=points.length-1,
             m=get_Bezier_Matrix(n);
-        this.coefficient_X=new Array(points.length);
-        this.coefficient_Y=new Array(points.length);
+        this._coefficient_X=new Array(points.length);
+        this._coefficient_Y=new Array(points.length);
         var i,j,tempx,tempy;
         for(i=n;i>=0;--i){
             tempx=tempy=0;
@@ -2044,8 +2121,8 @@ class BezierCurve{
                 tempx+=m[i][j]*points[j].x;
                 tempy+=m[i][j]*points[j].y;
             }
-            this.coefficient_X[i]=tempx;
-            this.coefficient_Y[i]=tempy;
+            this._coefficient_X[i]=tempx;
+            this._coefficient_Y[i]=tempy;
         }
     }
     /**
@@ -2053,9 +2130,10 @@ class BezierCurve{
      */
     reload_points(){
         this._points=Vector2.createByArray(
-            coefficientToPoints(this.coefficient_X),
-            coefficientToPoints(this.coefficient_Y)
+            coefficientToPoints(this._coefficient_X),
+            coefficientToPoints(this._coefficient_Y)
         );
+        this._align_proxy=null;
     }
     /**
      * 获取 x 坐标
@@ -2064,9 +2142,9 @@ class BezierCurve{
      */
     sampleCurveX(t){
         var rtn=0;
-        for(var i = this.coefficient_X.length-1;i>=0;--i){
+        for(var i = this._coefficient_X.length-1;i>=0;--i){
             rtn*=t;
-            rtn+=this.coefficient_X[i];
+            rtn+=this._coefficient_X[i];
         }
         return rtn;
     }
@@ -2077,9 +2155,9 @@ class BezierCurve{
      */
     sampleCurveY(t){
         var rtn=0;
-        for(var i = this.coefficient_Y.length-1;i>=0;--i){
+        for(var i = this._coefficient_Y.length-1;i>=0;--i){
             rtn*=t;
-            rtn+=this.coefficient_Y[i];
+            rtn+=this._coefficient_Y[i];
         }
         return rtn;
     }
@@ -2093,14 +2171,18 @@ class BezierCurve{
     }
     /**
      * 导函数 低一阶的贝塞尔曲线
+     * @returns {BezierCurve}
      */
     get derivatives(){
+        if(!(this._coefficient_X.length||this._coefficient_Y.length)){
+            return null;
+        }
         if(this._derivatives===null){
             // this._derivatives=new BezierCurve(Math2D.bezierDerivatives_points(this.points));
             this._derivatives=new BezierCurve();
             this._derivatives.reset_coefficient(
-                derivative(this.coefficient_X),
-                derivative(this.coefficient_Y)
+                derivative(this._coefficient_X),
+                derivative(this._coefficient_Y)
             );
         }
         return this._derivatives;
@@ -2146,10 +2228,81 @@ class BezierCurve{
         return this.derivatives.sampleCurve(t);
     }
     /**
-     * 获取曲线的根，
+     * 获取曲线的 根 的 t 参数
      * 目前只能得到四阶以下曲线的根
+     * @param {Boolean} range_flag 是否要取超过t的合法取值范围(0~1) 默认不超过
+     * @returns {Number[]} 返回导函数的根的 t 参数集合
      */
-    get_root(){
-        // todo
+    get_root_t(range_flag){
+        var rtn=this.derivatives?root_of_1_3(this.derivatives.coefficient_X).concat(root_of_1_3(this.derivatives.coefficient_Y)).concat(this.derivatives.get_root_t()):[];
+        if(!range_flag){
+            rtn=rtn.filter(BezierCurve.t_range);
+        }
+        return rtn;
+    }
+    /**
+     * 获取曲线的 根 的 t 参数
+     * 目前只能得到四阶以下曲线的根
+     * @param {Boolean} range_flag 是否要取超过t的合法取值范围(0~1) 默认不超过
+     * @returns {Vector2[]} 返回曲线的根的集合
+     */
+    get_root_v(range_flag){
+        var pts=this.get_root_t(range_flag),
+            i=pts.length,
+            rtn=new Array(i)
+        for(--i;i>=0;--i){
+            rtn[i]=this.sampleCurve(pts[i]);
+        }
+        return rtn;
+    }
+    
+    /**
+     * 轴对齐包围框 (边界框) axis aligned bounding box
+     * @returns {Rect_Data} 轴对齐包围框 (边界框) axis aligned bounding box
+     */
+    get_aabb(){
+        var pts=this.get_root_v().concat([this.sampleCurve(0),this.sampleCurve(1)]),
+            max=new Vector2(),
+            min=new Vector2();
+        max.x=pts[0].x;
+        max.y=pts[0].y;
+        min.x=pts[0].x;
+        min.y=pts[0].y;
+        for(var i=pts.length-1;i>=0;--i){
+                 if(pts[i].x>max.x)max.x=pts[i].x;
+            else if(pts[i].x<min.x)min.x=pts[i].x;
+                 if(pts[i].y>max.y)max.y=pts[i].y;
+            else if(pts[i].y<min.y)min.y=pts[i].y;
+        }
+        return Rect_Data.createByVector2(min,max);
+    }
+    
+    get_tightBoundsBox(){
+        var pts=this.align_proxy.get_root_v().concat([this.align_proxy.sampleCurve(0),this.align_proxy.sampleCurve(1)]),
+            max=new Vector2(),
+            min=new Vector2();
+        max.x=pts[0].x;
+        max.y=pts[0].y;
+        min.x=pts[0].x;
+        min.y=pts[0].y;
+        for(var i=pts.length-1;i>=0;--i){
+                 if(pts[i].x>max.x)max.x=pts[i].x;
+            else if(pts[i].x<min.x)min.x=pts[i].x;
+                 if(pts[i].y>max.y)max.y=pts[i].y;
+            else if(pts[i].y<min.y)min.y=pts[i].y;
+        }
+        var p_lb=new Vector2(min.x,max.y),
+            p_rt=new Vector2(max.x,min.y),
+            polygon=new Polygon([min,p_rt,max,p_lb]);
+        polygon.linearMapping(this._align_matrix_i,false,false);
+        return polygon;
+    }
+
+    /**
+     * t 是否在合法的取值范围
+     * @param {Number} t 
+     */
+    static t_range(t){
+        return t>=0&&t<=1;
     }
 }

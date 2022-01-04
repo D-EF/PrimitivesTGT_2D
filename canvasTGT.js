@@ -47,6 +47,16 @@
         ctx.lineTo(vs[1].x,vs[1].y);
         ctx.stroke();
     }
+    /**
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {Rect_Data} cd 
+     */
+    static rect(ctx,cd){
+        ctx.beginPath();
+        ctx.rect(cd.x,cd.y,cd.w,cd.h);
+        ctx.stroke();
+    }
 }
 
 /** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */
