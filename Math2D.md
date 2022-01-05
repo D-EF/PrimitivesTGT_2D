@@ -88,7 +88,7 @@
     @param {Number} x 点的x坐标   
     @param {Number} y 点的y坐标   
     @returns {Boolean} 返回 点是否在内部   
-#### ceratePolygonProxy()获取代理用的多边形    
+#### createPolygonProxy()获取代理用的多边形    
     @returns {Polygon} 返回一个多边形
 ---
 ## Arc_Data

@@ -212,7 +212,7 @@ class CanvasTGT{
      * @returns {CanvasPolygonTGT}
      */
     toPolygon(_accuracy=def_accuracy){
-        var rtn = new CanvasPolygonTGT(this.data.ceratePolygonProxy(...arguments));
+        var rtn = new CanvasPolygonTGT(this.data.createPolygonProxy(...arguments));
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
@@ -945,29 +945,3 @@ class CanvasBezierTGT extends CanvasTGT{
            }
        }
 }
-
-
-// /**
-//  * 贝塞尔曲线相交情况
-//  * @param {Bezier_Node} curve1d1
-//  * @param {Bezier_Node} curve1d2
-//  * @param {Bezier_Node} curve2d1
-//  * @param {Bezier_Node} curve2d2
-//  */
-// function bezier_i_bezier(curve1d1,curve1d2,curve2d1,curve2d2){
-//     var p0=curve1d1.node,
-//         p1=curve1d1.hand_after.dif(p0),
-//         p2=curve1d2.hand_before.dif(p0),
-//         p3=curve1d2.node,
-//         q0=curve2d1.node,
-//         q1=curve2d1.hand_after.dif(q0),
-//         q2=curve2d2.hand_before.dif(q0),
-//         q3=curve2d2.node;
-
-//     var ps=p3.dif(p0),
-//         qs=q3.dif(q0);
-    
-//     var psm=new Matrix2x2T().scale(1/ps.x,1/px.y),
-//         qsm=new Matrix2x2T().scale(1/qs.x,1/qx.y);
-//         //todo
-// }

@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-04 17:58:20
+ * @LastEditTime: 2022-01-05 21:08:15
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -414,7 +414,7 @@ class Rect_Data{
      * 获取代理用的多边形
      * @returns {Polygon} 返回一个多边形
      */
-    ceratePolygonProxy(){
+    createPolygonProxy(){
         return Polygon.rect(this.x,this.y,this.w,this.h);
     }
 }
@@ -820,7 +820,7 @@ class Rect_Data{
      * @param {Number}  _accuracy   弧形转换成多边形时代精度
      * @param {Boolean} _closeFlag  当不足为整个圆时 是否要封闭
      */
-    ceratePolygonProxy(_accuracy,_closeFlag){
+    createPolygonProxy(_accuracy,_closeFlag){
         var rtn=Polygon.arc(this.r,this.startAngle,this.endAngle,_accuracy,_closeFlag);
         rtn.translate(this.c);
         return rtn;
@@ -844,7 +844,7 @@ class Sector_Data extends Arc_Data{
     constructor(cx,cy,r,angle_A,angle_B){
         super(cx,cy,r,angle_A,angle_B);
     }
-    ceratePolygonProxy(_accuracy){
+    createPolygonProxy(_accuracy){
         var rtn=Polygon.sector(this.r,this.startAngle,this.endAngle,_accuracy);
         rtn.translate(this.c);
         return rtn;
@@ -1666,10 +1666,27 @@ class Polygon{
      * @param {Number} _accuracy 精度 在这里是无用的
      * @param {Number} _closeFlag 是否需要封闭
      */
-    ceratePolygonProxy(_accuracy,_closeFlag){
+    createPolygonProxy(_accuracy,_closeFlag){
         var rtn= this.copy();
         if(_closeFlag&&!rtn.isClosed()){
             rtn.seal();
+        }
+        return rtn;
+    }
+
+    /**
+     * 多边形所有边的长度和
+     * @param {Boolean} closeFlag 是否闭合多边形
+     * @returns {Number}
+     */
+    line_length(closeFlag){
+        var rtn=0;
+        var i=this.nodes.length-1;
+        if(closeFlag&&this.isClosed()&&this.node.length>2){
+            rtn+=this.nodes[0].dif(this.nodes[i-1]).mag();
+        }
+        for(;i>0;--i){
+            rtn+=this.nodes[i].dif(this.nodes[i-1]).mag();
         }
         return rtn;
     }
@@ -1982,9 +1999,60 @@ class BezierCurve{
         this._align_matrix=null;
         /**@type {Matrix2x2} 对齐曲线使用的矩阵的逆矩阵 用于求紧包围框*/
         this._align_matrix_i=null;
+        /**@type {Polygon} 多边形代理,拟合曲线的多边形*/
+        this._polygon_proxy=null;
+        /**@type {Number} 多边形代理的步长*/
+        this._polygon_proxy_sp=0;
+        /**@type {Number} 目标的多边形代理的步长,如果和_polygon_proxy_sp不同时，get访问器会重新生成多边形代理*/
+        this._polygon_proxy_want_sp=0;
+        /**@type {Number[]} 弧长记录表 */
+        this._arc_length_table=null;
         if(points) this.reset_points(points);
     }
+    /**
+     * 清空所有代理对象和导函数, 应该在控制点或计算系数改动时使用
+     */
+    clearProxy(){
+        this._derivatives=null;
+        this._align_proxy=null;
+        this._align_matrix=null;
+        this._align_matrix_i=null;
+        this._polygon_proxy=null;
+        this._polygon_proxy_sp=0;
+        this._arc_length_table=null;
+    }
+    /**
+     * 清理控制点
+     */
+    clearPoints(){
+        this._points=null;
+    }
 
+    /**
+     * 重新设置控制点
+     * @param {Vector2} points 控制点们 Vector2
+     */
+     reset_points(points){
+        this._derivatives=null;
+        if(points&&points.length){
+            this._points=new Array(points.length);
+            for(var i=points.length-1;i>=0;--i){
+                this._points[i]=Vector2.copy(points[i]);
+            }
+            this.reload_coefficient();
+        }
+        this.clearProxy();
+    }
+
+    /**
+     * 重新设置系数
+     * @param {Number[]} coefficient_X X系数
+     * @param {Number[]} coefficient_Y Y系数
+     */
+    reset_coefficient(coefficient_X,coefficient_Y){
+        this._coefficient_X=coefficient_X.concat();
+        this._coefficient_Y=coefficient_Y.concat();
+    }
     /**
      * 拷贝函数
      * @param {BezierCurve} bezierCurve 
@@ -2033,21 +2101,6 @@ class BezierCurve{
         return new BezierCurve([node1.node,node1.hand_after,node2.hand_before,node2.node]);
     }
     
-    /**
-     * 重新设置控制点
-     * @param {Vector2} points 控制点们 Vector2
-     */
-    reset_points(points){
-        this._derivatives=null;
-        if(points&&points.length){
-            this._points=new Array(points.length);
-            for(var i=points.length-1;i>=0;--i){
-                this._points[i]=Vector2.copy(points[i]);
-            }
-            this.reload_coefficient();
-        }
-        this._align_proxy=null;
-    }
     set points(points){
         this.reset_points(points);
     }
@@ -2057,22 +2110,13 @@ class BezierCurve{
         }
         return this._points;
     }
-    /**
-     * 重新设置系数
-     * @param {Number[]} coefficient_X X系数
-     * @param {Number[]} coefficient_Y Y系数
-     */
-    reset_coefficient(coefficient_X,coefficient_Y){
-        this._coefficient_X=coefficient_X.concat();
-        this._coefficient_Y=coefficient_Y.concat();
-    }
     set coefficient_Y(coefficient_Y){
         this._coefficient_Y=coefficient_Y;
-        this._points=null;
+        clearPoints();
     }
     set coefficient_X(coefficient_X){
         this._coefficient_X=coefficient_X;
-        this._points=null;
+        clearPoints();
     }
     get coefficient_Y(){
         return this._coefficient_Y;
@@ -2089,7 +2133,9 @@ class BezierCurve{
         }
         return this._align_proxy;
     }
-
+    /**
+     * 重新加载对齐后的曲线
+     */
     reload_align(){
         var i=this.points.length-1,
             d=this.points[i].dif(this.points[0]),
@@ -2106,7 +2152,7 @@ class BezierCurve{
     }
 
     /**
-     * 设置控制点之后 重新加载 各次幂的系数
+     * 设置控制点之后, 重新加载 各次幂的系数
      */
     reload_coefficient(){
         var points=this.points,
@@ -2126,14 +2172,14 @@ class BezierCurve{
         }
     }
     /**
-     * 设置系数后 重新加载 控制点坐标
+     * 设置系数后, 重新加载 控制点坐标
      */
     reload_points(){
         this._points=Vector2.createByArray(
             coefficientToPoints(this._coefficient_X),
             coefficientToPoints(this._coefficient_Y)
         );
-        this._align_proxy=null;
+        this.clearProxy();
     }
     /**
      * 获取 x 坐标
@@ -2164,14 +2210,14 @@ class BezierCurve{
     /**
      * 获取坐标
      * @param {Number} t t 参数
-     * @returns {Vector2}
+     * @returns {Vector2} 返回坐标
      */
     sampleCurve(t){
         return new Vector2(this.sampleCurveX(t),this.sampleCurveY(t));
     }
     /**
-     * 导函数 低一阶的贝塞尔曲线
-     * @returns {BezierCurve}
+     * 导函数
+     * @returns {BezierCurve}低一阶的贝塞尔曲线
      */
     get derivatives(){
         if(!(this._coefficient_X.length||this._coefficient_Y.length)){
@@ -2208,7 +2254,7 @@ class BezierCurve{
         return [pt,d];
     }
     /**
-     * 当前点的法向
+     * 当前点的法线
      * @param {Number} 时间参数 t
      * @param {Vector2} 返回一个相对坐标
      */
@@ -2276,7 +2322,10 @@ class BezierCurve{
         }
         return Rect_Data.createByVector2(min,max);
     }
-    
+    /**
+     * 获取紧包围框
+     * @returns {Polygon}
+     */
     get_tightBoundsBox(){
         var pts=this.align_proxy.get_root_v().concat([this.align_proxy.sampleCurve(0),this.align_proxy.sampleCurve(1)]),
             max=new Vector2(),
@@ -2304,5 +2353,117 @@ class BezierCurve{
      */
     static t_range(t){
         return t>=0&&t<=1;
+    }
+
+    /**
+     * 曲线的拐点 仅用于三阶曲线
+     * @returns {Number[]} 曲线拐点的 t 参数的集合
+     */
+    inflections(){
+        var points=this.align_proxy.points,
+            a=points[2].x*points[1].y,
+            b=points[3].x*points[1].y,
+            c=points[1].x*points[2].y,
+            d=points[3].x*points[2].y,
+            z=c-a,
+            y=-3*z-b,
+            x=-y+b-d,
+            x2=2*x,
+            k=y*y-2*x2*z;
+            if(x2===0){
+                return [-z/y];
+            }
+            if(k>=0){
+                var q = Math.sqrt(k)
+                return [(q - y) / x2, (-y - q) / y2];
+            }
+            return [];
+    }
+    get_t_by_x(x){
+        var temp=this.coefficient_X.concat();
+        temp[0]-=x;
+        return root_of_1_3(temp).filter(BezierCurve.t_range);
+    }
+    get_t_by_y(y){
+        var temp=this.coefficient_Y.concat();
+        temp[0]-=y;
+        return root_of_1_3(temp).filter(BezierCurve.t_range);
+    }
+    /**
+     * 求弧长
+     * @param {Number} step_size t 时间参数的步长, 设置越接近0精度越高; 默认为 0.1
+     * @returns {Number} 近似的曲线长度
+     */
+    arc_length(step_size){
+        this._polygon_proxy_want_sp=step_size;
+        var tb=this.arc_length_table;
+        return tb[tb.length-1];
+    }
+    get arc_length_table(){
+        var polygon=this.polygon_proxy;
+        if(this._arc_length_table===null){
+            this._arc_length_table=[];
+            var temp;
+            for(var i=1;i<polygon.nodes.length;++i){
+                temp=polygon.nodes[i].dif(polygon.nodes[i-1]).mag();
+                this._arc_length_table[i]=this._arc_length_table[i-1]+temp;
+            }
+        }
+        return this._arc_length_table;
+    }
+    get polygon_proxy(){
+        if(this._polygon_proxy===null||this._polygon_proxy_sp!==this._polygon_proxy_want_sp){
+            this._polygon_proxy=this.createPolygonProxy(this._polygon_proxy_want_sp);
+        }
+        return this._polygon_proxy;
+    }
+
+    /**
+     * 创建多边形拟合曲线
+     * @param {Number} step_size t 时间参数的步长, 设置越接近0精度越高; 默认为 0.1
+     * @returns {Polygon} 多边形拟合曲线
+     */
+    createPolygonProxy(step_size){
+        var sp=Math.abs(step_size)||0.1,
+            temp=[];
+        for(var i = 0; i<1; i+=sp){
+            temp.push(this.sampleCurve(i));
+        }
+        temp.push(this.sampleCurve(1));
+        this._arc_length_table===null;
+        this._polygon_proxy_sp=step_size;
+        return temp;
+    }
+
+    /**
+     * 某点的曲率
+     * @param {Number} t 时间参数 t
+     * @returns {Number} 当前点曲率
+     */
+    kappa(t){
+        var d = this.derivative(t),
+            dd = this.derivatives.derivative(t),
+            numerator = d.x * dd.y - dd.x * d.y,
+            denominator = Math.pow(d.x*d.x + d.y*d.y, 3/2);
+        // if (denominator === 0) return NaN;
+        return numerator / denominator
+    }
+    /**
+     * 当前点的曲率拟合圆
+     * @param {Number} t 时间参数 t
+     * @param {Arc_Data} tgtData 目标 data, 该参数传入后值将会被修改并返回，而不是返回新实例化的数据
+     * @returns {Arc_Data} 当前点曲率拟合圆
+     */
+    kappa_circle(t,tgtData){
+        var kr=-1/this.kappa(t),
+            pt=this.sampleCurve(t),
+            n=this.normal(t).normalize(),
+            c=pt.add(n.np(kr));
+        kr=Math.abs(kr);
+        if(tgtData){
+            tgtData.c=c;
+            tgtData.r=kr;
+        }
+        return new Arc_Data(c.x,c.y,kr,0,2*Math.PI);
     }
 }
