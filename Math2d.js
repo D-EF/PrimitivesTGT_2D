@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-06 20:34:21
+ * @LastEditTime: 2022-01-06 20:57:01
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -328,9 +328,13 @@ class Math2D{
         temp.linearMapping(m,false,true);
         
         var ts=temp.get_t_by_y(0),
-        rtn=new Array(ts.length);
+        tv,
+        rtn=[];
         for(var i=ts.length-1;i>=0;--i){
-            rtn[i]=bezierCurve.sampleCurve(ts[[i]]);
+            tv=bezierCurve.sampleCurve(ts[[i]]);
+            if( ((tv.x>v1.x&&tv.x<v2.x)||(tv.x>v2.x&&tv.x<v1.x)) && ((tv.y>v1.y&&tv.y<v2.y)||(tv.y>v2.y&&tv.y<v1.y)) ){
+                rtn.push(tv);
+            }
         }
         return rtn;
     }

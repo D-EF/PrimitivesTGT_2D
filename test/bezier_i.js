@@ -1,7 +1,7 @@
 /*
  * @Date: 2021-12-21 14:49:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-06 20:37:19
+ * @LastEditTime: 2022-01-06 20:53:16
  * @FilePath: \def-web\js\visual\test\bezier_i.js
  */
 var canvas=document.getElementById("canvas");
@@ -60,9 +60,10 @@ d1.transformMatrix=new Matrix2x2T().translate(200,200);
 d1.data.cut(0,0.5);
 d1.render(ctx);
 
-CtrlCanvas2d.line(ctx,[{x:0,y:300},{x:300,y:0}]);
+CtrlCanvas2d.line(ctx,[{x:0,y:300},{x:150,y:150}]);
 
-var di=Math2D.line_i_bezier_v({x:0,y:300},{x:300,y:0},bd);
+var di=Math2D.line_i_bezier_v({x:0,y:300},{x:150,y:150},bd);
 
-CtrlCanvas2d.dot(ctx,di[0]);
-CtrlCanvas2d.dot(ctx,di[1]);
+for(var  i=di.length-1;i>=0;--i){
+    CtrlCanvas2d.dot(ctx,di[i]);
+}
