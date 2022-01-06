@@ -1,7 +1,7 @@
 /*
  * @Date: 2021-12-27 13:43:17
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-05 20:05:31
+ * @LastEditTime: 2022-01-06 15:33:33
  * @FilePath: \def-web\js\visual\test\bezier_test.js
  */
 var canvas=document.getElementById("canvas");
@@ -50,12 +50,17 @@ CtrlCanvas2d.bezier2(ctx,bd.derivatives);
 CtrlCanvas2d.line(ctx,bd.derivatives.derivatives.points);
 
 // 
-ctx.lineWidth=0.3
-for(var i = 0; i<=1; i+=0.01){
-    var pt=bd.sampleCurve(i),
-        k=bd.kappa(i)*100000,
-        pk=pt.add(bd.normal(i).normalize().np(k)),
-        pki=pt.add(bd.normal(i).normalize().np(-k));
-    CtrlCanvas2d.line(ctx,[pt,pk]);
-    CtrlCanvas2d.line(ctx,[pt,pki]);
+// ctx.lineWidth=0.3
+// for(var i = 0; i<=1; i+=0.01){
+//     var pt=bd.sampleCurve(i),
+//         k=bd.kappa(i)*100000,
+//         pk=pt.add(bd.normal(i).normalize().np(k)),
+//         pki=pt.add(bd.normal(i).normalize().np(-k));
+//     CtrlCanvas2d.line(ctx,[pt,pk]);
+//     CtrlCanvas2d.line(ctx,[pt,pki]);
+// }
+
+var maxl=bd.get_arc_length(0.1);
+for(var i = -0.00001; -i<=maxl; i-=20){
+    CtrlCanvas2d.dot(ctx,bd.sampleCurve(bd.get_t_by_arc_length(i)));
 }

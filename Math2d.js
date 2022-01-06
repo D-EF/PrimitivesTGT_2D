@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-05 21:08:15
+ * @LastEditTime: 2022-01-06 20:34:21
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -314,7 +314,26 @@ class Math2D{
             )
         ];
     }
-
+    /**
+     * 获取曲线和线段相交的点的坐标
+     * @param {Vector2} v1      线段起点
+     * @param {Vector2} v2      线段终点
+     * @param {BezierCurve} bezierCurve   贝塞尔曲线实例
+     * @returns {Vector2[]} 返回交点的集合(数组)
+     */
+    static line_i_bezier_v(v1,v2,bezierCurve){
+        var temp=BezierCurve.copy(bezierCurve),
+            nd=Vector2.dif(v1,v2).normalize(),
+            m=Matrix2x2T.createByVector2(nd).setTranslate(-v1.x,-v1.y);
+        temp.linearMapping(m,false,true);
+        
+        var ts=temp.get_t_by_y(0),
+        rtn=new Array(ts.length);
+        for(var i=ts.length-1;i>=0;--i){
+            rtn[i]=bezierCurve.sampleCurve(ts[[i]]);
+        }
+        return rtn;
+    }
 }
 
 /* 基础图形------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -1009,11 +1028,12 @@ class Sector_Data extends Arc_Data{
      */
     op(v2){return this.x*v2.y-this.y*v2.x;}
     /**
-     * 
+     * 进行线性变换
      * @param {Matrix2x2T}  m   变换矩阵
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
+     * @return {BezierCurve} 返回this
      */ 
     linearMapping(m,fln=false,f=false,anchorPoint){
         if(anchorPoint){
@@ -2004,7 +2024,8 @@ class BezierCurve{
         /**@type {Number} 多边形代理的步长*/
         this._polygon_proxy_sp=0;
         /**@type {Number} 目标的多边形代理的步长,如果和_polygon_proxy_sp不同时，get访问器会重新生成多边形代理*/
-        this._polygon_proxy_want_sp=0;
+        this._polygon_proxy_want_sp;
+        this.polygon_proxy_want_sp=0.1;
         /**@type {Number[]} 弧长记录表 */
         this._arc_length_table=null;
         if(points) this.reset_points(points);
@@ -2060,15 +2081,14 @@ class BezierCurve{
      */
     static copy(bezierCurve){
         var rtn=new BezierCurve();
-        if(bezierCurve._points&&bezierCurve._points.length){
+        if(bezierCurve.points&&bezierCurve.points.length){
             rtn._points=new Array(bezierCurve._points.length);
             for(var i=rtn._points.length-1;i>=0;--i){
-                rtn._points[i]=Vector2.copy(bezierCurve._points[i])
+                rtn._points[i]=Vector2.copy(bezierCurve._points[i]);
             }
         }
         rtn.coefficient_X=bezierCurve.coefficient_X;
         rtn.coefficient_Y=bezierCurve.coefficient_Y;
-        rtn.coefficient_Y=BezierCurve.copy(bezierCurve._derivatives);
         return rtn;
     }
     copy(){
@@ -2112,11 +2132,11 @@ class BezierCurve{
     }
     set coefficient_Y(coefficient_Y){
         this._coefficient_Y=coefficient_Y;
-        clearPoints();
+        this.clearPoints();
     }
     set coefficient_X(coefficient_X){
         this._coefficient_X=coefficient_X;
-        clearPoints();
+        this.clearPoints();
     }
     get coefficient_Y(){
         return this._coefficient_Y;
@@ -2133,22 +2153,25 @@ class BezierCurve{
         }
         return this._align_proxy;
     }
+    get polygon_proxy_want_sp(){
+        return this._polygon_proxy_want_sp;
+    }
+    set polygon_proxy_want_sp(step_size){
+        var sp=Math.abs(step_size);
+        this._polygon_proxy_want_sp=sp>1?1:sp;
+    }
     /**
      * 重新加载对齐后的曲线
      */
     reload_align(){
-        var i=this.points.length-1,
-            d=this.points[i].dif(this.points[0]),
+        var d=this.points[this.points.length-1].dif(this.points[0]),
             nd=d.copy().normalize();
             // var m=new Matrix2x2T().setTranslate(di.x,di.y),
-        var m=Matrix2x2T.createByVector2(nd).setTranslate(-this.points[0].x,-this.points[0].y),
-            np=new Array(i+1);
-            this._align_matrix=m;
-            this._align_matrix_i=m.inverse();
-        for(;i>=0;--i){
-            np[i]=Vector2.copy(this.points[i]).linearMapping(this._align_matrix,false,true);
-        }
-        this._align_proxy=new BezierCurve(np);
+        var m=Matrix2x2T.createByVector2(nd).setTranslate(-this.points[0].x,-this.points[0].y);
+        this._align_matrix=m;
+        this._align_matrix_i=m.inverse();
+        this._align_proxy=BezierCurve.copy(this);
+        this._align_proxy.linearMapping(this._align_matrix,false,true);
     }
 
     /**
@@ -2180,6 +2203,22 @@ class BezierCurve{
             coefficientToPoints(this._coefficient_Y)
         );
         this.clearProxy();
+    }
+    
+    /**
+     * 使用矩阵进行线性变换
+     * @param {Matrix2x2T}  m   变换矩阵
+     * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
+     * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
+     * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心 默认 (0,0)
+     * @return {BezierCurve} 返回this
+     */
+     linearMapping(m,fln,f,anchorPoint){
+        for(var i=this.points.length-1;i>=0;--i){
+            this.points[i].linearMapping(m,fln,f,anchorPoint);
+        }
+        this.reload_coefficient();
+        return this;
     }
     /**
      * 获取 x 坐标
@@ -2301,7 +2340,6 @@ class BezierCurve{
         }
         return rtn;
     }
-    
     /**
      * 轴对齐包围框 (边界框) axis aligned bounding box
      * @returns {Rect_Data} 轴对齐包围框 (边界框) axis aligned bounding box
@@ -2346,7 +2384,6 @@ class BezierCurve{
         polygon.linearMapping(this._align_matrix_i,false,false);
         return polygon;
     }
-
     /**
      * t 是否在合法的取值范围
      * @param {Number} t 
@@ -2354,7 +2391,6 @@ class BezierCurve{
     static t_range(t){
         return t>=0&&t<=1;
     }
-
     /**
      * 曲线的拐点 仅用于三阶曲线
      * @returns {Number[]} 曲线拐点的 t 参数的集合
@@ -2379,11 +2415,21 @@ class BezierCurve{
             }
             return [];
     }
+    /**
+     * 使用坐标求t值
+     * @param {Number} x X坐标
+     * @returns 对应的t值
+     */
     get_t_by_x(x){
         var temp=this.coefficient_X.concat();
         temp[0]-=x;
         return root_of_1_3(temp).filter(BezierCurve.t_range);
     }
+    /**
+     * 使用坐标求t值
+     * @param {Number} y Y坐标
+     * @returns 对应的t值
+     */
     get_t_by_y(y){
         var temp=this.coefficient_Y.concat();
         temp[0]-=y;
@@ -2391,19 +2437,40 @@ class BezierCurve{
     }
     /**
      * 求弧长
-     * @param {Number} step_size t 时间参数的步长, 设置越接近0精度越高; 默认为 0.1
-     * @returns {Number} 近似的曲线长度
+     * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
+     * @returns {Number} 使用多边形拟合曲线求得的长度
      */
-    arc_length(step_size){
-        this._polygon_proxy_want_sp=step_size;
+    get_arc_length(step_size){
+        if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
         var tb=this.arc_length_table;
         return tb[tb.length-1];
     }
+
+    /**
+     * 使用弧长求t值
+     * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时会出现错误的结果
+     * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
+     * @returns {Number} 对应的时间参数t
+     */
+    get_t_by_arc_length(length,step_size){
+        if(step_size) this.polygon_proxy_want_sp=step_size;
+        var tb=this.arc_length_table,
+            i=tb.length-1,
+            l=length>=0?length:tb[i]+length;
+        for(--i;i>=0;--i){
+            if(tb[i]<l){
+                return this._polygon_proxy_sp*(i+(l-tb[i])/(tb[i+1]-tb[i]))
+            }
+        }
+        return 0;
+    }
+    /** 弧长表 */
     get arc_length_table(){
         var polygon=this.polygon_proxy;
         if(this._arc_length_table===null){
             this._arc_length_table=[];
             var temp;
+            this._arc_length_table[0]=0;
             for(var i=1;i<polygon.nodes.length;++i){
                 temp=polygon.nodes[i].dif(polygon.nodes[i-1]).mag();
                 this._arc_length_table[i]=this._arc_length_table[i-1]+temp;
@@ -2412,12 +2479,11 @@ class BezierCurve{
         return this._arc_length_table;
     }
     get polygon_proxy(){
-        if(this._polygon_proxy===null||this._polygon_proxy_sp!==this._polygon_proxy_want_sp){
-            this._polygon_proxy=this.createPolygonProxy(this._polygon_proxy_want_sp);
+        if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
+            this._polygon_proxy=this.createPolygonProxy(this.polygon_proxy_want_sp);
         }
         return this._polygon_proxy;
     }
-
     /**
      * 创建多边形拟合曲线
      * @param {Number} step_size t 时间参数的步长, 设置越接近0精度越高; 默认为 0.1
@@ -2432,9 +2498,8 @@ class BezierCurve{
         temp.push(this.sampleCurve(1));
         this._arc_length_table===null;
         this._polygon_proxy_sp=step_size;
-        return temp;
+        return new Polygon(temp);
     }
-
     /**
      * 某点的曲率
      * @param {Number} t 时间参数 t
@@ -2466,4 +2531,5 @@ class BezierCurve{
         }
         return new Arc_Data(c.x,c.y,kr,0,2*Math.PI);
     }
+
 }
