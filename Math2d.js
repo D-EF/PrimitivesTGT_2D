@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-06 20:57:01
+ * @LastEditTime: 2022-01-07 21:09:50
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -314,6 +314,24 @@ class Math2D{
             )
         ];
     }
+
+    /**
+     * 判断三阶以下的贝塞尔曲线 t取值范围内曲线是否单调
+     * @param {Vector2[]} points 贝塞尔曲线的控制点
+     * @returns {{x:Boolean,y:Boolean}} t取值范围内曲线是否单调 true为单调
+     */
+    static bezier_lower3_unilateral(points){
+        var points=bezier1.points,
+            l=points.length-1,
+            i,
+            x=true,y=true;
+        for(i=l-1;i>0&&(x||y);--i){
+            x=((points[l].x>points[i].x)!==(points[0].x>points[i].x))||(points[0].x===points[i].x)||(points[l].x===points[i].x);
+            y=((points[l].y>points[i].y)!==(points[0].y>points[i].y))||(points[0].y===points[i].y)||(points[l].y===points[i].y);
+        }
+        return {x:x,y:y};
+    }
+
     /**
      * 获取曲线和线段相交的点的坐标
      * @param {Vector2} v1      线段起点
@@ -335,6 +353,79 @@ class Math2D{
             if( ((tv.x>v1.x&&tv.x<v2.x)||(tv.x>v2.x&&tv.x<v1.x)) && ((tv.y>v1.y&&tv.y<v2.y)||(tv.y>v2.y&&tv.y<v1.y)) ){
                 rtn.push(tv);
             }
+        }
+        return rtn;
+    }
+    /**
+     * box线框相交情况
+     * @param {Vector2} va1 矩形a的向量1
+     * @param {Vector2} va2 矩形a的向量2
+     * @param {Vector2} vb1 矩形b的向量1
+     * @param {Vector2} vb2 矩形b的向量2
+     * @returns {Boolean} 返回是否相交
+     */
+    static boxL_i_boxL(va1,va2,vb1,vb2){
+        return  (((va1.x>vb1.x)!==(va1.x>vb2.x))||((va2.x>vb1.x)!==(va2.x>vb2.x))||((vb1.x>va1.x)!==(vb1.x>va2.x))||((vb2.x>va1.x)!==(vb2.x>va2.x)))&&
+                (((va1.y>vb1.y)!==(va1.y>vb2.y))||((va2.y>vb1.y)!==(va2.y>vb2.y))||((vb1.y>va1.y)!==(vb1.y>va2.y))||((vb2.y>va1.y)!==(vb2.y>va2.y)));
+    }
+    
+    /**
+     * 贝塞尔曲线求交
+     * @param {BezierCurve} bezier1 贝塞尔曲线1
+     * @param {BezierCurve} bezier2 贝塞尔曲线2
+     * @param {Number} accuracy 采样精度(最终包围框的宽高最大不超过) 默认1
+     * @returns {Vectore2[]}  返回交点的集合
+     */
+    static bezier_i_bezier_v(bezier1,bezier2,accuracy){
+        var group1a,
+            group2a,
+            group1b,
+            group2b;
+        // 第一次分割 得到单调性的曲线组
+        if(Math2D.bezier_lower3_unilateral(bezier1)){
+            group1a=[bezier1];
+        }else{
+            
+        }
+        if(Math2D.bezier_lower3_unilateral(bezier2)){
+            group2a=[bezier2];
+        }else{
+
+        }
+    }
+    
+    /**
+     * 使用曲线的根将曲线变成单调的多条曲线
+     * @param {BezierCurve} bezier1 
+     * @return {BezierCurve[]} 返回多条曲线
+     */
+    static cut_bezier_to_unilateral_by_root(bezier1){
+        var ts=bezier1.get_root_t(1);
+        var i,j,temp,l=ts.length-1;
+        for(i=l;i>=0;--i){
+            for(j=l-i;j>0;--j){
+                if(ts[j]<ts[j-1]){
+                    temp=ts[j];
+                    ts[j]=ts[j-1];
+                    ts[j-1]=temp;
+                }
+            }
+        }
+        
+        var rtn=[];
+        i=0;
+        while(approximately(ts[i],0))++i;
+        var temp1=this.BezierCut(ts.points,t[i]);
+        l=i;
+        rtn.push(new BezierCurve(temp1[0]));
+
+        for(i=0;i<ts.length;++i){
+            if(approximately(ts[i],0)||approximately(ts[i],1)){
+                continue;
+            }
+            temp1=Math2D.BezierCut(temp1[1],(ts[i]-ts[l])/(1-t[l]));
+            rtn.push(new BezierCurve(temp1[0]));
+            l=i;
         }
         return rtn;
     }
@@ -2128,6 +2219,9 @@ class BezierCurve{
     set points(points){
         this.reset_points(points);
     }
+    /** 
+     * @return {Vector2[]}
+     */
     get points(){
         if(this._points===null){
             this.reload_points();
@@ -2222,6 +2316,7 @@ class BezierCurve{
             this.points[i].linearMapping(m,fln,f,anchorPoint);
         }
         this.reload_coefficient();
+        this.clearProxy();
         return this;
     }
     /**
@@ -2319,11 +2414,16 @@ class BezierCurve{
     /**
      * 获取曲线的 根 的 t 参数
      * 目前只能得到四阶以下曲线的根
+     * @param {Number} ddepth 取到几阶导数的根 默认取全部
      * @param {Boolean} range_flag 是否要取超过t的合法取值范围(0~1) 默认不超过
      * @returns {Number[]} 返回导函数的根的 t 参数集合
      */
-    get_root_t(range_flag){
-        var rtn=this.derivatives?root_of_1_3(this.derivatives.coefficient_X).concat(root_of_1_3(this.derivatives.coefficient_Y)).concat(this.derivatives.get_root_t()):[];
+    get_root_t(ddepth,range_flag){
+        var depth=ddepth===undefined?Infinity:ddepth;
+        if(depth<=0){
+            return [];
+        }
+        var rtn=this.derivatives?root_of_1_3(this.derivatives.coefficient_X).concat(root_of_1_3(this.derivatives.coefficient_Y)).concat(this.derivatives.get_root_t(depth-1)):[];
         if(!range_flag){
             rtn=rtn.filter(BezierCurve.t_range);
         }
