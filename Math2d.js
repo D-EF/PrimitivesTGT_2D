@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-07 21:09:50
+ * @LastEditTime: 2022-01-08 09:40:50
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -397,7 +397,7 @@ class Math2D{
     /**
      * 使用曲线的根将曲线变成单调的多条曲线
      * @param {BezierCurve} bezier1 
-     * @return {BezierCurve[]} 返回多条曲线
+     * @returns {BezierCurve[]} 返回多条曲线
      */
     static cut_bezier_to_unilateral_by_root(bezier1){
         var ts=bezier1.get_root_t(1);
@@ -415,18 +415,20 @@ class Math2D{
         var rtn=[];
         i=0;
         while(approximately(ts[i],0))++i;
-        var temp1=this.BezierCut(ts.points,t[i]);
+        var temp1=this.BezierCut(bezier1.points,ts[i]);
         l=i;
         rtn.push(new BezierCurve(temp1[0]));
 
-        for(i=0;i<ts.length;++i){
+        for(++i;i<ts.length;++i){
             if(approximately(ts[i],0)||approximately(ts[i],1)){
                 continue;
             }
-            temp1=Math2D.BezierCut(temp1[1],(ts[i]-ts[l])/(1-t[l]));
+            temp1=Math2D.BezierCut(temp1[1],(ts[i]-ts[l])/(1-ts[l]));
             rtn.push(new BezierCurve(temp1[0]));
             l=i;
         }
+        rtn.push(new BezierCurve(temp1[1]));
+
         return rtn;
     }
 }
