@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-08 09:40:50
+ * @LastEditTime: 2022-01-08 18:00:53
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -292,7 +292,7 @@ class Math2D{
      * 二维中的贝塞尔曲线分割
      * @param {Vector2[]} points 控制点集合
      * @param {Number} t t时间参数
-     * @return {Vector2[][]} 返回新的两组贝塞尔曲线的点
+     * @returns {Vector2[][]} 返回新的两组贝塞尔曲线的点
      */
     static BezierCut(points,t){
         var l=points.length,
@@ -321,6 +321,7 @@ class Math2D{
      * @returns {{x:Boolean,y:Boolean}} t取值范围内曲线是否单调 true为单调
      */
     static bezier_lower3_unilateral(points){
+        if(points.length>4) return {};
         var points=bezier1.points,
             l=points.length-1,
             i,
@@ -370,36 +371,15 @@ class Math2D{
     }
     
     /**
-     * 贝塞尔曲线求交
-     * @param {BezierCurve} bezier1 贝塞尔曲线1
-     * @param {BezierCurve} bezier2 贝塞尔曲线2
-     * @param {Number} accuracy 采样精度(最终包围框的宽高最大不超过) 默认1
-     * @returns {Vectore2[]}  返回交点的集合
-     */
-    static bezier_i_bezier_v(bezier1,bezier2,accuracy){
-        var group1a,
-            group2a,
-            group1b,
-            group2b;
-        // 第一次分割 得到单调性的曲线组
-        if(Math2D.bezier_lower3_unilateral(bezier1)){
-            group1a=[bezier1];
-        }else{
-            
-        }
-        if(Math2D.bezier_lower3_unilateral(bezier2)){
-            group2a=[bezier2];
-        }else{
-
-        }
-    }
-    
-    /**
      * 使用曲线的根将曲线变成单调的多条曲线
      * @param {BezierCurve} bezier1 
      * @returns {BezierCurve[]} 返回多条曲线
      */
     static cut_bezier_to_unilateral_by_root(bezier1){
+        var f=this.bezier_lower3_unilateral(bezier1.points);
+        if(f.x&&t.y){
+            return [bezier1];
+        }
         var ts=bezier1.get_root_t(1);
         var i,j,temp,l=ts.length-1;
         for(i=l;i>=0;--i){
@@ -432,6 +412,7 @@ class Math2D{
         return rtn;
     }
 }
+
 
 /* 基础图形------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -1049,7 +1030,7 @@ class Sector_Data extends Arc_Data{
      * 使用x坐标和y坐标的数组创建向量
      * @param {Number[]} x_arr x坐标的集合
      * @param {Number[]} y_arr y坐标的集合
-     * @return {Vector2[]} 返回坐标向量集合
+     * @returns {Vector2[]} 返回坐标向量集合
      */
     static createByArray(x_arr,y_arr){
         var rtn=new Array(x_arr.length);
@@ -1130,7 +1111,7 @@ class Sector_Data extends Arc_Data{
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
-     * @return {BezierCurve} 返回this
+     * @returns {BezierCurve} 返回this
      */ 
     linearMapping(m,fln=false,f=false,anchorPoint){
         if(anchorPoint){
@@ -2222,7 +2203,7 @@ class BezierCurve{
         this.reset_points(points);
     }
     /** 
-     * @return {Vector2[]}
+     * @returns {Vector2[]}
      */
     get points(){
         if(this._points===null){
@@ -2245,7 +2226,7 @@ class BezierCurve{
         return this._coefficient_X;
     }
     /**
-     * @return {BezierCurve} 返回一条对齐到x轴后的曲线
+     * @returns {BezierCurve} 返回一条对齐到x轴后的曲线
      */
     get align_proxy(){
         if(this._align_proxy===null){
@@ -2311,7 +2292,7 @@ class BezierCurve{
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心 默认 (0,0)
-     * @return {BezierCurve} 返回this
+     * @returns {BezierCurve} 返回this
      */
      linearMapping(m,fln,f,anchorPoint){
         for(var i=this.points.length-1;i>=0;--i){
@@ -2638,4 +2619,113 @@ class BezierCurve{
         return new Arc_Data(c.x,c.y,kr,0,2*Math.PI);
     }
 
+}
+
+/**
+ * 用来求交点的边界框, 需要事先确定曲线的单调性 属性全只读
+ */
+class Unilateral_Bezier_Box{
+    constructor(b){
+        this.b=b;
+        this.t1;
+        this.t2;
+        this.v1;
+        this.v2;
+        this.iterations=0;
+        /**@type {Unilateral_Bezier_Box[]} 配对的边界框 */
+        this.sb;
+    }
+    /**进一步细分 */
+    ex_box(){
+        var b1=new Unilateral_Bezier_Box(b);
+        var b2=new Unilateral_Bezier_Box(b);
+        var p=(t2-t1)*0.5+t1;
+        var pt=this.b.sampleCurve(p);
+        b1.t1=this.t1||0;
+        b1.t2=b2.t1=p;
+        b2.t2=this.t2;
+        b1.v1=this.v1||this.b.sampleCurve(this.t1);
+        b1.v2=pt;
+        b2.v1=pt;
+        b1.v1=this.v2||this.b.sampleCurve(this.t2);
+
+        // 刷新配对 迭代次数计数器+1
+        b1.sb=this.sb.concat();
+        b2.sb=this.sb.concat();
+        b1.iterations=this.iterations+1;
+        b2.iterations=this.iterations+1;
+
+        for(var i=this.sb.length-1;i>=0;--i){
+            this.sb[i].sb.splice(this.sb[i].sb.indexOf(this),1,b1,b2);
+        }
+
+        return [b1,b2];
+    }
+    /**@returns {Boolean} 是否足够精度 */
+    has_accuracy(_accuracy){
+        return (Math.abs(this.v2.x-this.v1.x)<_accuracy)&&(Math.abs(this.v2.y-this.v1.y)<_accuracy);
+    }
+    /**清除无重叠的配对 */
+    weed_out(){
+        for(var i=this.sb.length-1;i>=0;--i){
+            if(this.has_overlap(this.sb[i])){
+                this.sb[i].sb.splice(this.sb[i].sb.indexOf(this),1);
+                this.sb.splice(i,1);
+            }
+        }
+    }
+    /**
+     * box是否有重叠
+     * @param {Unilateral_Bezier_Box} bb 另一个实例
+     * @returns {Boolean}
+     */
+    has_overlap(bb){
+        return Math2D.boxL_i_boxL(
+            this.v1||this.b.sampleCurve(0),this.v2||this.b.sampleCurve(1),
+            bb.v1||bb.b.sampleCurve(0),bb.v2||bb.b.sampleCurve(1)
+        );
+    }
+    /**
+     * 立刻使用向量求交 
+     * @returns {v:Vector2}
+     */
+    line_i_line(){
+        var tb,rtn=[];
+        for(var i=this.sb.length-1;i>=0;--i){
+            tb=this.sb[i];
+            rtn.push(Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,tb.v1.x,tb.v1.y,tb.v2.x,tb.v2.y));
+        }
+        return rtn;
+    }
+}
+
+/**
+ * 贝塞尔曲线求交
+ * @param {BezierCurve} bezier1 贝塞尔曲线1
+ * @param {BezierCurve} bezier2 贝塞尔曲线2
+ * @param {Number} _accuracy 采样临界值(最终包围框的宽高最大不超过) 默认 1 值越小精度越高
+ * @param {Number} max_iterations 最大迭代次数 默认无限
+ * @param {Boolean} f_lil 是否使用最后得到的向量配对进行交点计算, 默认为true, 注意 如果采样精度太低进行求交可能会导致焦点丢失
+ * @returns {Vectore2[]}  返回交点的集合
+ */
+function bezier_i_bezier_v(bezier1,bezier2,_accuracy){
+    /**@type {BezierCurve[][]} 两条曲线的单调子曲线*/
+    var group_bezier=[this.cut_bezier_to_unilateral_by_root(bezier1),this.cut_bezier_to_unilateral_by_root(bezier2)];
+    /**
+     * @type {Unilateral_Bezier_Box[][]}
+     */
+    var group;
+
+    /**@type {Number} 精度 */
+    var accuracy=_accuracy<=0?1:_accuracy;
+    var i,j,k,l;
+    
+    for(i=group_bezier.length-1;i>=0;--i){
+        for(j=group_bezier[i].length-1;j>=0;--j){
+            group_bezier[i][j]
+        }
+    }
+    var temp;
+    // todo
+    
 }
