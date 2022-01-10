@@ -1,7 +1,7 @@
 /*
  * @Date: 2021-12-21 14:49:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-10 18:23:45
+ * @LastEditTime: 2022-01-10 21:00:41
  * @FilePath: \def-web\js\visual\test\bezier_i.js
  */
 var canvas=document.getElementById("canvas");
@@ -25,8 +25,8 @@ tgt_d.data.pushNode({
 });
 tgt_d.data.pushNode({
     node:{
-        x:110,
-        y:150
+        x:130,
+        y:50
     },
     hand_before:{
         x:25,
@@ -54,7 +54,7 @@ CtrlCanvas2d.line(ctx,bd.derivatives.derivatives.points);
 
 var tgt_d1=tgt_d.copy();
 tgt_d1.strokeStyle="#f00";
-tgt_d1.transformMatrix=new Matrix2x2T().translate(200,-20).rotate(90*Math.DEG);
+tgt_d1.transformMatrix=new Matrix2x2T().translate(280,-40).rotate(90*Math.DEG);
 tgt_d1.data.cut(0,0.5);
 var bd1=BezierCurve.createBy_BezierNode(tgt_d.data.nodes[0],tgt_d.data.nodes[1]);
 bd1.linearMapping(tgt_d1.transformMatrix,true,false,{x:0,y:0})
