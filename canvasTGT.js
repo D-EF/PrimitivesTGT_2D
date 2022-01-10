@@ -57,6 +57,15 @@
         ctx.rect(cd.x,cd.y,cd.w,cd.h);
         ctx.stroke();
     }
+    static rv2(ctx,v1,v2){
+        var x=v1.x,
+            y=v1.y,
+            w=v2.x-v1.x,
+            h=v2.y-v1.y;
+        ctx.beginPath();
+        ctx.rect(x,y,w,h);
+        ctx.stroke();
+    }
 }
 
 /** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */

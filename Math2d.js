@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-08 18:00:53
+ * @LastEditTime: 2022-01-10 20:47:03
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -322,8 +322,7 @@ class Math2D{
      */
     static bezier_lower3_unilateral(points){
         if(points.length>4) return {};
-        var points=bezier1.points,
-            l=points.length-1,
+        var l=points.length-1,
             i,
             x=true,y=true;
         for(i=l-1;i>0&&(x||y);--i){
@@ -377,7 +376,7 @@ class Math2D{
      */
     static cut_bezier_to_unilateral_by_root(bezier1){
         var f=this.bezier_lower3_unilateral(bezier1.points);
-        if(f.x&&t.y){
+        if(f.x&&f.y){
             return [bezier1];
         }
         var ts=bezier1.get_root_t(1);
@@ -2625,29 +2624,40 @@ class BezierCurve{
  * 用来求交点的边界框, 需要事先确定曲线的单调性 属性全只读
  */
 class Unilateral_Bezier_Box{
-    constructor(b){
+    constructor(b,t1,t2){
         this.b=b;
-        this.t1;
-        this.t2;
-        this.v1;
-        this.v2;
+        this.t1=t1||0;
+        this.t2=t2||1;
+        this._v1;
+        this._v2;
+        /**@type {Number} 细分迭代次数 */
         this.iterations=0;
         /**@type {Unilateral_Bezier_Box[]} 配对的边界框 */
-        this.sb;
+        this.sb=[];
     }
+    get v1(){
+        return this._v1||this.b.sampleCurve(this.t1);
+    }
+    get v2(){
+        return this._v2||this.b.sampleCurve(this.t2);
+    }
+    set v1(v){return this._v1=v;}
+    set v2(v){return this._v2=v;}
+    
     /**进一步细分 */
     ex_box(){
-        var b1=new Unilateral_Bezier_Box(b);
-        var b2=new Unilateral_Bezier_Box(b);
-        var p=(t2-t1)*0.5+t1;
-        var pt=this.b.sampleCurve(p);
+        var b=this.b,
+            b1=new Unilateral_Bezier_Box(b),
+            b2=new Unilateral_Bezier_Box(b),
+            p=0.5*(this.t1+this.t2),
+            pt=this.b.sampleCurve(p);
         b1.t1=this.t1||0;
         b1.t2=b2.t1=p;
         b2.t2=this.t2;
         b1.v1=this.v1||this.b.sampleCurve(this.t1);
         b1.v2=pt;
         b2.v1=pt;
-        b1.v1=this.v2||this.b.sampleCurve(this.t2);
+        b2.v2=this.v2||this.b.sampleCurve(this.t2);
 
         // 刷新配对 迭代次数计数器+1
         b1.sb=this.sb.concat();
@@ -2663,14 +2673,19 @@ class Unilateral_Bezier_Box{
     }
     /**@returns {Boolean} 是否足够精度 */
     has_accuracy(_accuracy){
+        if(!(this.v2&&this.v1)){
+            this.v1=this.b.sampleCurve(0);
+            this.v2=this.b.sampleCurve(1);
+        }
         return (Math.abs(this.v2.x-this.v1.x)<_accuracy)&&(Math.abs(this.v2.y-this.v1.y)<_accuracy);
     }
     /**清除无重叠的配对 */
     weed_out(){
-        for(var i=this.sb.length-1;i>=0;--i){
-            if(this.has_overlap(this.sb[i])){
+        for(var i=0;i<this.sb.length;++i){
+            if(!this.has_overlap(this.sb[i])){
                 this.sb[i].sb.splice(this.sb[i].sb.indexOf(this),1);
                 this.sb.splice(i,1);
+                --i;
             }
         }
     }
@@ -2680,22 +2695,32 @@ class Unilateral_Bezier_Box{
      * @returns {Boolean}
      */
     has_overlap(bb){
-        return Math2D.boxL_i_boxL(
-            this.v1||this.b.sampleCurve(0),this.v2||this.b.sampleCurve(1),
-            bb.v1||bb.b.sampleCurve(0),bb.v2||bb.b.sampleCurve(1)
-        );
+        var v11=this.v1 ||this.b.sampleCurve(this.t1),
+            v12=this.v2 ||this.b.sampleCurve(this.t2),
+            v21=bb.v1   ||  bb.b.sampleCurve(  bb.t1),
+            v22=bb.v2   ||  bb.b.sampleCurve(  bb.t2);
+        return Math2D.boxL_i_boxL(v11,v12,v21,v22);
     }
     /**
-     * 立刻使用向量求交 
-     * @returns {v:Vector2}
+     * 立刻使用向量求交, 如果曲线的导数差异较大可能会导致求交失败
+     * @returns {Vector2[]}
      */
-    line_i_line(){
+    all_line_i_line(){
         var tb,rtn=[];
         for(var i=this.sb.length-1;i>=0;--i){
             tb=this.sb[i];
             rtn.push(Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,tb.v1.x,tb.v1.y,tb.v2.x,tb.v2.y));
         }
         return rtn;
+    }
+    
+    /**
+     * 立刻使用向量求交, 如果曲线的导数差异较大可能会导致求交失败
+     * @param {Unilateral_Bezier_Box} 
+     * @returns {Vector2}
+     */
+    line_i_line(bb){
+            return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
     }
 }
 
@@ -2704,28 +2729,105 @@ class Unilateral_Bezier_Box{
  * @param {BezierCurve} bezier1 贝塞尔曲线1
  * @param {BezierCurve} bezier2 贝塞尔曲线2
  * @param {Number} _accuracy 采样临界值(最终包围框的宽高最大不超过) 默认 1 值越小精度越高
- * @param {Number} max_iterations 最大迭代次数 默认无限
- * @param {Boolean} f_lil 是否使用最后得到的向量配对进行交点计算, 默认为true, 注意 如果采样精度太低进行求交可能会导致焦点丢失
+ * @param {Boolean} f_lil 是否使用最后得到的向量配对进行交点计算, 默认为true, 注意 如果采样精度太低进行求交可能会导致交点丢失
  * @returns {Vectore2[]}  返回交点的集合
  */
-function bezier_i_bezier_v(bezier1,bezier2,_accuracy){
+function bezier_i_bezier_v(bezier1,bezier2,_accuracy,f_lil){
     /**@type {BezierCurve[][]} 两条曲线的单调子曲线*/
-    var group_bezier=[this.cut_bezier_to_unilateral_by_root(bezier1),this.cut_bezier_to_unilateral_by_root(bezier2)];
-    /**
-     * @type {Unilateral_Bezier_Box[][]}
-     */
-    var group;
-
+    var group_bezier=[Math2D.cut_bezier_to_unilateral_by_root(bezier1),Math2D.cut_bezier_to_unilateral_by_root(bezier2)],
+        l=group_bezier[0].length-1,
+        k=group_bezier[1].length-1,
+        i,j;
     /**@type {Number} 精度 */
-    var accuracy=_accuracy<=0?1:_accuracy;
-    var i,j,k,l;
+    var accuracy=(_accuracy&&(_accuracy>0))?_accuracy:1;
+    /**@type {Unilateral_Bezier_Box[]} 用来配对的集合*/
+    var group=new Array(l),
+    /**@type {Unilateral_Bezier_Box[]} 暂存*/
+    temp_group=new Array(k);
+    var tempVector2;
     
-    for(i=group_bezier.length-1;i>=0;--i){
-        for(j=group_bezier[i].length-1;j>=0;--j){
-            group_bezier[i][j]
-        }
+    for(j=k;j>=0;--j){
+        temp_group[j]=new Unilateral_Bezier_Box(group_bezier[1][j]);
     }
-    var temp;
-    // todo
+    for(i=l;i>=0;--i){
+        group[i]=new Unilateral_Bezier_Box(group_bezier[0][i]);
+        group[i].sb=temp_group.concat();
+    }
+    for(j=k;j>=0;--j){
+        temp_group[j].sb=group.concat();
+    }
+
+    var rtn=[],d=0,f=false;
+    temp_group=[];
+
+    while(group.length){
+        ++d;
+        f=false;
+        // ctx.clearRect(0,0,1000,1000);
+        for(i=group.length-1;(i>=0)&&group[i].sb.length;--i){
+            group[i].weed_out();
+            if(!group[i].sb.length){
+                // 左组i项无配对
+                continue;
+            }
+            // tgt_d.render(ctx);
+            // tgt_d1.render(ctx);
+
+            if(group[i].has_accuracy(accuracy)){
+                // 左组i项精度达成
+                f=true;
+                temp_group.push(group[i]);
+            }else{
+                // 左组的精度不足 左组派生细分
+                temp_group=temp_group.concat(group[i].ex_box());
+            }
+            for(j=0;j<group[i].sb.length;++j){
+                if(f&&group[i].sb[j].has_accuracy(accuracy)){
+                    // 精度都足够 剔除配对并增加返回
+                    if(f_lil){
+                        rtn.push(center_v2([group[i].v1,group[i].v2,group[i].sb[j].v1,group[i].sb[j].v2]));
+                    }
+                    else{
+                        tempVector2=group[i].line_i_line(group[i].sb[j]);
+                        if(!(isNaN(tempVector2.x)||(tempVector2.x===Infinity)||(tempVector2.x===-Infinity)||
+                        isNaN(tempVector2.y)||(tempVector2.y===Infinity)||(tempVector2.y===-Infinity)))
+                        rtn.push(tempVector2);
+                    }
+                    group[i].sb.splice(j,1);
+                    --j;
+                }
+                else if(group[i].sb[j].iterations<d){
+                    // 精度未达成 并且这次迭代中未细分
+                    group[i].sb[j].ex_box();
+                    ++j;
+                }
+            }
+        }
+        group=temp_group;
+        temp_group=[];
+    }
     
+    return rtn;
+}
+
+/**
+ * 坐标的中心点
+ * @param {Vector2[]} ordinates 坐标集合
+ * @returns {Vector2} 返回中心的坐标
+ */
+function center_v2(ordinates){
+    var min=new Vector2(),max=new Vector2();
+    max.x=ordinates[0].x;
+    max.y=ordinates[0].y;
+    min.x=ordinates[0].x;
+    min.y=ordinates[0].y;
+
+    for(var i=ordinates.length-1;i>0;--i){
+        if(ordinates[i].x>max.x)max.x=ordinates[i].x;
+   else if(ordinates[i].x<min.x)min.x=ordinates[i].x;
+        if(ordinates[i].y>max.y)max.y=ordinates[i].y;
+   else if(ordinates[i].y<min.y)min.y=ordinates[i].y;
+    }
+
+    return new Vector2(0.5*(max.x-min.x),0.5*(max.y-min.y));
 }

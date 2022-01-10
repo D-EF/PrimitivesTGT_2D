@@ -1,15 +1,15 @@
 /*
  * @Date: 2021-12-21 14:49:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-06 20:53:16
+ * @LastEditTime: 2022-01-10 18:23:45
  * @FilePath: \def-web\js\visual\test\bezier_i.js
  */
 var canvas=document.getElementById("canvas");
 var ctx=canvas.getContext("2d");
 
-var d=new CanvasBezierTGT();
-d.data=new Bezier_Polygon();
-d.data.pushNode({
+var tgt_d=new CanvasBezierTGT();
+tgt_d.data=new Bezier_Polygon();
+tgt_d.data.pushNode({
     node:{
         x:210,
         y:30
@@ -23,7 +23,7 @@ d.data.pushNode({
         y:250
     },
 });
-d.data.pushNode({
+tgt_d.data.pushNode({
     node:{
         x:110,
         y:150
@@ -44,21 +44,30 @@ var ctx=canvas.getContext('2d');
 
 // ctx.translate(2000,2000)
 
-d.strokeStyle="#000";
-d.lineWidth=1;
-// d.want_to_closePath=true;
-d.render(ctx);
+tgt_d.strokeStyle="#000";
+tgt_d.lineWidth=1;
+// tgt_d.want_to_closePath=true;
 
-var bd=BezierCurve.createBy_BezierNode(d.data.nodes[0],d.data.nodes[1]);
+var bd=BezierCurve.createBy_BezierNode(tgt_d.data.nodes[0],tgt_d.data.nodes[1]);
 CtrlCanvas2d.bezier2(ctx,bd.derivatives);
 CtrlCanvas2d.line(ctx,bd.derivatives.derivatives.points);
 
-var d1=d.copy();
-d1.strokeStyle="#f00";
-d1.transformMatrix=new Matrix2x2T().translate(200,200);
+var tgt_d1=tgt_d.copy();
+tgt_d1.strokeStyle="#f00";
+tgt_d1.transformMatrix=new Matrix2x2T().translate(200,-20).rotate(90*Math.DEG);
+tgt_d1.data.cut(0,0.5);
+var bd1=BezierCurve.createBy_BezierNode(tgt_d.data.nodes[0],tgt_d.data.nodes[1]);
+bd1.linearMapping(tgt_d1.transformMatrix,true,false,{x:0,y:0})
 
-d1.data.cut(0,0.5);
-d1.render(ctx);
+ctx.resetTransform;
+// ctx.translate(300,300);
+ctx.moveTo(bd1.points[0].x,bd1.points[0].y);
+ctx.bezierCurveTo(bd1.points[1].x,bd1.points[1].y,bd1.points[2].x,bd1.points[2].y,bd1.points[3].x,bd1.points[3].y);
+ctx.stroke();
+
+tgt_d1.render(ctx);
+tgt_d.render(ctx);
+
 
 CtrlCanvas2d.line(ctx,[{x:0,y:300},{x:150,y:150}]);
 
