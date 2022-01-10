@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-10 20:47:03
+ * @LastEditTime: 2022-01-10 20:50:28
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -2628,22 +2628,13 @@ class Unilateral_Bezier_Box{
         this.b=b;
         this.t1=t1||0;
         this.t2=t2||1;
-        this._v1;
-        this._v2;
+        this.v1;
+        this.v2;
         /**@type {Number} 细分迭代次数 */
         this.iterations=0;
         /**@type {Unilateral_Bezier_Box[]} 配对的边界框 */
         this.sb=[];
     }
-    get v1(){
-        return this._v1||this.b.sampleCurve(this.t1);
-    }
-    get v2(){
-        return this._v2||this.b.sampleCurve(this.t2);
-    }
-    set v1(v){return this._v1=v;}
-    set v2(v){return this._v2=v;}
-    
     /**进一步细分 */
     ex_box(){
         var b=this.b,
