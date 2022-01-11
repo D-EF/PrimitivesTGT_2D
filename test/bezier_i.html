@@ -1,7 +1,7 @@
 <!--
  * @Date: 2021-12-21 14:40:53
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-06 20:25:09
+ * @LastEditTime: 2022-01-11 09:52:43
  * @FilePath: \def-web\js\visual\test\bezier_i.html
 -->
 <!DOCTYPE html>
@@ -17,6 +17,11 @@
     <script src="../../basics/Basics.js"></script>
     <script src="../Math2d.js"></script>
     <script src="../canvasTGT.js"></script>
-    <script src="./bezier_i.js"></script>
+    <!-- <script src="./bezier_i.js" type="moduel"></script> -->
+    <script type="module">
+        import {cnm} from "./bezier3Cut.js"
+
+        console.log(cnm);
+    </script>
 </body>
 </html>

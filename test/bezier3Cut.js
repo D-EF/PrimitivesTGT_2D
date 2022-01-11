@@ -1,7 +1,7 @@
 /*
  * @Date: 2021-12-21 14:49:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-04 19:37:52
+ * @LastEditTime: 2022-01-11 09:48:36
  * @FilePath: \def-web\js\visual\test\bezier3Cut.js
  */
 var canvas=document.getElementById("canvas");
@@ -40,7 +40,6 @@ d.data.pushNode({
 
 
 var canvas=document.getElementById("canvas");
-var ctx=canvas.getContext('2d');
 
 // ctx.translate(2000,2000)
 
@@ -61,4 +60,10 @@ d1.data.cut(0,0.5);
 d1.render(ctx);
 
 var d=bd.align_proxy;
-var pp=new CanvasPolygonTGT(bd.get_tightBoundsBox());pp.render(ctx);
+var pp=new CanvasPolygonTGT(bd.get_tightBoundsBox());
+// pp.render(ctx);
+
+var cnm="gnn"
+export{
+    cnm
+}

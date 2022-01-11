@@ -1,9 +1,13 @@
 /*
  * @Date: 2021-12-21 14:49:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-10 21:00:41
+ * @LastEditTime: 2022-01-11 09:31:59
  * @FilePath: \def-web\js\visual\test\bezier_i.js
  */
+
+import {cnm} from "./bezier3Cut.js"
+console.log(cnm);
+
 var canvas=document.getElementById("canvas");
 var ctx=canvas.getContext("2d");
 

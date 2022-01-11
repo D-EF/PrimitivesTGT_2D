@@ -1,11 +1,25 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-10 20:50:28
+ * @LastEditTime: 2022-01-11 20:08:08
  */
 /**
  * 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
  */
+
+import {
+    createBezierCutMatrix_Q,
+    bezierCut_By_Matrix,
+    binaryLinearEquation,
+    approximately,
+    derivative,
+    root_of_1_3,
+    coefficientToPoints,
+} from "../basics/math_ex.js";
+
+import {
+    OlFunction,
+} from "../basics/basics.js";
 /**
  * 放了一点2d静态函数
  */
@@ -1899,7 +1913,6 @@ class Polygon{
     }
     static EX_linearMapping(p,m,translate_befroeOrAfter){}
     static EX_linearMapping_nt(p,m,translate_befroeOrAfter){}
-
 }
 
 // 函数重载 -------------------------------------------------------------------------------------------
@@ -2077,6 +2090,9 @@ class Bezier_Polygon{
     }
 }
 
+/**
+ * 贝塞尔曲线的数据
+ */
 class BezierCurve{
     /**
      * @param {Vector2[]} points 控制点们 Vector2
@@ -2617,7 +2633,6 @@ class BezierCurve{
         }
         return new Arc_Data(c.x,c.y,kr,0,2*Math.PI);
     }
-
 }
 
 /**
