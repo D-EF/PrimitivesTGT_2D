@@ -4,39 +4,57 @@
  *  默认渲染时的变换矩阵 是向量后乘矩阵再偏移, 如果需要修改, 自己派生
  */
 
-const { abs, cos, sin, acos, atan2, sqrt, pow } = Math;
+import {
+    OlFunction,
+} from "../basics/basics.js";
+import {
+    Math2D,
+    Rect_Data,
+    Arc_Data,
+    Sector_Data,
+    Vector2,
+    Matrix2x2,
+    Matrix2x2T,
+    Polygon,
+    Bezier_Node,
+    Bezier_Polygon,
+    BezierCurve,
+    bezier_i_bezier_v,
+    center_v2,
+}from "./Math2d.js";
 
 /** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */
 var def_accuracy=20;
 
-class CanvasTGT{
+class PrimitiveTGT{
     constructor(){
         /**@type {Object} */
         this.data;
+        /** @type {<String,>} */
         this.fillStyle="#fff0";
         this.strokeStyle="#000";
         this.lineWidth=1;
         this.want_to_closePath=false;
         /**@type {Matrix2x2T} */
-        this._transformMatrix=createMatrix2x2T();
+        this._transformMatrix=new Matrix2x2T();
         this._worldToLocalM;
         /**
-         * tgt的 data的类型 用于将json实例化为 CanvasTGT
+         * tgt的 data的类型 用于将json实例化为 PrimitiveTGT
          * @type {String}
          */
         this.dataType="Object";
     }
     /**
      * 拷贝函数 注:json互相转化时,无法正常转换成json的类型 fillStyle strokeStyle 会丢失
-     * @param {CanvasTGT} tgt
-     * @return {CanvasTGT} 返回一个拷贝
+     * @param {PrimitiveTGT} tgt
+     * @return {PrimitiveTGT} 返回一个拷贝
      */
     static copy(tgt){
         var rtn;
-        rtn=CanvasTGT.create_ByDataType[tgt.dataType](tgt.data);
+        rtn=PrimitiveTGT.create_ByDataType[tgt.dataType](tgt.data);
 
-        rtn.fillStyle           = tgt.fillStyle.copy();
-        rtn.strokeStyle         = tgt.strokeStyle;
+        rtn.fillStyle           = tgt.fillStyle.copy?tgt.fillStyle.copy():tgt.fillStyle;
+        rtn.strokeStyle         = tgt.strokeStyle.copy?tgt.strokeStyle.copy():tgt.strokeStyle;
         rtn.lineWidth           = tgt.lineWidth;
         rtn.transformMatrix     = Matrix2x2T.copy(tgt._transformMatrix);
         rtn._worldToLocalM      = Matrix2x2T.copy(tgt._worldToLocalM);
@@ -46,10 +64,10 @@ class CanvasTGT{
     }
     /**
      * 拷贝函数
-     * @return {CanvasTGT} 返回一个拷贝
+     * @return {PrimitiveTGT} 返回一个拷贝
      */
     copy(){
-        return CanvasTGT.copy(this);
+        return PrimitiveTGT.copy(this);
     }
     /** 
      * 获取最小的(局部)坐标
@@ -156,10 +174,10 @@ class CanvasTGT{
     }
     /** 转换成多边形
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {CanvasPolygonTGT}
+     * @returns {PrimitivePolygonTGT}
      */
     toPolygon(_accuracy=def_accuracy){
-        var rtn = new CanvasPolygonTGT(this.data.createPolygonProxy(...arguments));
+        var rtn = new PrimitivePolygonTGT(this.data.createPolygonProxy(...arguments));
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
@@ -171,12 +189,12 @@ class CanvasTGT{
      * 生成世界坐标的多边形集合
      * @param {Boolean} f 是否作拷贝 默认 true, 为 false 时会影响 this
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {CanvasPolygonTGT[]} 因为只有一个tgt所以是 length 为 1 的数组
+     * @returns {PrimitivePolygonTGT[]} 因为只有一个tgt所以是 length 为 1 的数组
      */
     create_worldPolygons(f,_accuracy=def_accuracy){
-        /** @type {CanvasPolygonTGT} */
+        /** @type {PrimitivePolygonTGT} */
         var rtn;
-        if((!f)&&(rtn instanceof CanvasPolygonTGT)){
+        if((!f)&&(rtn instanceof PrimitivePolygonTGT)){
             rtn=this;
         }
         else{
@@ -188,10 +206,10 @@ class CanvasTGT{
     }
     /**
      * 碰撞检测 有多个重载, 在class外面实现
-     * @param {CanvasTGT} canvasTGT1 需要检测碰撞的对象
-     * @param {CanvasTGT} canvasTGT2 需要检测碰撞的对象
+     * @param {PrimitiveTGT} primitiveTGT1 需要检测碰撞的对象
+     * @param {PrimitiveTGT} primitiveTGT2 需要检测碰撞的对象
      */
-    static isTouch(canvasTGT1,canvasTGT2){}
+    static isTouch(primitiveTGT1,primitiveTGT2){}
     /**
      * 根据鼠标xy触发内部tgt事件
      */
@@ -211,27 +229,27 @@ class CanvasTGT{
     static create_ByDataType={
         /**
          * @param {Arc_Data} data 
-         * @returns {CanvasArcTGT}
+         * @returns {PrimitiveArcTGT}
          */
         "Arc_Data":function(data){
-            return new CanvasArcTGT(data.c.x,data.c.y,data._r,data._startAngle,data._endAngle);
+            return new PrimitiveArcTGT(data.c.x,data.c.y,data._r,data._startAngle,data._endAngle);
         },
         /**
          * @param {Rect_Data} data 
-         * @returns {CanvasRectTGT}
+         * @returns {PrimitiveRectTGT}
          */
         "Rect_Data":function(data){
-            return new CanvasRectTGT(data.x,data.y,data.w,data.h);
+            return new PrimitiveRectTGT(data.x,data.y,data.w,data.h);
         },
         /**
          * @param {Polygon} data 
-         * @returns {CanvasPolygonTGT}
+         * @returns {PrimitivePolygonTGT}
          */
         "Polygon":function(data){
-            return new CanvasPolygonTGT(data);
+            return new PrimitivePolygonTGT(data);
         },
         "Bezier_Data":function(data){
-            return new CanvasBezierTGT(data);
+            return new PrimitiveBezierTGT(data);
         }
     }
 }
@@ -242,7 +260,7 @@ class CanvasTGT{
  * @param {Number} width 
  * @param {Number} height 
  */
-class CanvasRectTGT extends CanvasTGT{
+class PrimitiveRectTGT extends PrimitiveTGT{
     constructor(x,y,w,h){
         super();
         /**@type {Rect_Data} */
@@ -260,7 +278,7 @@ class CanvasRectTGT extends CanvasTGT{
  * 弧形
  * 需要注意旋转方向因为坐标系不同而有所变动
  */
-class CanvasArcTGT extends CanvasTGT{
+class PrimitiveArcTGT extends PrimitiveTGT{
     /**
      * @param {Number} cx 圆心的坐标
      * @param {Number} cy 圆心的坐标
@@ -287,7 +305,7 @@ class CanvasArcTGT extends CanvasTGT{
 /**
  * 扇形
  */
-class CanvasSectorTGT extends CanvasTGT{
+class PrimitiveSectorTGT extends PrimitiveTGT{
     /**
      * @param {Number} cx 圆心的坐标
      * @param {Number} cy 圆心的坐标
@@ -317,7 +335,7 @@ class CanvasSectorTGT extends CanvasTGT{
 
 /** 多边形
 */
-class CanvasPolygonTGT extends CanvasTGT{
+class PrimitivePolygonTGT extends PrimitiveTGT{
     /**
      * @param {Polygon} _polygon 多边形
      */
@@ -348,7 +366,7 @@ class CanvasPolygonTGT extends CanvasTGT{
     getPolygonProxy(){
         return this.data.copy();
     }
-    createCanvasPath(){
+    createCanvasPath(ctx){
         var i=this.data.nodes.length-1,
             nodes=this.data.nodes;
         ctx.moveTo(nodes[i].x,nodes[i].y);
@@ -361,53 +379,53 @@ class CanvasPolygonTGT extends CanvasTGT{
     }
 }
 
-// CanvasTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
+// PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
 
-function _CanvasTGT_isInside(_x,_y){
+function _PrimitiveTGT_isInside(_x,_y){
     var v=this.worldToLocal(_x,_y);
     return this.data.isInside(v.x,v.y,this.want_to_closePath);
 }
-CanvasTGT.prototype.isInside=OlFunction.create();
-CanvasTGT.prototype.isInside.addOverload([Number,Number],_CanvasTGT_isInside);
-CanvasTGT.prototype.isInside.addOverload([Vector2],function(_v){
-    return _CanvasTGT_isInside.call(this,_v.x,_v.y)
+PrimitiveTGT.prototype.isInside=OlFunction.create();
+PrimitiveTGT.prototype.isInside.addOverload([Number,Number],_PrimitiveTGT_isInside);
+PrimitiveTGT.prototype.isInside.addOverload([Vector2],function(_v){
+    return _PrimitiveTGT_isInside.call(this,_v.x,_v.y)
 });
 
 // 局部坐标 to 世界坐标
-function _CanvasTGT_localToWorld(v){
+function _PrimitiveTGT_localToWorld(v){
     return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
 }
-CanvasTGT.prototype.localToWorld=OlFunction.create();
-CanvasTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
-    return _CanvasTGT_localToWorld.call(this,new Vector2(x,y));
+PrimitiveTGT.prototype.localToWorld=OlFunction.create();
+PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
+    return _PrimitiveTGT_localToWorld.call(this,new Vector2(x,y));
 });
-CanvasTGT.prototype.localToWorld.addOverload([Vector2],_CanvasTGT_localToWorld);
+PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_PrimitiveTGT_localToWorld);
 
 // 世界坐标 to 局部坐标
-function _CanvasTGT_worldToLocal(v){
+function _PrimitiveTGT_worldToLocal(v){
     var tm=this.worldToLocalM;
     return Vector2.beforeTranslate_linearMapping(v,tm);
 }
-CanvasTGT.prototype.worldToLocal=OlFunction.create();
-CanvasTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
-    return _CanvasTGT_worldToLocal.call(this,new Vector2(x,y));
+PrimitiveTGT.prototype.worldToLocal=OlFunction.create();
+PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
+    return _PrimitiveTGT_worldToLocal.call(this,new Vector2(x,y));
 });
-CanvasTGT.prototype.worldToLocal.addOverload([Vector2],_CanvasTGT_worldToLocal
+PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT_worldToLocal
 );
 //碰撞检测函数 ----------------------------------------------------------------------------------------------------------------------------------
 
 /** @type {Number} 默认精度 用于弧形转换成多边形 */
-CanvasTGT.accuracy=20;
-CanvasTGT.isTouch=OlFunction.create(isTouch_base);
+PrimitiveTGT.accuracy=20;
+PrimitiveTGT.isTouch=OlFunction.create(isTouch_base);
 
 /**
  * 可以通用的碰撞检测函数 将对象转换成多边形 开销较大
- * @param {CanvasTGT} canvasTGT1
- * @param {CanvasTGT} canvasTGT2
+ * @param {PrimitiveTGT} primitiveTGT1
+ * @param {PrimitiveTGT} primitiveTGT2
  */
-function isTouch_base(canvasTGT1,canvasTGT2){
-    var tgt1 = canvasTGT1.toPolygon(CanvasTGT.accuracy,canvasTGT1.want_to_closePath);
-    var tgt2 = canvasTGT2.toPolygon(CanvasTGT.accuracy,canvasTGT2.want_to_closePath);
+function isTouch_base(primitiveTGT1,primitiveTGT2){
+    var tgt1 = primitiveTGT1.toPolygon(PrimitiveTGT.accuracy,primitiveTGT1.want_to_closePath);
+    var tgt2 = primitiveTGT2.toPolygon(PrimitiveTGT.accuracy,primitiveTGT2.want_to_closePath);
     var i;
     for(i=tgt1.data.nodes.length-1;i>=0;--i){
         tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);
@@ -421,27 +439,27 @@ function isTouch_base(canvasTGT1,canvasTGT2){
     if(Polygon.getImpactFlag(tgt1.data,tgt2.data)){
         return true;                                         
     }
-    return canvasTGT1.isInside(canvasTGT2.localToWorld(canvasTGT2.data.nodes[0]))||canvasTGT2.isInside(canvasTGT1.localToWorld(canvasTGT1.data.nodes[0]));
+    return primitiveTGT1.isInside(primitiveTGT2.localToWorld(primitiveTGT2.data.nodes[0]))||primitiveTGT2.isInside(primitiveTGT1.localToWorld(primitiveTGT1.data.nodes[0]));
 }
 
 /**
  * 碰撞检测函数 矩形 弧形(圆形)
- * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
- * @param {CanvasArcTGT}  tgt2 进行碰撞检测的对象
+ * @param {PrimitiveRectTGT} tgt1 进行碰撞检测的对象
+ * @param {PrimitiveArcTGT}  tgt2 进行碰撞检测的对象
  */
 function isTouch_Rect_Arc(tgt1,tgt2){
     var t1=tgt1.toPolygon();
     return isTouch_Arc_Polygon(tgt2,t1);
 }
-CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasArcTGT],isTouch_Rect_Arc);
-CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasRectTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveArcTGT],isTouch_Rect_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveRectTGT],function(tgt1,tgt2){
     return isTouch_Rect_Arc(tgt2,tgt1)
 });
 
 /**
  * 碰撞检测函数 矩形 多边形
- * @param {CanvasRectTGT} tgt1
- * @param {CanvasPolygonTGT} tgt2
+ * @param {PrimitiveRectTGT} tgt1
+ * @param {PrimitivePolygonTGT} tgt2
  */
 function isTouch_Rect_Polygon(tgt1,tgt2){
     
@@ -466,15 +484,15 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
         return false;
     }
 }
-CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasPolygonTGT],isTouch_Rect_Polygon);
-CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitivePolygonTGT],isTouch_Rect_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveRectTGT],function(tgt1,tgt2){
     return isTouch_Rect_Polygon(tgt2,tgt1);
 });
 
 /**
  * 碰撞检测函数 弧形(圆形) 多边形
- * @param {CanvasArcTGT} tgt1
- * @param {CanvasPolygonTGT} tgt2
+ * @param {PrimitiveArcTGT} tgt1
+ * @param {PrimitivePolygonTGT} tgt2
  */
  function isTouch_Arc_Polygon(tgt1,tgt2){
     var i =tgt2.data.nodes.length-1,
@@ -517,43 +535,43 @@ CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasRectTGT],function(tgt1,tgt
     }
     return false;
 }
-CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasPolygonTGT],isTouch_Arc_Polygon);
-CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasArcTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitivePolygonTGT],isTouch_Arc_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveArcTGT],function(tgt1,tgt2){
     return isTouch_Arc_Polygon(tgt2,tgt1);
 });
 
 /**
  * 碰撞检测函数 弧形(圆形) 弧形
- * @param {CanvasArcTGT} tgt1 
- * @param {CanvasArcTGT} tgt2 
+ * @param {PrimitiveArcTGT} tgt1 
+ * @param {PrimitiveArcTGT} tgt2 
  */
 function isTouch_Arc_Arc(tgt1,tgt2){
     var tgtt=tgt1.toPolygon();
     return isTouch_Arc_Polygon(tgt2,tgtt);
 }
 
-CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasArcTGT],isTouch_Arc_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveArcTGT],isTouch_Arc_Arc);
 
 // 扇形碰撞 --------------------------------------------------------------------------------------------
 
 /**
  * 碰撞检测函数 矩形 扇形(圆形)
- * @param {CanvasRectTGT} tgt1 进行碰撞检测的对象
- * @param {CanvasSectorTGT}  tgt2 进行碰撞检测的对象
+ * @param {PrimitiveRectTGT} tgt1 进行碰撞检测的对象
+ * @param {PrimitiveSectorTGT}  tgt2 进行碰撞检测的对象
  */
  function isTouch_Rect_Sector(tgt1,tgt2){
     var t1=tgt1.toPolygon();
     return isTouch_Sector_Polygon(tgt2,t1);
 }
-CanvasTGT.isTouch.addOverload([CanvasRectTGT,CanvasSectorTGT],isTouch_Rect_Sector);
-CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasRectTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveSectorTGT],isTouch_Rect_Sector);
+PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveRectTGT],function(tgt1,tgt2){
     return isTouch_Rect_Sector(tgt2,tgt1);
 });
 
 /**
  * 碰撞检测函数 扇形(圆形) 多边形
- * @param {CanvasSectorTGT} tgt1 
- * @param {CanvasPolygonTGT} tgt2 
+ * @param {PrimitiveSectorTGT} tgt1 
+ * @param {PrimitivePolygonTGT} tgt2 
  */
  function isTouch_Sector_Polygon(tgt1,tgt2){
     var i =tgt2.data.nodes.length-1,
@@ -581,50 +599,50 @@ CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasRectTGT],function(tgt1,tgt2
     return false;
 }
 
-CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasPolygonTGT],isTouch_Sector_Polygon);
-CanvasTGT.isTouch.addOverload([CanvasPolygonTGT,CanvasSectorTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitivePolygonTGT],isTouch_Sector_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveSectorTGT],function(tgt1,tgt2){
     return isTouch_Sector_Polygon(tgt2,tgt1)
 });
 
 /**
  * 碰撞检测函数 扇形(圆形) 弧形
- * @param {CanvasSectorTGT} tgt1 
- * @param {CanvasArcTGT} tgt2 
+ * @param {PrimitiveSectorTGT} tgt1 
+ * @param {PrimitiveArcTGT} tgt2 
  */
  function isTouch_Sector_Arc(tgt1,tgt2){
     var tgtt=tgt1.toPolygon();
     return isTouch_Arc_Polygon(tgt2,tgtt);
 }
 
-CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasArcTGT],isTouch_Sector_Arc);
-CanvasTGT.isTouch.addOverload([CanvasArcTGT,CanvasSectorTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveArcTGT],isTouch_Sector_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveSectorTGT],function(tgt1,tgt2){
     return isTouch_Sector_Arc(tgt2,tgt1)
 });
 
 /**
  * 碰撞检测函数 扇形(圆形) 弧形
- * @param {CanvasSectorTGT} tgt1 
- * @param {CanvasSectorTGT} tgt2 
+ * @param {PrimitiveSectorTGT} tgt1 
+ * @param {PrimitiveSectorTGT} tgt2 
  */
  function isTouch_Sector_Sector(tgt1,tgt2){
     var tgtt=tgt1.toPolygon();
     return isTouch_Sector_Polygon(tgt2,tgtt);
 }
 
-CanvasTGT.isTouch.addOverload([CanvasSectorTGT,CanvasSectorTGT],isTouch_Sector_Sector);
+PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch_Sector_Sector);
 
 // 组----------------------------------------------------------------------------------------------------------------------------------------------
 
 /**
- * canvas tgt 组
+ * PrimitiveTGT 组
  */
-class CanvasTGT_Group{
+class PrimitiveTGT_Group{
     /**
      * 
-     * @param {CanvasTGT,CanvasTGT_Group[]} tgts 
+     * @param {PrimitiveTGT,PrimitiveTGT_Group[]} tgts 
      */
     constructor(tgts){
-        /**@type {CanvasTGT,CanvasTGT_Group[]} */
+        /**@type {PrimitiveTGT,PrimitiveTGT_Group[]} */
         this.children;
         if(tgts!==undefined){
             this.children=[].concat(tgts);
@@ -632,20 +650,20 @@ class CanvasTGT_Group{
         else{
             this.children=[]
         }
-        this._transformMatrix=createMatrix2x2T();
+        this._transformMatrix=new Matrix2x2T();
         this._worldToLocalM=undefined;
         this.dataType="Group";
     }
     /**
      * 添加子项
-     * @param {CanvasTGT} tgt CanvasTGT对象
+     * @param {PrimitiveTGT} tgt PrimitiveTGT对象
      */
     addChildren(tgt){
         this.children.push(tgt);
     }
     /**
      * 添加子项
-     * @param {CanvasTGT[]} tgt CanvasTGT对象
+     * @param {PrimitiveTGT[]} tgt PrimitiveTGT对象
      */
     addChildrens(tgts){
         this.children=this.children.concat(tgts);
@@ -659,7 +677,7 @@ class CanvasTGT_Group{
     }
     /**
      * 移除一个子项
-     * @param {CanvasTGT} tgt 必须是同一个子项
+     * @param {PrimitiveTGT} tgt 必须是同一个子项
      */
     removeChildren(tgt){
         for(var i=this.children.length-1;i>=0;--i){
@@ -671,29 +689,29 @@ class CanvasTGT_Group{
     /**
      * 拷贝函数
      * 注意别把某个组放在自己的后代里
-     * @param {CanvasTGT_Group}
-     * @return {CanvasTGT_Group} 返回一个拷贝
+     * @param {PrimitiveTGT_Group}
+     * @return {PrimitiveTGT_Group} 返回一个拷贝
      */
     static copy(tgt){
         if(tgt.dataType==="Group"){
-            var rtn=new CanvasTGT_Group();
+            var rtn=new PrimitiveTGT_Group();
             for(var i=tgt.children.length-1;i>=0;--i){
-                rtn.children.push(CanvasTGT_Group.copy(tgt.children[i]));
+                rtn.children.push(PrimitiveTGT_Group.copy(tgt.children[i]));
             }
             rtn._transformMatrix=Matrix2x2T.copy(tgt._transformMatrix);
             rtn._worldToLocalM=Matrix2x2T.copy(tgt._worldToLocalM);
             return rtn;
         }else{
-            return CanvasTGT.copy(tgt);
+            return PrimitiveTGT.copy(tgt);
         }
     }
 
     /**
      * 拷贝函数
-     * @return {CanvasTGT_Group} 返回一个拷贝
+     * @return {PrimitiveTGT_Group} 返回一个拷贝
      */
     copy(){
-        return CanvasTGT_Group.copy(this);
+        return PrimitiveTGT_Group.copy(this);
     }
     get transformMatrix(){
         return this._transformMatrix;
@@ -759,10 +777,10 @@ class CanvasTGT_Group{
      * 生成世界坐标的多边形集合
      * @param {Boolean} f 组的该方法中的是无用的属性
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {CanvasPolygonTGT[]}
+     * @returns {PrimitivePolygonTGT[]}
      */
     create_worldPolygons(f,_accuracy=def_accuracy){
-        /**@type {CanvasPolygonTGT[]}  */
+        /**@type {PrimitivePolygonTGT[]}  */
         var rtn=[];
         var i = this.children.length-1;
         for(;i>=0;--i){
@@ -777,7 +795,7 @@ class CanvasTGT_Group{
     }
 }
 
-function _CanvasTGT_Group_Inside_I(_x,_y){
+function _PrimitiveTGT_Group_Inside_I(_x,_y){
     var v=this.worldToLocal(_x,_y);
     for(var i=this.children.length-1;i>=0;--i){
         if(this.children[i].isInside(v)){
@@ -787,20 +805,20 @@ function _CanvasTGT_Group_Inside_I(_x,_y){
     }
     return -1;
 }
-CanvasTGT_Group.prototype.inside_i=OlFunction.create();
-CanvasTGT_Group.prototype.inside_i.addOverload([Number,Number],_CanvasTGT_Group_Inside_I);
-CanvasTGT_Group.prototype.inside_i.addOverload([Vector2],function(_v){
-    return _CanvasTGT_Group_Inside_I.call(this,_v.x,_v.y);
+PrimitiveTGT_Group.prototype.inside_i=OlFunction.create();
+PrimitiveTGT_Group.prototype.inside_i.addOverload([Number,Number],_PrimitiveTGT_Group_Inside_I);
+PrimitiveTGT_Group.prototype.inside_i.addOverload([Vector2],function(_v){
+    return _PrimitiveTGT_Group_Inside_I.call(this,_v.x,_v.y);
 });
-// 此处直接使用了 CanvasTGT 的 重载函数对象
-CanvasTGT_Group.prototype.localToWorld=CanvasTGT.prototype.localToWorld;
-CanvasTGT_Group.prototype.worldToLocal=CanvasTGT.prototype.worldToLocal;
+// 此处直接使用了 PrimitiveTGT 的 重载函数对象
+PrimitiveTGT_Group.prototype.localToWorld=PrimitiveTGT.prototype.localToWorld;
+PrimitiveTGT_Group.prototype.worldToLocal=PrimitiveTGT.prototype.worldToLocal;
 
 /**
  * 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
- * @param {CanvasPolygonTGT[]} _tgts 多边形对象数组 不要加矩阵
- * @param {CanvasTGT_Group} g 组
- * @param {CanvasTGT_Group} pg g的父组
+ * @param {PrimitivePolygonTGT[]} _tgts 多边形对象数组 不要加矩阵
+ * @param {PrimitiveTGT_Group} g 组
+ * @param {PrimitiveTGT_Group} pg g的父组
  */
 function isTouch_noTransformPolygons_Group(_tgts,g,pg){
     var tgts=_tgts;
@@ -818,12 +836,12 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
     for(i=tgts.length-1;i>=0;--i){
         tgts[i].transformMatrix=g.transformMatrix;
         for(j=g.children.length-1;j>=0;--j){
-            if(g.children[j] instanceof CanvasTGT_Group){
+            if(g.children[j] instanceof PrimitiveTGT_Group){
                 if(isTouch_noTransformPolygons_Group(tgts,g.children[j],g)){
                     return true;
                 }
             }else{
-                if(CanvasTGT.isTouch(tgts[i],g.children[j])){
+                if(PrimitiveTGT.isTouch(tgts[i],g.children[j])){
                     return true;
                 }
             }
@@ -833,24 +851,25 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
 }
 /**
  * 碰撞检测函数 组 组
- * @param {CanvasTGT_Group} group1
- * @param {CanvasTGT_Group} group2
+ * @param {PrimitiveTGT_Group} group1
+ * @param {PrimitiveTGT_Group} group2
  */
 function isTouch_Group_Group(group1,group2){
     var g1_Polygons=group1.create_worldPolygons();
     return isTouch_noTransformPolygons_Group(g1_Polygons,group2);
 }
-CanvasTGT.isTouch.addOverload([CanvasTGT_Group,CanvasTGT_Group],isTouch_Group_Group);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT_Group,PrimitiveTGT_Group],isTouch_Group_Group);
 
-CanvasTGT.isTouch.addOverload([CanvasTGT_Group,CanvasTGT],function (group,tgt){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT_Group,PrimitiveTGT],function (group,tgt){
     return isTouch_noTransformPolygons_Group([tgt],group);
 });
-CanvasTGT.isTouch.addOverload([CanvasTGT,CanvasTGT_Group],function (tgt,group){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT,PrimitiveTGT_Group],function (tgt,group){
     return isTouch_noTransformPolygons_Group([tgt],group);
 });
 
 
-class CanvasBezierTGT extends CanvasTGT{
+// todo BezierTGT
+class PrimitiveBezierTGT extends PrimitiveTGT{
     /**
      * @param {Bezier_Polygon} bezier_polygon 
      */
@@ -892,3 +911,14 @@ class CanvasBezierTGT extends CanvasTGT{
            }
        }
 }
+
+
+export{
+    PrimitiveTGT,
+    PrimitiveRectTGT,
+    PrimitiveArcTGT,
+    PrimitiveSectorTGT,
+    PrimitivePolygonTGT,
+    PrimitiveTGT_Group,
+    PrimitiveBezierTGT
+};

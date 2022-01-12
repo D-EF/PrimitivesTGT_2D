@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-11 20:08:08
+ * @LastEditTime: 2022-01-12 10:41:54
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -8,6 +8,7 @@
  */
 
 import {
+    get_Bezier_Matrix,
     createBezierCutMatrix_Q,
     bezierCut_By_Matrix,
     binaryLinearEquation,
@@ -19,7 +20,7 @@ import {
 
 import {
     OlFunction,
-} from "../basics/basics.js";
+} from "../basics/Basics.js";
 /**
  * 放了一点2d静态函数
  */
@@ -1546,13 +1547,6 @@ class Matrix2x2T extends Matrix2x2{
     // }
 }
 
-/**
- * 创建一个新的2x2t矩阵
- * @for Matrix2x2T
- */
-function createMatrix2x2T(){
-    return new Matrix2x2T(1,0,0,1,0,0);
-}
  
 
 /* 多边形 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
@@ -2836,4 +2830,21 @@ function center_v2(ordinates){
     }
 
     return new Vector2(0.5*(max.x-min.x),0.5*(max.y-min.y));
+}
+
+
+export{
+    Math2D,
+    Rect_Data,
+    Arc_Data,
+    Sector_Data,
+    Vector2,
+    Matrix2x2,
+    Matrix2x2T,
+    Polygon,
+    Bezier_Node,
+    Bezier_Polygon,
+    BezierCurve,
+    bezier_i_bezier_v,
+    center_v2,
 }

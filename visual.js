@@ -2,6 +2,23 @@
  * @LastEditors: Darth_Eternalfaith
  */
 
+import {
+    Math2D,
+    Rect_Data,
+    Arc_Data,
+    Sector_Data,
+    Vector2,
+    Matrix2x2,
+    Matrix2x2T,
+    Polygon,
+    Bezier_Node,
+    Bezier_Polygon,
+    BezierCurve,
+    bezier_i_bezier_v,
+    center_v2,
+}from "./Math2d.js";
+
+
 /**把色卡(#xxx)变成rgba的格式 */
 function colorToRGBA(str) {
     var rgbass;
@@ -161,4 +178,12 @@ function v2Animation(start,end,t){
         start.e+(end.e-start.e)*t,
         start.f+(end.f-start.f)*t,
     )
+}
+
+export {
+    colorToRGBA,
+    AnimationCtrl,
+    valueAnimation,
+    v2Animation,
+    m2tAnimation
 }

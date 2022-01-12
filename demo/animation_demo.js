@@ -1,6 +1,38 @@
 /*
  * @LastEditors: Darth_Eternalfaith
  */
+import {
+    colorToRGBA,
+    AnimationCtrl,
+    valueAnimation,
+    v2Animation,
+    m2tAnimation
+} from "../visual.js";
+import {
+    PrimitiveTGT as CanvasTGT,
+    PrimitiveRectTGT as CanvasRectTGT,
+    PrimitiveArcTGT as CanvasArcTGT,
+    PrimitiveSectorTGT as CanvasSectorTGT,
+    PrimitivePolygonTGT as CanvasPolygonTGT,
+    PrimitiveTGT_Group as CanvasTGT_Group,
+    PrimitiveBezierTGT as CanvasBezierTGT
+} from "../PrimitivesTGT_2D.js";
+import {
+    Math2D,
+    Rect_Data,
+    Arc_Data,
+    Sector_Data,
+    Vector2,
+    Matrix2x2,
+    Matrix2x2T,
+    Polygon,
+    Bezier_Node,
+    Bezier_Polygon,
+    BezierCurve,
+    bezier_i_bezier_v,
+    center_v2,
+}from "../Math2d.js";
+
 var canvas=document.getElementById("canvas");
 var ctx=canvas.getContext('2d');
 
@@ -28,14 +60,17 @@ var d1start =new Vector2(12.06794919,0),
     d2end   =new Vector2(6.033974595,53.66025405);
 
 var itemTGT0=new CanvasPolygonTGT();
-itemTGT0.fillStyle="#fff"
 itemTGT0.strokeStyle="#0000"
 var itemTGT1=itemTGT0.copy(),
     itemTGT2=itemTGT0.copy();
 
-    itemTGT0.data=itemPolygon;
-    itemTGT1.data=itemPolygon;
-    itemTGT2.data=itemPolygon;
+itemTGT0.data=itemPolygon;
+itemTGT1.data=itemPolygon;
+itemTGT2.data=itemPolygon;
+itemTGT0.fillStyle="#fff"
+itemTGT1.fillStyle="#fff"
+itemTGT2.fillStyle="#fff"
+
 
 var tgt_group0=new CanvasTGT_Group([itemTGT0]),
     tgt_group1=new CanvasTGT_Group([itemTGT1]),
@@ -72,13 +107,17 @@ var gm=tgt_group.transformMatrix,
 // 因为这个UnitBezier是图形学的,这个x坐标并不是时间轴t的控制点.
 // 如果要还原css的 Bezier 时间曲线，需要使用x坐标得到t然后用这个t得到y(值)坐标, 而不是直接使用t参数得到y坐标
 // 这样的话控制点的x坐标取值范围就必须是在0到1，不然某x对应的t就有可能有多个
-var animation_curve=new UnitBezier(0, 1.2, 0, 1.03);
-
+var animation_curve=new BezierCurve([
+    {x:0,y:0},
+    {x:1,y:1},
+    {x:0,y:1.2},
+    {x:1,y:1},
+]);
 /**
  * 把看上去是矩形的东西变成一块logo
  */
 function rect_to_logoItem(t){
-    var t=animation_curve.sampleCurveY(t);
+    var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
     var d1=v2Animation(d1start,d1end,t);
     var d2=v2Animation(d2start,d2end,t);
     itemPolygonNodes[1].x=d1.x;
@@ -96,7 +135,7 @@ function rect_to_logoItem(t){
  * 把logo缩小
  */
 function logoScale(t){
-    var t=animation_curve.sampleCurveY(t);
+    var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
     tgt_group._transformMatrix=m2tAnimation(gm,gm_end,t);
     ctxRender();
 }
@@ -104,7 +143,7 @@ function logoScale(t){
  * 把logo从item变成完整的一块
  */
 function logoItemShow(t){
-    var t=animation_curve.sampleCurveY(t);
+    var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
     tgt_group0._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0, 45,t)*Math.DEG);
     tgt_group1._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,165,t)*Math.DEG);
     tgt_group2._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,285,t)*Math.DEG);
@@ -298,4 +337,11 @@ function atf2(){
     animation2.frameCallback=animation_F2f;
     animation2.stopCallback=undefined;
     animation2.start(100);
+}
+
+window.tgts={
+    tgt_group:tgt_group,
+    tgt_group0:tgt_group0,
+    tgt_group1:tgt_group1,
+    tgt_group2:tgt_group2,
 }

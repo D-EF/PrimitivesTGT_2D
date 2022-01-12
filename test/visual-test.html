@@ -56,7 +56,7 @@
         var canvas=document.getElementById("canvasDemo"),ctx=canvas.getContext("2d");
 
         var tgt1=new CanvasRectTGT(-50,-50,100,100);
-        tgt1.transformMatrix=(createMatrix2x2T().rotate(45*Math.DEG).translate(200,200));
+        tgt1.transformMatrix=(new Matrix2x2T().rotate(45*Math.DEG).translate(200,200));
         tgt1.regEvent(canvas,"click",function(e){
             console.log(this);
         });
@@ -76,7 +76,7 @@
             {x:0,y:0}]
         );
         var tgt3 = new CanvasPolygonTGT();
-        tgt3.transformMatrix=(createMatrix2x2T().scale(2,2).rotate(23*Math.DEG).translate(100,150))
+        tgt3.transformMatrix=(new Matrix2x2T().scale(2,2).rotate(23*Math.DEG).translate(100,150))
         tgt3.data=tgt3data;
 
         tgt3.regEvent(canvas,"click",function(e){

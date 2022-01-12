@@ -80,7 +80,7 @@ class CanvasTGT{
         this.lineWidth=1;
         this.want_to_closePath=false;
         /**@type {Matrix2x2T} */
-        this._transformMatrix=createMatrix2x2T();
+        this._transformMatrix=new Matrix2x2T();
         this._worldToLocalM;
         /**
          * tgt的 data的类型 用于将json实例化为 CanvasTGT
@@ -694,7 +694,7 @@ class CanvasTGT_Group{
         else{
             this.children=[]
         }
-        this._transformMatrix=createMatrix2x2T();
+        this._transformMatrix=new Matrix2x2T();
         this._worldToLocalM=undefined;
         this.dataType="Group";
     }

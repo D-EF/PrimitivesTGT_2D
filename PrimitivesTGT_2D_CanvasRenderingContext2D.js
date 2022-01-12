@@ -1,9 +1,28 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-11 09:31:50
+ * @LastEditTime: 2022-01-12 15:59:58
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  */
+
+import {
+    OlFunction,
+} from "../basics/basics.js";
+import {
+    Math2D,
+    Rect_Data,
+    Arc_Data,
+    Sector_Data,
+    Vector2,
+    Matrix2x2,
+    Matrix2x2T,
+    Polygon,
+    Bezier_Node,
+    Bezier_Polygon,
+    BezierCurve,
+    bezier_i_bezier_v,
+    center_v2,
+}from "./Math2d.js";
 
 /**
  * temp
