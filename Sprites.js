@@ -147,18 +147,19 @@ class Sprites{
  */
 class Sprites_Animation{
     /**
-     * @param {Sprites} sprites 精灵图对象实例
+     * @param {Number} min_x x轴最小值
+     * @param {Number} max_x x轴最大值
+     * @param {Number} min_y y轴最小值
+     * @param {Number} max_y y轴最大值
      */
-    constructor(sprites){
-        /**@type {Sprites} 精灵图对象实例 */
-        this.sprites=sprites;
+    constructor(min_x,max_x,min_y,max_y){
         /** @type {Stepper} X方向的步进器 */
-        this.stepperx=new Stepper(0,sprites.spritesX);
+        this.stepperx=new Stepper(min_x,max_x);
         /** @type {Stepper} Y方向的步进器 */
-        this.steppery=new Stepper(0,sprites.spritesY);
-        /**@type {Function[]} 回调列表  this.callbackList[i](x,y,this)*/
+        this.steppery=new Stepper(min_y,max_y);
+        /**@type {Function[]} 结束回调队列  this.callbackList\[0\](x,y,this)*/
         this.callbackList=[];
-        /** @type {Funciton} 帧回调函数 如果返回true将会停止动画 */
+        /** @type {Funciton} 帧回调函数 如果返回true将会停止动画 this.frameCallback(x,y,this)*/
         this.frameCallback=nullfnc;
         /** @type {Boolean} 是否正在运行动画, 直接控制这个属性可以急停动画 */
         this._keepGo=false;
@@ -166,7 +167,7 @@ class Sprites_Animation{
     /**
      * 添加一个回调
      * @param {Function} callback 下一个动作
-     * @returns 
+     * @returns {Sprites_Animation} this
      */
     then(callback){
         this.callbackList.push(callback);
@@ -189,13 +190,14 @@ class Sprites_Animation{
      * @param {Number} edy 终点的y坐标(格)
      * @param {String} order 执行顺序 使用两个字符串控制; 例"y1x-1" 即从上到下然后从右到左
      * @param {Number} fps  动画帧率
+     * @returns {Sprites_Animation} this
      */
     play(opx,opy,edx,edy,order,fps){
         var v={
             opx:opx,
             opy:opy,
-            edx:edx,
-            edy:edy
+            edx:this.stepperx.set(edx),
+            edy:this.steppery.set(edy)
         },
         orderOBJ=[],
         that=this;
@@ -214,7 +216,7 @@ class Sprites_Animation{
             k:order[j].toLowerCase(),
             v:Number(order.slice(j+1,i))
         });
-
+        
         // 初始化步进器
         this.stepperx.set(opx);
         this.steppery.set(opy);
@@ -227,13 +229,14 @@ class Sprites_Animation{
 
         var interval= setInterval(function (){
             if(
-                that._keepGo&&!that.frameCallback(that.stepperx.valueOf(),that.steppery.valueOf(),that)&&
+                that._keepGo&&
                 (
                     (v["ed"+orderOBJ[1].k]===that["stepper"+orderOBJ[1].k].valueOf())&&
                     (v["ed"+orderOBJ[0].k]*orderOBJ[0].v)>=(that["stepper"+orderOBJ[0].k].valueOf()*orderOBJ[0].v)||
                     (v["ed"+orderOBJ[1].k]>that["stepper"+orderOBJ[1].k].valueOf())
                 )
             ){
+                that._keepGo=!that.frameCallback(that.stepperx.valueOf(),that.steppery.valueOf(),that)
                 that["stepper"+orderOBJ[0].k].next(orderOBJ[0].v);
                 // 继续
             }else{
