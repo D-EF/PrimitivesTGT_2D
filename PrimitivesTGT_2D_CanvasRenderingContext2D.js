@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-12 15:59:58
+ * @LastEditTime: 2022-01-13 19:56:30
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  */
 
@@ -86,4 +86,61 @@ import {
        ctx.rect(x,y,w,h);
        ctx.stroke();
    }
+}
+
+
+/**
+ * 创建精灵图像填充类型
+ * @param {Sprites} _sprites 精灵图像实例
+ */
+function createSpritesFillStyle(_sprites,sx,sy){
+    var vMin=this.getMin();
+    var vMax=this.getMax();
+    return _sprites.createPattern(sx,sy,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
+}
+
+class PrimitiveTGT_Renderer{
+    /**
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     */
+    constructor(ctx){
+        /**@type {CanvasRenderingContext2D} 渲染上下文 */
+        this.ctx=ctx;
+        this.fillStyle="#fff0";
+        this.strokeStyle="#000";
+    }
+    static copy(tgt){
+
+    }
+    copy(){
+        PrimitiveTGT_Renderer.copy(this);
+    }
+    
+    /** 
+     * 渲染图形 
+     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
+    */
+    render(ctx){
+        ctx.save();
+        ctx.beginPath();
+        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e||0,this.transformMatrix.f||0);
+        ctx.fillStyle=this.fillStyle;
+        ctx.strokeStyle=this.strokeStyle;
+        ctx.lineWidth=this.lineWidth;
+    
+        this.createCanvasPath(ctx);
+
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.restore();
+    }
+    /**
+     * 根据 tgt 的属性 创建用于绘制的路径
+     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
+     */
+    createCanvasPath(ctx){
+        // 在派生类中实现
+    }
 }

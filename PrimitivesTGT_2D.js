@@ -30,10 +30,6 @@ class PrimitiveTGT{
     constructor(){
         /**@type {Object} */
         this.data;
-        /** @type {<String,>} */
-        this.fillStyle="#fff0";
-        this.strokeStyle="#000";
-        this.lineWidth=1;
         this.want_to_closePath=false;
         /**@type {Matrix2x2T} */
         this._transformMatrix=new Matrix2x2T();
@@ -53,9 +49,6 @@ class PrimitiveTGT{
         var rtn;
         rtn=PrimitiveTGT.create_ByDataType[tgt.dataType](tgt.data);
 
-        rtn.fillStyle           = tgt.fillStyle.copy?tgt.fillStyle.copy():tgt.fillStyle;
-        rtn.strokeStyle         = tgt.strokeStyle.copy?tgt.strokeStyle.copy():tgt.strokeStyle;
-        rtn.lineWidth           = tgt.lineWidth;
         rtn.transformMatrix     = Matrix2x2T.copy(tgt._transformMatrix);
         rtn._worldToLocalM      = Matrix2x2T.copy(tgt._worldToLocalM);
         rtn.want_to_closePath   = tgt.want_to_closePath;
@@ -82,15 +75,6 @@ class PrimitiveTGT{
      */
     getMax(){
         return this.data.getMax();
-    }
-    /**
-     * 创建精灵图像填充类型
-     * @param {Sprites} _sprites 精灵图像实例
-     */
-    createSpritesFillStyle(_sprites,sx,sy,sw,sh){
-        var vMin=this.getMin();
-        var vMax=this.getMax();
-        return _sprites.createPattern(sx,sy,sw,sh,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
     }
     /** 如果需要使用逆变换矩阵的话,不要直接修改矩阵的参数 */
     set transformMatrix(m){
@@ -146,32 +130,6 @@ class PrimitiveTGT{
     isInside(_x,_y){
         // 2个重载
     }
-    /** 
-     * 渲染图形 
-     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
-    */
-    render(ctx){
-        ctx.save();
-        ctx.beginPath();
-        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e||0,this.transformMatrix.f||0);
-        ctx.fillStyle=this.fillStyle;
-        ctx.strokeStyle=this.strokeStyle;
-        ctx.lineWidth=this.lineWidth;
-    
-        this.createCanvasPath(ctx);
-
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.restore();
-    }
-    /**
-     * 根据 tgt 的属性 创建用于绘制的路径
-     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
-     */
-    createCanvasPath(ctx){
-        // 在派生类中实现
-    }
     /** 转换成多边形
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
      * @returns {PrimitivePolygonTGT}
@@ -210,19 +168,6 @@ class PrimitiveTGT{
      * @param {PrimitiveTGT} primitiveTGT2 需要检测碰撞的对象
      */
     static isTouch(primitiveTGT1,primitiveTGT2){}
-    /**
-     * 根据鼠标xy触发内部tgt事件
-     */
-    static trigger(e){
-        var i,j,tgts=this.eventTGTs[e.type]
-        for(i=tgts.length-1;i>=0;--i){
-            if(tgts[i].isInside(e.offsetX,e.offsetY)){
-                for(j=tgts[i][e.type+"Event"].length-1;j>=0;--j){
-                    if(tgts[i][e.type+"Event"][j].call(tgts[i],e,this)=="stop")return;
-                }
-            }
-        }
-    }
     /** 
      * 根据数据类型创建
      */
