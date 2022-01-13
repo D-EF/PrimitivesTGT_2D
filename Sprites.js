@@ -142,202 +142,109 @@ class Sprites{
 
 /*精灵图像截取ed*/
 
-
 /**
- * 
- * @param {Sprites} _Sprites Sprites类的实例化
- * @param {Number} order 播放顺序 0 从左到右 从上到下; 1 从上到下 从左到右; 2从右到左 从上到下; 3 从上到下 从右到左; 4 从左到右 从下到上; 5 从下到上 从左到右; 6 从右到左 从下到上; 7 从下到上 从右到左
- * @param {Number} FPS 每秒的帧数
+ * 精灵图像帧动画控制器
  */
-function Sprites_Animation(_Sprites,order,FPS){
-    this.Sprites=_Sprites;
-    this.order=order||0;
-    this.FPS=FPS||24;
-    /** 动画完成时的回调 */
-    this.callback;
-    /** 动画跑完一次循环后的回调 */
-    this.callstep;
-    /** 用于中断动画的函数，函数返回0时将中断动画 */
-    this.discontinueFunction;
-}
-Sprites_Animation.prototype={
-    constructor:Sprites_Animation,
+class Sprites_Animation{
     /**
-     * 计算下一个xy
-     * @param {Number} x 
-     * @param {Number} y 
-     * @param {Number} sx 
-     * @param {Number} sy 
-     * @param {Number} _unXL    左侧的空省
-     * @param {Number} _unYT    上方的空省
-     * @param {Number} _unXR    右侧的空省
-     * @param {Number} _unYB    下方的空省
-     * @return {Array}  [x,y,endFlag]
+     * @param {Sprites} sprites 精灵图对象实例
      */
-    calcNextXY:function(_x,_y,_sx,_sy,_unXL,_unXR,_unYT,_unYB,_x2,_y2){
-        var x=_x,y=_y,endFlag=0;
-        var minX=_unXL,maxX=this.Sprites.spritesX-1-_unXR,minY=_unYT,maxY=this.Sprites.spritesY-1-_unYB;
-        switch(this.order){
-            // 0 从左到右 从上到下;
-            case 0:
-                x+=_sx;
-                if(x>maxX){
-                    x=minX;
-                    y+=_sy;
-                }
-                if(y>maxY||y>_y2||(y==_y2&&x>=_x2)){
-                    endFlag=1;
-                }
-            break;
-            // 1 从上到下 从左到右;
-            case 1:
-                y+=_sy;
-                if(y>maxY){
-                    y=minY;
-                    x+=_sx;
-                }
-                if(x>maxX||x>_x2||(x==_x2&&y>=_y2)){
-                    endFlag=1;
-                }
-            break;
-            // 2从右到左 从上到下;
-            case 2:
-                x-=_sx;
-                if(x<minY){
-                    x=maxX;
-                    y+=_sy;
-                }
-                if(y>maxY||y>_y2||(y==_y2&&x<=_x2)){
-                    endFlag=1;
-                }
-            break;
-            // 3 从上到下 从右到左; 
-            case 3:
-                y+=_sy;
-                if(y>maxY){
-                    y=minY;
-                    x-=_sx;
-                }
-                if(x<minX||x<_x2||(x==_x2&&y>=_y2)){
-                    endFlag=1;
-                }
-            break;
-            // 4 从左到右 从下到上;
-            case 4:
-                x+=_sx;
-                if(x>maxX){
-                    x=minX;
-                    y-=_sy;
-                }
-                if(y<minY||y<_y2||(y==_y2&&x>=_x2)){
-                    endFlag=1;
-                }
-            break;
-            // 5 从下到上 从左到右;
-            case 5:
-                y-=_sx;
-                if(y<minY){
-                    y=maxY;
-                    x+=_sx;
-                }
-                if(x>maxX||x>_x2||(x==_x2&&y<=_y2)){
-                    endFlag=1;
-                }
-            break;
-            // 6 从右到左 从下到上; 
-            case 6:
-                x-=_sx;
-                if(x<minY){
-                    x=maxX;
-                    y-=_sy;
-                }
-                if(y<minY||y<_y2||(y==_y2&&x<=_x2)){
-                    endFlag=1;
-                }
-            break;
-            // 7 从下到上 从右到左;
-            case 7:
-                y-=_sy;
-                if(x<minY){
-                    y=maxY;
-                    x-=_sx;
-                }
-                if(x<minX||x<_x2||(x==_x2&&y<=_y2)){
-                    endFlag=1;
-                }
-            break;
-            default:
-                endFlag=1;
-            break;
-        }
-
-        return [x,y,endFlag];
-    },
-    /**
-     * 运行动画
-     * @param {HTMLElement} _element 目标元素
-     * @param {Number} X1   起点的X坐标
-     * @param {Number} Y1   起点的Y坐标
-     * @param {Number} X2   终点的X坐标
-     * @param {Number} Y2   终点的Y坐标
-     * @param {Number} SX   当前图像在整张图像中X占据多少格子,同时也是动画的步长
-     * @param {Number} SY   当前图像在整张图像中Y占据多少格子,同时也是动画的步长
-     * @param {Number} _unXL     左侧的空省
-     * @param {Number} _unYT     上方的空省
-     * @param {Number} _unXR     右侧的空省
-     * @param {Number} _unYB     下方的空省
-     */
-    go:function(_element,X1,Y1,X2,Y2,_SX,_SY,_unXL,_unYT,_unXR,_unYB,_count){
-        var thisAnimation=this,
-            F_Speeds=1000/this.FPS,
-            X=X1||0,Y=Y1||0,SX=_SX||1,SY=_SY||1,
-            unXL=_unXL||0,unXR=_unXR||0,unYT=_unYT||0,unYB=_unYB||0,endFlag=0,
-            callback=this.callback,
-            callstep=this.callstep,
-            _arguments=arguments,
-            count=_count||1,
-            discontinueFunction=this.discontinueFunction||function(){return 1};
-        clearInterval(_element.SpritesAnimationTimer);
-        _element.SpritesAnimationTimer=setInterval(function(){
-            thisAnimation.Sprites.renderSprites(_element,X,Y,_SX,_SY);
-            if(!discontinueFunction(thisAnimation)){
-                if(callback&&callback.constructor==Function){
-                    callback();
-                }
-                clearInterval(_element.SpritesAnimationTimer);
-            }
-            [X,Y,endFlag]=thisAnimation.calcNextXY(X,Y,SX,SY,unXL,unXR,unYT,unYB,X2,Y2);
-            if(endFlag){
-                if(--count){
-                    X=X1||0,Y=Y1||0;
-                    if(callstep&&callstep.constructor==Function)callstep.apply(thisAnimation,_arguments);
-                }
-                else{
-                    // 结束
-                    clearInterval(_element.SpritesAnimationTimer);
-                    if(callback&&callback.constructor==Function)callback.apply(thisAnimation,_arguments);
-                }
-            }
-        },F_Speeds);
-    }
-}
-
-class Sprites_loop{
-    /**
-     * @param {Sprites} sprites Sprites 实例
-     * @param {Number} _min_x 最小的x, 单位是 Sprites 的格
-     * @param {Number} _max_x 最大的x, 单位是 Sprites 的格
-     * @param {Number} _min_y 最小的y, 单位是 Sprites 的格
-     * @param {Number} _max_y 最大的y, 单位是 Sprites 的格
-     */
-    constructor(sprites,_min_x,_max_x,_min_y,_max_y){
-        var max_x=_max_x===undefined?sprites.spritesX:max_x,
-            min_x=_min_x||0,
-            min_y=_min_y||0,
-            max_y=_max_y===undefined?sprites.spritesX:max_y;
+    constructor(sprites){
+        /**@type {Sprites} 精灵图对象实例 */
         this.sprites=sprites;
-        this._sectionX=new Stepper(max_x,min_x);
-        this._sectionY=new Stepper(max_y,min_y);
+        /** @type {Stepper} X方向的步进器 */
+        this.stepperx=new Stepper(0,sprites.spritesX);
+        /** @type {Stepper} Y方向的步进器 */
+        this.steppery=new Stepper(0,sprites.spritesY);
+        /**@type {Function[]} 回调列表  this.callbackList[i](x,y,this)*/
+        this.callbackList=[];
+        /** @type {Funciton} 帧回调函数 如果返回true将会停止动画 */
+        this.frameCallback=nullfnc;
+        /** @type {Boolean} 是否正在运行动画, 直接控制这个属性可以急停动画 */
+        this._keepGo=false;
+    }
+    /**
+     * 添加一个回调
+     * @param {Function} callback 下一个动作
+     * @returns 
+     */
+    then(callback){
+        this.callbackList.push(callback);
+        return this;
+    }
+    /**
+     * 移除一个回调
+     * @param {Function} callback 
+     * @returns {Sprites_Animation} this
+     */
+    removeCallback(callback){
+        this.callbackList.splice(this.callbackList.indexOf(callback),1);
+        return this;
+    }
+    /**
+     * 执行动画
+     * @param {Number} opx 起点的x坐标(格)
+     * @param {Number} opy 起点的y坐标(格)
+     * @param {Number} edx 终点的x坐标(格)
+     * @param {Number} edy 终点的y坐标(格)
+     * @param {String} order 执行顺序 使用两个字符串控制; 例"y1x-1" 即从上到下然后从右到左
+     * @param {Number} fps  动画帧率
+     */
+    play(opx,opy,edx,edy,order,fps){
+        var v={
+            opx:opx,
+            opy:opy,
+            edx:edx,
+            edy:edy
+        },
+        orderOBJ=[],
+        that=this;
+        var i=1,j,fs=1000/fps;
+        that._keepGo=true;
+
+        // 分析顺序
+        while((order[i]>='0'&&order[i]<='9')||order[i]==='-')++i;
+        orderOBJ.push({
+            k:order[0].toLowerCase(),
+            v:Number(order.slice(1,i))
+        });
+        j=i;
+        do{++i;}while((order[i]>='0'&&order[i]<='9')||order[i]==='-');
+        orderOBJ.push({
+            k:order[j].toLowerCase(),
+            v:Number(order.slice(j+1,i))
+        });
+
+        // 初始化步进器
+        this.stepperx.set(opx);
+        this.steppery.set(opy);
+        this["stepper"+orderOBJ[1].k].regressionlinListener=[function (){
+            that._keepGo=false;
+        }];
+        this["stepper"+orderOBJ[0].k].regressionlinListener=[function(){
+            that["stepper"+orderOBJ[1].k].next(orderOBJ[1].v);
+        }];
+
+        var interval= setInterval(function (){
+            if(
+                that._keepGo&&!that.frameCallback(that.stepperx.valueOf(),that.steppery.valueOf(),that)&&
+                (
+                    (v["ed"+orderOBJ[1].k]===that["stepper"+orderOBJ[1].k].valueOf())&&
+                    (v["ed"+orderOBJ[0].k]*orderOBJ[0].v)>=(that["stepper"+orderOBJ[0].k].valueOf()*orderOBJ[0].v)||
+                    (v["ed"+orderOBJ[1].k]>that["stepper"+orderOBJ[1].k].valueOf())
+                )
+            ){
+                that["stepper"+orderOBJ[0].k].next(orderOBJ[0].v);
+                // 继续
+            }else{
+                // 结束
+                that._keepGo=false;
+                clearInterval(interval);
+                that.callbackList[0].call(that,that.stepperx.valueOf(),that.steppery.valueOf(),that);
+                that.callbackList.shift();
+            }
+        },fs);
+        return this;
     }
 }
 
@@ -345,5 +252,4 @@ class Sprites_loop{
 export{
     Sprites,
     Sprites_Animation,
-    Sprites_loop
 }

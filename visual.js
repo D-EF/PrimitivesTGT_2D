@@ -83,17 +83,18 @@ class AnimationCtrl{
      * @param {Function} stopCallback 
      */
     constructor(frameCallback,stopCallback){
-        /**@type {Boolean}表示是否正在进行动作*/
+        /**@type {Boolean}表示是否正在进行动作 设置为false可以急停动画*/
         this._keepGo=false;
         /**@type {Number}开始的时间*/
         this._startTime=0;
         /**@type {Number} 用于表示时间长度, 值为 1/时间长度 */
         this.timeD;
-        
         /**@type {Function} 每次进行动作的回调 frameCallback(t,this)*/
         this.frameCallback=frameCallback;
         /**@type {Function} 结束时的回调 stopCallback(this)*/
         this.stopCallback=stopCallback;
+        /**@type {Function} 控制结束函数 返回true时会停下动画*/
+        this.discontinueFunction=nullfnc
     }
     /**
      * 开始动作
@@ -120,7 +121,7 @@ class AnimationCtrl{
      */
      r_frame(){
         var that=this;
-        if(this._keepGo)
+        if(this._keepGo&&!that.discontinueFunction())
         this.animationID=requestAnimationFrame(
             function(){
                 var t=(performance.now()-that._startTime)*that.timeD;
