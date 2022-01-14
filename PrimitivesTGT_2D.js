@@ -26,14 +26,97 @@ import {
 /** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */
 var def_accuracy=20;
 
+/**材质抽象类 */
+class Material{
+    constructor(texture){
+        /**@type {Sprites} */
+        this.texture=texture;
+    }
+    /**
+     * 获取2d材质
+     * @param {PrimitiveTGT} tgt 图元对象
+     * @param {*} ctx 渲染上下文
+     */
+    get(tgt,ctx){
+        // 虚函数
+    }
+}
+/**渲染器抽象类 */
+class PrimitiveTGT_Renderer{
+    /**
+     * @param {PrimitiveTGT[]} tgtList 等待渲染的对象列表
+     */
+    constructor(tgtList){
+        this.tgtList=tgtList.concat();
+        this.rendererIndex=PrimitiveTGT_Renderer.rendererIndex++;
+        PrimitiveTGT_Renderer.rendererList.push(rendererList);
+    }
+    /**@type {Number} 渲染器在列表中的下标 */
+    static rendererIndex=0;
+    /**@type {PrimitiveTGT_Renderer[]} 已有的渲染器列表 */
+    static rendererList=[];
+    /**
+     * 将渲染器从静态渲染器列表中移除
+     * @param {PrimitiveTGT_Renderer} renderer 渲染器实例
+     */
+    static remove_in_rendererList(renderer){
+        PrimitiveTGT_Renderer.rendererList.splice(
+            PrimitiveTGT_Renderer.rendererList.indexOf(renderer),1
+        )
+    }
+    /**
+     * 拷贝函数
+     * @param {PrimitiveTGT_Renderer} tgt 
+     * @returns 
+     */
+    static copy(tgt){
+        var rtn = new PrimitiveTGT_Renderer(tgt.tgtList);
+        return rtn;
+    }
+    /** 拷贝函数 */
+    copy(){
+        return this.constructor.copy(this);
+    }
+    /**
+     * @param {PrimitiveTGT} tgt 
+     */
+    render(tgt){}
+    render_all(){
+        for(var i=0;i<this.tgtList.length;++i){
+            this.render(this.tgtList[i]);
+        }
+    }
+}
+
+
+/**
+ * 图元抽象类
+ */
 class PrimitiveTGT{
     constructor(){
-        /**@type {Object} */
+        /**@type {Object} 数据*/
         this.data;
+        /**@type {Boolean} 自动闭合路径 开关*/
         this.want_to_closePath=false;
-        /**@type {Matrix2x2T} */
+        /**@type {Matrix2x2T} 局部坐标变换到世界坐标的矩阵*/
         this._transformMatrix=new Matrix2x2T();
+        /**@type {Matrix2x2T} 世界坐标变换到局部坐标的矩阵*/
         this._worldToLocalM;
+
+        /**@type {Material} 填充 材质*/
+        this.fill_Material;
+        /**@type {Vector2} 填充 贴图坐标 */
+        this.fill_uv=new Vector2();
+        /**@type {Vector2} 填充 贴图坐标宽高 */
+        this.fill_uvwh=new Vector2(1,1);
+        
+        /**@type {Material} 描边 材质*/
+        this.stroke_Material;
+        /**@type {Vector2} 描边 贴图坐标*/
+        this.uv=new Vector2();
+        /**@type {Vector2} 描边 贴图坐标宽高 */
+        this.uvwh=new Vector2(1,1);
+
         /**
          * tgt的 data的类型 用于将json实例化为 PrimitiveTGT
          * @type {String}
@@ -47,11 +130,16 @@ class PrimitiveTGT{
      */
     static copy(tgt){
         var rtn;
-        rtn=PrimitiveTGT.create_ByDataType[tgt.dataType](tgt.data);
-
-        rtn.transformMatrix     = Matrix2x2T.copy(tgt._transformMatrix);
-        rtn._worldToLocalM      = Matrix2x2T.copy(tgt._worldToLocalM);
-        rtn.want_to_closePath   = tgt.want_to_closePath;
+        rtn                   = PrimitiveTGT.create_ByDataType[tgt.dataType](tgt.data);
+        rtn.transformMatrix   = Matrix2x2T.copy(tgt._transformMatrix);
+        rtn._worldToLocalM    = Matrix2x2T.copy(tgt._worldToLocalM);
+        rtn.want_to_closePath = tgt.want_to_closePath;
+        rtn.fill_Material     = this.fill_Material;
+        rtn.stroke_Material   = this.stroke_Material;
+        rtn.fill_uv           = Vector2.copy(this.fill_uv);
+        rtn.fill_uvwh         = Vector2.copy(this.fill_uvwh);
+        rtn.uv                = Vector2.copy(this.uv);
+        rtn.uvwh              = Vector2.copy(this.uvwh);
         
         return rtn;
     }
@@ -193,7 +281,7 @@ class PrimitiveTGT{
         "Polygon":function(data){
             return new PrimitivePolygonTGT(data);
         },
-        "Bezier_Data":function(data){
+        "Bezier_Polygon":function(data){
             return new PrimitiveBezierTGT(data);
         }
     }
@@ -213,9 +301,6 @@ class PrimitiveRectTGT extends PrimitiveTGT{
         this.dataType="Rect_Data";
         /** 矩形一直是封闭图形 */
         this.want_to_closePath=true;
-    }
-    createCanvasPath(ctx){
-        ctx.rect(this.data.x,this.data.y,this.data.w,this.data.h);
     }
 }
 
@@ -237,15 +322,6 @@ class PrimitiveArcTGT extends PrimitiveTGT{
         this.data=new Arc_Data(cx,cy,r,startAngle,endAngle);
         this.dataType="Arc_Data";
     }
-    createCanvasPath(ctx){
-        ctx.arc(this.data.c.x,this.data.c.y,this.data.r,this.data.startAngle,this.data.endAngle,false);
-        if(this.want_to_closePath){
-            var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
-            if((Math.PI*2>arcA)&&this.want_to_closePath){
-                ctx.closePath();
-            }
-        }
-    }
 }
 /**
  * 扇形
@@ -262,24 +338,15 @@ class PrimitiveSectorTGT extends PrimitiveTGT{
         super();
         /**@type {Sector_Data} */
         this.data=new Sector_Data(cx,cy,r,startAngle,endAngle);
-        this.dataType="Arc_Data";
+        this.dataType="Sector_Data";
         /** 扇形一直是封闭图形 */
         this.want_to_closePath=true;
     }
-    createCanvasPath(ctx){
-        ctx.arc(this.data.c.x,this.data.c.y,this.data.r,this.data.startAngle,this.data.endAngle,false);
-        if(this.want_to_closePath){
-            var arcA=Math.abs((this.data.anticlockwise?(this.data.startAngle-this.data.endAngle):(this.data.endAngle-this.data.startAngle)));
-            ctx.lineTo(this.data.c.x,this.data.c.y)
-            if((Math.PI*2>arcA)){
-                ctx.closePath();
-            }
-        }
-    }
 }
 
-/** 多边形
-*/
+/** 
+ * 多边形
+ */
 class PrimitivePolygonTGT extends PrimitiveTGT{
     /**
      * @param {Polygon} _polygon 多边形
@@ -311,19 +378,192 @@ class PrimitivePolygonTGT extends PrimitiveTGT{
     getPolygonProxy(){
         return this.data.copy();
     }
-    createCanvasPath(ctx){
-        var i=this.data.nodes.length-1,
-            nodes=this.data.nodes;
-        ctx.moveTo(nodes[i].x,nodes[i].y);
-        for(--i;i>=0;--i){
-            ctx.lineTo(nodes[i].x,nodes[i].y);
-        }
-        if(this.want_to_closePath){
-            ctx.closePath();
-        }
-    }
 }
 
+
+// todo BezierTGT
+/**
+ * 贝塞尔曲线多边形
+ */
+class PrimitiveBezierTGT extends PrimitiveTGT{
+    /**
+     * @param {Bezier_Polygon} bezier_polygon 
+     */
+    constructor(bezier_polygon){
+           super();
+           if(bezier_polygon)
+           /**@type {Bezier_Polygon} */
+           this.data=Bezier_Polygon.copy(bezier_polygon);
+           this.dataType="Bezier_Polygon";
+       }
+       /**
+        * 将局部坐标系的 nodes 转换到世界坐标系
+        * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
+        */
+       nodesToWorld(clear_tfm_f=true){
+           // this.data.linearMapping(this.transformMatrix,true)
+           for(var i=this.data.nodes.length-1;i>=0;--i){
+               this.data.nodes[i].node=this.localToWorld(this.data.nodes[i].node);
+               this.data.nodes[i].hand_before=this.localToWorld(this.data.nodes[i].hand_before);
+               this.data.nodes[i].hand_after=this.localToWorld(this.data.nodes[i].hand_after);
+           }
+           if(clear_tfm_f){
+               this.transformMatrix=new Matrix2x2T();
+           }
+       }
+       /**
+        * @param {CanvasRenderingContext2D} ctx 
+        */
+       createCanvasPath(ctx){
+       }
+}
+
+/**
+ * PrimitiveTGT 组
+ */
+ class PrimitiveTGT_Group{
+    /**
+     * 
+     * @param {PrimitiveTGT[],PrimitiveTGT_Group[]} tgts 
+     */
+    constructor(tgts){
+        /**@type {PrimitiveTGT[],PrimitiveTGT_Group[]} */
+        this.children;
+        if(tgts!==undefined){
+            this.children=[].concat(tgts);
+        }
+        else{
+            this.children=[]
+        }
+        this._transformMatrix=new Matrix2x2T();
+        this._worldToLocalM=undefined;
+        this.dataType="Group";
+    }
+    /**
+     * 添加子项
+     * @param {PrimitiveTGT} tgt PrimitiveTGT对象
+     */
+    addChildren(tgt){
+        this.children.push(tgt);
+    }
+    /**
+     * 添加子项
+     * @param {PrimitiveTGT[]} tgt PrimitiveTGT对象
+     */
+    addChildrens(tgts){
+        this.children=this.children.concat(tgts);
+    }
+    /**
+     * 移除一个子项
+     * @param {Number} index 下标
+     */
+    removeChildrenByIndex(index){
+        this.children.splice(index,1);
+    }
+    /**
+     * 移除一个子项
+     * @param {PrimitiveTGT} tgt 必须是同一个子项
+     */
+    removeChildren(tgt){
+        for(var i=this.children.length-1;i>=0;--i){
+            if(this.children[i]===tgt)
+            this.children.splice(this.children.indexOf,1);
+        }
+    }
+
+    /**
+     * 拷贝函数
+     * 注意别把自己放在自己的后代里
+     * @param {PrimitiveTGT_Group}
+     * @return {PrimitiveTGT_Group} 返回一个拷贝
+     */
+    static copy(tgt){
+        if(tgt.dataType==="Group"){
+            var rtn=new PrimitiveTGT_Group();
+            for(var i=tgt.children.length-1;i>=0;--i){
+                rtn.children.push(PrimitiveTGT_Group.copy(tgt.children[i]));
+            }
+            rtn._transformMatrix=Matrix2x2T.copy(tgt._transformMatrix);
+            rtn._worldToLocalM=Matrix2x2T.copy(tgt._worldToLocalM);
+            return rtn;
+        }else{
+            return PrimitiveTGT.copy(tgt);
+        }
+    }
+
+    /**
+     * 拷贝函数
+     * @return {PrimitiveTGT_Group} 返回一个拷贝
+     */
+    copy(){
+        return PrimitiveTGT_Group.copy(this);
+    }
+    get transformMatrix(){
+        return this._transformMatrix;
+    }
+    set transformMatrix(m){
+        this._transformMatrix=m.copy();
+        this._worldToLocalM=undefined;
+        return this._transformMatrix;
+    }
+    get worldToLocalM(){
+        this.re_worldToLocalM();
+        return _worldToLocalM;
+    }
+    /**
+     * 刷新逆变换矩阵
+     */
+    re_worldToLocalM(){
+        if(this._worldToLocalM===undefined){
+            this._worldToLocalM=this.transformMatrix.inverse();
+        }
+    }
+    
+    /** 
+     * 获取点在某子项内部
+     * @param {Number} _x    重载1的参数 世界坐标x
+     * @param {Number} _y    重载1的参数 世界坐标y
+     * @param {Vector2} _v   重载2的参数 世界坐标向量
+     * @returns {Number} 返回下标
+    */
+    inside_i(_x,_y){
+        // 2个重载
+    }
+    
+    /** 
+     * 获取点是否在子项内部
+     * @param {Number} _x    重载1的参数 世界坐标x
+     * @param {Number} _y    重载1的参数 世界坐标y
+     * @param {Vector2} _v   重载2的参数 世界坐标向量
+     * @returns {Boolean} 返回是否在子项内
+     */
+    isInside(_x,_y){
+        var i;
+        if(_x.constructor===Vector2) i=this.inside_i(_x)
+        else i=this.inside_i(_x,_y);
+        return i!==-1;
+    }
+    /**
+     * 生成世界坐标的多边形集合
+     * @param {Boolean} f 组的该方法中的是无用的属性
+     * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
+     * @returns {PrimitivePolygonTGT[]}
+     */
+    create_worldPolygons(f,_accuracy=def_accuracy){
+        /**@type {PrimitivePolygonTGT[]}  */
+        var rtn=[];
+        var i = this.children.length-1;
+        for(;i>=0;--i){
+            rtn=rtn.concat(this.children[i].create_worldPolygons(true,_accuracy));
+        }
+        console.log('rtn :>> ', rtn);
+        for(i=rtn.length-1;i>=0;--i){
+            rtn[i].transformMatrix=this.transformMatrix;
+            rtn[i].nodesToWorld();
+        }
+        return rtn;
+    }
+}
 // PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
 
 function _PrimitiveTGT_isInside(_x,_y){
@@ -497,7 +737,7 @@ function isTouch_Arc_Arc(tgt1,tgt2){
 
 PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveArcTGT],isTouch_Arc_Arc);
 
-// 扇形碰撞 --------------------------------------------------------------------------------------------
+// 扇形碰撞 -------------------------------------------------------------------------------------------------
 
 /**
  * 碰撞检测函数 矩形 扇形(圆形)
@@ -576,169 +816,6 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveSectorTGT],function(t
 
 PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch_Sector_Sector);
 
-// 组----------------------------------------------------------------------------------------------------------------------------------------------
-
-/**
- * PrimitiveTGT 组
- */
-class PrimitiveTGT_Group{
-    /**
-     * 
-     * @param {PrimitiveTGT,PrimitiveTGT_Group[]} tgts 
-     */
-    constructor(tgts){
-        /**@type {PrimitiveTGT,PrimitiveTGT_Group[]} */
-        this.children;
-        if(tgts!==undefined){
-            this.children=[].concat(tgts);
-        }
-        else{
-            this.children=[]
-        }
-        this._transformMatrix=new Matrix2x2T();
-        this._worldToLocalM=undefined;
-        this.dataType="Group";
-    }
-    /**
-     * 添加子项
-     * @param {PrimitiveTGT} tgt PrimitiveTGT对象
-     */
-    addChildren(tgt){
-        this.children.push(tgt);
-    }
-    /**
-     * 添加子项
-     * @param {PrimitiveTGT[]} tgt PrimitiveTGT对象
-     */
-    addChildrens(tgts){
-        this.children=this.children.concat(tgts);
-    }
-    /**
-     * 移除一个子项
-     * @param {Number} index 下标
-     */
-    removeChildrenByIndex(index){
-        this.children.splice(index,1);
-    }
-    /**
-     * 移除一个子项
-     * @param {PrimitiveTGT} tgt 必须是同一个子项
-     */
-    removeChildren(tgt){
-        for(var i=this.children.length-1;i>=0;--i){
-            if(this.children[i]===tgt)
-            this.children.splice(index,1);
-        }
-    }
-
-    /**
-     * 拷贝函数
-     * 注意别把某个组放在自己的后代里
-     * @param {PrimitiveTGT_Group}
-     * @return {PrimitiveTGT_Group} 返回一个拷贝
-     */
-    static copy(tgt){
-        if(tgt.dataType==="Group"){
-            var rtn=new PrimitiveTGT_Group();
-            for(var i=tgt.children.length-1;i>=0;--i){
-                rtn.children.push(PrimitiveTGT_Group.copy(tgt.children[i]));
-            }
-            rtn._transformMatrix=Matrix2x2T.copy(tgt._transformMatrix);
-            rtn._worldToLocalM=Matrix2x2T.copy(tgt._worldToLocalM);
-            return rtn;
-        }else{
-            return PrimitiveTGT.copy(tgt);
-        }
-    }
-
-    /**
-     * 拷贝函数
-     * @return {PrimitiveTGT_Group} 返回一个拷贝
-     */
-    copy(){
-        return PrimitiveTGT_Group.copy(this);
-    }
-    get transformMatrix(){
-        return this._transformMatrix;
-    }
-    set transformMatrix(m){
-        this._transformMatrix=m.copy();
-        this._worldToLocalM=undefined;
-        return this._transformMatrix;
-    }
-    get worldToLocalM(){
-        this.re_worldToLocalM();
-        return _worldToLocalM;
-    }
-    /**
-     * 刷新逆变换矩阵
-     */
-    re_worldToLocalM(){
-        if(this._worldToLocalM===undefined){
-            this._worldToLocalM=this.transformMatrix.inverse();
-        }
-    }
-    
-    /** 
-     * 获取点在某子项内部
-     * @param {Number} _x    重载1的参数 世界坐标x
-     * @param {Number} _y    重载1的参数 世界坐标y
-     * @param {Vector2} _v   重载2的参数 世界坐标向量
-     * @returns {Number} 返回下标
-    */
-    inside_i(_x,_y){
-        // 2个重载
-    }
-    
-    /** 
-     * 获取点是否在子项内部
-     * @param {Number} _x    重载1的参数 世界坐标x
-     * @param {Number} _y    重载1的参数 世界坐标y
-     * @param {Vector2} _v   重载2的参数 世界坐标向量
-     * @returns {Boolean} 返回是否在子项内
-     */
-    isInside(_x,_y){
-        var i;
-        if(_x.constructor===Vector2) i=this.inside_i(_x)
-        else i=this.inside_i(_x,_y);
-        return i!==-1;
-    }
-    
-    /** 
-     * 渲染图形 
-     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
-    */
-     render(ctx){
-        ctx.save();
-        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e,this.transformMatrix.f);
-    
-        for(var i=this.children.length-1;i>=0;--i){
-            this.children[i].render(ctx);
-        }
-
-        ctx.restore();
-    }
-    /**
-     * 生成世界坐标的多边形集合
-     * @param {Boolean} f 组的该方法中的是无用的属性
-     * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {PrimitivePolygonTGT[]}
-     */
-    create_worldPolygons(f,_accuracy=def_accuracy){
-        /**@type {PrimitivePolygonTGT[]}  */
-        var rtn=[];
-        var i = this.children.length-1;
-        for(;i>=0;--i){
-            rtn=rtn.concat(this.children[i].create_worldPolygons(true,_accuracy));
-        }
-        console.log('rtn :>> ', rtn);
-        for(i=rtn.length-1;i>=0;--i){
-            rtn[i].transformMatrix=this.transformMatrix;
-            rtn[i].nodesToWorld();
-        }
-        return rtn;
-    }
-}
 
 function _PrimitiveTGT_Group_Inside_I(_x,_y){
     var v=this.worldToLocal(_x,_y);
@@ -813,52 +890,9 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT,PrimitiveTGT_Group],function (tgt
 });
 
 
-// todo BezierTGT
-class PrimitiveBezierTGT extends PrimitiveTGT{
-    /**
-     * @param {Bezier_Polygon} bezier_polygon 
-     */
-    constructor(bezier_polygon){
-           super();
-           if(bezier_polygon)
-           /**@type {Bezier_Polygon} */
-           this.data=Bezier_Polygon.copy(bezier_polygon);
-           this.dataType="Bezier_Data";
-       }
-       /**
-        * 将局部坐标系的 nodes 转换到世界坐标系
-        * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
-        */
-       nodesToWorld(clear_tfm_f=true){
-           // this.data.linearMapping(this.transformMatrix,true)
-           for(var i=this.data.nodes.length-1;i>=0;--i){
-               this.data.nodes[i].node=this.localToWorld(this.data.nodes[i].node);
-               this.data.nodes[i].hand_before=this.localToWorld(this.data.nodes[i].hand_before);
-               this.data.nodes[i].hand_after=this.localToWorld(this.data.nodes[i].hand_after);
-           }
-           if(clear_tfm_f){
-               this.transformMatrix=new Matrix2x2T();
-           }
-       }
-       /**
-        * @param {CanvasRenderingContext2D} ctx 
-        */
-       createCanvasPath(ctx){
-           var nodes=this.data.nodes,i=0;
-           ctx.moveTo(nodes[i].node.x,nodes[i].node.y);
-
-           for(i=1;i<this.data.nodes.length;++i){
-               ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[i].hand_before.x,nodes[i].hand_before.y,nodes[i].node.x,nodes[i].node.y);
-           }
-           if(this.want_to_closePath){
-            //    ctx.closePath();
-            ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[0].hand_before.x,nodes[0].hand_before.y,nodes[0].node.x,nodes[0].node.y);
-           }
-       }
-}
-
-
 export{
+    Material,
+    PrimitiveTGT_Renderer,
     PrimitiveTGT,
     PrimitiveRectTGT,
     PrimitiveArcTGT,

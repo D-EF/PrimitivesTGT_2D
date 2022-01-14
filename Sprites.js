@@ -53,12 +53,12 @@ class Sprites{
     /**
      * 渲染精灵图像
      * @param {*} tgt 上下文, 可以是 Element 或者 CanvasRenderingContext2D
-     * @param {*} sx  当前的X坐标(单位: 格)
-     * @param {*} sy  当前的Y坐标(单位: 格)
-     * @param {*} dx  图像绘制位置X  仅供canvas使用
-     * @param {*} dy  图像绘制位置Y  仅供canvas使用
-     * @param {*} dw  图像绘制宽度   仅供canvas使用
-     * @param {*} dh  图像绘制高度   仅供canvas使用
+     * @param {Number} sx  当前的X坐标(单位: 格)
+     * @param {Number} sy  当前的Y坐标(单位: 格)
+     * @param {Number} dx  图像绘制位置X  仅供canvas使用
+     * @param {Number} dy  图像绘制位置Y  仅供canvas使用
+     * @param {Number} dw  图像绘制宽度   仅供canvas使用
+     * @param {Number} dh  图像绘制高度   仅供canvas使用
      */
     renderSprites(tgt, sx, sy, dx, dy, dw, dh) {
         if (tgt instanceof Element) {

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-13 19:56:30
+ * @LastEditTime: 2022-01-14 20:20:39
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  */
 
@@ -23,6 +23,17 @@ import {
     bezier_i_bezier_v,
     center_v2,
 }from "./Math2d.js";
+
+import {
+    Material,
+    PrimitiveTGT_Renderer,
+    PrimitiveTGT
+}from "./PrimitivesTGT_2D.js"
+
+import {
+    Sprites,
+    Sprites_Animation
+}from "./Sprites.js"
 
 /**
  * temp
@@ -88,48 +99,54 @@ import {
    }
 }
 
-
-/**
- * 创建精灵图像填充类型
- * @param {Sprites} _sprites 精灵图像实例
- */
-function createSpritesFillStyle(_sprites,sx,sy){
-    var vMin=this.getMin();
-    var vMax=this.getMax();
-    return _sprites.createPattern(sx,sy,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
+class Canvas2d_Material extends Material{
+    constructor(texture){
+        /**@type {Sprites} */
+        this.texture=texture;
+    }
+    /**
+     * 获取2d材质
+     * @param {Number} x 精灵图元素 x 坐标
+     * @param {Number} y 精灵图元素 y 坐标
+     * @param {PrimitiveTGT} tgt 图元对象
+     * @param {CanvasRenderingContext2D} ctx 画布渲染上下文对象
+     */
+    get(tgt,ctx){
+        if(this.texture instanceof String){
+            return this.texture;
+        }else{
+            var vMin=tgt.getMin();
+            var vMax=tgt.getMax();
+            return this.texture.createPattern(ctx,x,y,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
+        }
+    }
 }
 
-class PrimitiveTGT_Renderer{
+class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
     /**
-     * 
      * @param {CanvasRenderingContext2D} ctx 
      */
-    constructor(ctx){
+     constructor(renderList,ctx){
+        super(renderList);
         /**@type {CanvasRenderingContext2D} 渲染上下文 */
         this.ctx=ctx;
-        this.fillStyle="#fff0";
-        this.strokeStyle="#000";
     }
-    static copy(tgt){
-
-    }
-    copy(){
-        PrimitiveTGT_Renderer.copy(this);
-    }
-    
     /** 
      * 渲染图形 
-     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
+     * @param {PrimitiveTGT} tgt 目标画布的上下文
     */
-    render(ctx){
+    render(tgt){
+        var ctx=this.ctx;
         ctx.save();
         ctx.beginPath();
-        ctx.transform(this.transformMatrix.a,this.transformMatrix.b,this.transformMatrix.c,this.transformMatrix.d,this.transformMatrix.e||0,this.transformMatrix.f||0);
-        ctx.fillStyle=this.fillStyle;
-        ctx.strokeStyle=this.strokeStyle;
-        ctx.lineWidth=this.lineWidth;
+        ctx.transform(tgt.transformMatrix.a,tgt.transformMatrix.b,tgt.transformMatrix.c,tgt.transformMatrix.d,tgt.transformMatrix.e||0,tgt.transformMatrix.f||0);
+        if(tgt.fill_Material){
+            ctx.fillStyle=tgt.fill_Material.get(tgt,this.ctx);
+        }
+        ctx.strokeStyle=tgt.strokeStyle;
+        ctx.lineWidth=tgt.lineWidth;
     
-        this.createCanvasPath(ctx);
+        this.createCanvasPath(tgt);
 
         ctx.fill();
         ctx.stroke();
@@ -138,9 +155,66 @@ class PrimitiveTGT_Renderer{
     }
     /**
      * 根据 tgt 的属性 创建用于绘制的路径
-     * @param {CanvasRenderingContext2D} ctx 目标画布的上下文
+     * @param {PrimitiveTGT} tgt
      */
-    createCanvasPath(ctx){
-        // 在派生类中实现
+    createCanvasPath(tgt){
+        Canvas2D_TGT_Renderer.createCanvasPath[tgt.dataType](this,tgt);
     }
+}
+
+
+Canvas2D_TGT_Renderer.createCanvasPath={
+    "group"         : function(that,tgt){
+        for(var i=0;i<tgt.children.length;++i){
+            that.render(tgt.children[i]);
+        }
+    },
+    "Rect_Data"     : function(that,tgt){
+        var ctx=that.ctx;
+        ctx.rect(tgt.data.x,tgt.data.y,tgt.data.w,tgt.data.h);
+    },
+    "Arc_Data"      : function(that,tgt){
+        var ctx=that.ctx;
+        ctx.arc(tgt.data.c.x,tgt.data.c.y,tgt.data.r,tgt.data.startAngle,tgt.data.endAngle,false);
+        if(tgt.want_to_closePath){
+            var arcA=Math.abs((tgt.data.anticlockwise?(tgt.data.startAngle-tgt.data.endAngle):(tgt.data.endAngle-tgt.data.startAngle)));
+            if((Math.PI*2>arcA)&&tgt.want_to_closePath){
+                ctx.closePath();
+            }
+        }
+    },
+    "Sector_Data"   : function(that,tgt){
+        var ctx=that.ctx;
+        ctx.arc(tgt.data.c.x,tgt.data.c.y,tgt.data.r,tgt.data.startAngle,tgt.data.endAngle,false);
+        if(tgt.want_to_closePath){
+            var arcA=Math.abs((tgt.data.anticlockwise?(tgt.data.startAngle-tgt.data.endAngle):(tgt.data.endAngle-tgt.data.startAngle)));
+            ctx.lineTo(tgt.data.c.x,tgt.data.c.y)
+            if((Math.PI*2>arcA)){
+                ctx.closePath();
+            }
+        }
+    },
+    "Polygon"       : function(ctx,tgt){
+        var i=tgt.data.nodes.length-1,
+            nodes=tgt.data.nodes;
+        ctx.moveTo(nodes[i].x,nodes[i].y);
+        for(--i;i>=0;--i){
+            ctx.lineTo(nodes[i].x,nodes[i].y);
+        }
+        if(tgt.want_to_closePath){
+            ctx.closePath();
+        }
+    },
+    "Bezier_Polygon": function(that,tgt){
+        var ctx=that.ctx;
+        var nodes=tgt.data.nodes,i=0;
+        ctx.moveTo(nodes[i].node.x,nodes[i].node.y);
+        for(i=1;i<tgt.data.nodes.length;++i){
+            ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[i].hand_before.x,nodes[i].hand_before.y,nodes[i].node.x,nodes[i].node.y);
+        }
+        if(tgt.want_to_closePath){
+         //    ctx.closePath();
+         ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[0].hand_before.x,nodes[0].hand_before.y,nodes[0].node.x,nodes[0].node.y);
+        }
+    },
 }
