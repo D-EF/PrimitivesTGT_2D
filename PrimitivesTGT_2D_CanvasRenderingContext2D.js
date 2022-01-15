@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-14 20:20:39
+ * @LastEditTime: 2022-01-15 12:07:31
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  */
 
@@ -27,7 +27,13 @@ import {
 import {
     Material,
     PrimitiveTGT_Renderer,
-    PrimitiveTGT
+    PrimitiveTGT,
+    PrimitiveRectTGT,
+    PrimitiveArcTGT,
+    PrimitiveSectorTGT,
+    PrimitivePolygonTGT,
+    PrimitiveBezierTGT,
+    PrimitiveTGT_Group
 }from "./PrimitivesTGT_2D.js"
 
 import {
@@ -101,6 +107,7 @@ import {
 
 class Canvas2d_Material extends Material{
     constructor(texture){
+        super();
         /**@type {Sprites} */
         this.texture=texture;
     }
@@ -111,13 +118,15 @@ class Canvas2d_Material extends Material{
      * @param {PrimitiveTGT} tgt 图元对象
      * @param {CanvasRenderingContext2D} ctx 画布渲染上下文对象
      */
-    get(tgt,ctx){
-        if(this.texture instanceof String){
+    get(tgt,ctx,type){
+        if((this.texture.constructor===String)||(this.texture instanceof String)){
             return this.texture;
         }else{
-            var vMin=tgt.getMin();
-            var vMax=tgt.getMax();
-            return this.texture.createPattern(ctx,x,y,vMin.x,vMin.y,vMax.x-vMin.x,vMax.y-vMin.y);
+            var uv=tgt[((type.toString()+'_')||'')+"uv"],
+                uvwh=tgt[((type.toString()+'_')||'')+"uvwh"],
+                vMin=tgt.getMin(),
+                vMax=tgt.getMax();
+            return this.texture.createPattern(ctx,uv.x,uv.y,vMin.x,vMin.y,(vMax.x-vMin.x)*uvwh.x,(vMax.y-vMin.y)*uvwh.y);
         }
     }
 }
@@ -133,7 +142,7 @@ class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
     }
     /** 
      * 渲染图形 
-     * @param {PrimitiveTGT} tgt 目标画布的上下文
+     * @param {PrimitiveTGT} tgt
     */
     render(tgt){
         var ctx=this.ctx;
@@ -141,9 +150,11 @@ class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
         ctx.beginPath();
         ctx.transform(tgt.transformMatrix.a,tgt.transformMatrix.b,tgt.transformMatrix.c,tgt.transformMatrix.d,tgt.transformMatrix.e||0,tgt.transformMatrix.f||0);
         if(tgt.fill_Material){
-            ctx.fillStyle=tgt.fill_Material.get(tgt,this.ctx);
+            ctx.fillStyle=tgt.fill_Material.get(tgt,this.ctx,"fill");
         }
-        ctx.strokeStyle=tgt.strokeStyle;
+        if(tgt.stroke_Material){
+            ctx.strokeStyle=tgt.stroke_Material.get(tgt,this.ctx,"stroke");
+        }
         ctx.lineWidth=tgt.lineWidth;
     
         this.createCanvasPath(tgt);
@@ -194,7 +205,8 @@ Canvas2D_TGT_Renderer.createCanvasPath={
             }
         }
     },
-    "Polygon"       : function(ctx,tgt){
+    "Polygon"       : function(that,tgt){
+        var ctx=that.ctx;
         var i=tgt.data.nodes.length-1,
             nodes=tgt.data.nodes;
         ctx.moveTo(nodes[i].x,nodes[i].y);
@@ -217,4 +229,18 @@ Canvas2D_TGT_Renderer.createCanvasPath={
          ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[0].hand_before.x,nodes[0].hand_before.y,nodes[0].node.x,nodes[0].node.y);
         }
     },
+}
+
+export{
+    PrimitiveRectTGT,
+    PrimitiveArcTGT,
+    PrimitiveSectorTGT,
+    PrimitivePolygonTGT,
+    PrimitiveBezierTGT,
+    PrimitiveTGT_Group,
+    CtrlCanvas2d,
+    Canvas2d_Material,
+    Canvas2D_TGT_Renderer,
+    Sprites,
+    Sprites_Animation
 }

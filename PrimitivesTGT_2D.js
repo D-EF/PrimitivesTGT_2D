@@ -36,8 +36,9 @@ class Material{
      * 获取2d材质
      * @param {PrimitiveTGT} tgt 图元对象
      * @param {*} ctx 渲染上下文
+     * @param {String} type 类型 (用于选择使用哪个 uv)
      */
-    get(tgt,ctx){
+    get(tgt,ctx,type){
         // 虚函数
     }
 }
@@ -49,7 +50,7 @@ class PrimitiveTGT_Renderer{
     constructor(tgtList){
         this.tgtList=tgtList.concat();
         this.rendererIndex=PrimitiveTGT_Renderer.rendererIndex++;
-        PrimitiveTGT_Renderer.rendererList.push(rendererList);
+        PrimitiveTGT_Renderer.rendererList.push(this);
     }
     /**@type {Number} 渲染器在列表中的下标 */
     static rendererIndex=0;
@@ -113,9 +114,11 @@ class PrimitiveTGT{
         /**@type {Material} 描边 材质*/
         this.stroke_Material;
         /**@type {Vector2} 描边 贴图坐标*/
-        this.uv=new Vector2();
+        this.stroke_uv=new Vector2();
         /**@type {Vector2} 描边 贴图坐标宽高 */
-        this.uvwh=new Vector2(1,1);
+        this.stroke_uvwh=new Vector2(1,1);
+        /**@type {Number} 描边线宽度 */
+        this.lineWidth=1;
 
         /**
          * tgt的 data的类型 用于将json实例化为 PrimitiveTGT
@@ -140,7 +143,6 @@ class PrimitiveTGT{
         rtn.fill_uvwh         = Vector2.copy(this.fill_uvwh);
         rtn.uv                = Vector2.copy(this.uv);
         rtn.uvwh              = Vector2.copy(this.uvwh);
-        
         return rtn;
     }
     /**
@@ -173,6 +175,7 @@ class PrimitiveTGT{
     get transformMatrix(){
         return this._transformMatrix;
     }
+    /** 世界坐标变成局部坐标的矩阵 */
     get worldToLocalM(){
         this.re_worldToLocalM();
         return this._worldToLocalM;
@@ -283,6 +286,13 @@ class PrimitiveTGT{
         },
         "Bezier_Polygon":function(data){
             return new PrimitiveBezierTGT(data);
+        },
+        "Group":function (data){
+            var rtn=new PrimitiveTGT_Group();
+            for(var i=tgt.data.length-1;i>=0;--i){
+                rtn.data.push(PrimitiveTGT_Group.copy(tgt.data[i]));
+            }
+            return rtn;
         }
     }
 }
@@ -421,104 +431,52 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
 /**
  * PrimitiveTGT 组
  */
- class PrimitiveTGT_Group{
+ class PrimitiveTGT_Group extends PrimitiveTGT{
     /**
      * 
      * @param {PrimitiveTGT[],PrimitiveTGT_Group[]} tgts 
      */
     constructor(tgts){
+        super()
         /**@type {PrimitiveTGT[],PrimitiveTGT_Group[]} */
-        this.children;
+        this.data;
         if(tgts!==undefined){
-            this.children=[].concat(tgts);
+            this.data=[].concat(tgts);
         }
         else{
-            this.children=[]
+            this.data=[]
         }
-        this._transformMatrix=new Matrix2x2T();
-        this._worldToLocalM=undefined;
         this.dataType="Group";
+        
     }
     /**
      * 添加子项
      * @param {PrimitiveTGT} tgt PrimitiveTGT对象
      */
     addChildren(tgt){
-        this.children.push(tgt);
+        this.data.push(tgt);
     }
     /**
      * 添加子项
      * @param {PrimitiveTGT[]} tgt PrimitiveTGT对象
      */
     addChildrens(tgts){
-        this.children=this.children.concat(tgts);
+        this.data=this.data.concat(tgts);
     }
     /**
      * 移除一个子项
      * @param {Number} index 下标
      */
     removeChildrenByIndex(index){
-        this.children.splice(index,1);
+        this.data.splice(index,1);
     }
     /**
      * 移除一个子项
      * @param {PrimitiveTGT} tgt 必须是同一个子项
      */
     removeChildren(tgt){
-        for(var i=this.children.length-1;i>=0;--i){
-            if(this.children[i]===tgt)
-            this.children.splice(this.children.indexOf,1);
-        }
+        this.data.splice(this.data.indexOf,1);
     }
-
-    /**
-     * 拷贝函数
-     * 注意别把自己放在自己的后代里
-     * @param {PrimitiveTGT_Group}
-     * @return {PrimitiveTGT_Group} 返回一个拷贝
-     */
-    static copy(tgt){
-        if(tgt.dataType==="Group"){
-            var rtn=new PrimitiveTGT_Group();
-            for(var i=tgt.children.length-1;i>=0;--i){
-                rtn.children.push(PrimitiveTGT_Group.copy(tgt.children[i]));
-            }
-            rtn._transformMatrix=Matrix2x2T.copy(tgt._transformMatrix);
-            rtn._worldToLocalM=Matrix2x2T.copy(tgt._worldToLocalM);
-            return rtn;
-        }else{
-            return PrimitiveTGT.copy(tgt);
-        }
-    }
-
-    /**
-     * 拷贝函数
-     * @return {PrimitiveTGT_Group} 返回一个拷贝
-     */
-    copy(){
-        return PrimitiveTGT_Group.copy(this);
-    }
-    get transformMatrix(){
-        return this._transformMatrix;
-    }
-    set transformMatrix(m){
-        this._transformMatrix=m.copy();
-        this._worldToLocalM=undefined;
-        return this._transformMatrix;
-    }
-    get worldToLocalM(){
-        this.re_worldToLocalM();
-        return _worldToLocalM;
-    }
-    /**
-     * 刷新逆变换矩阵
-     */
-    re_worldToLocalM(){
-        if(this._worldToLocalM===undefined){
-            this._worldToLocalM=this.transformMatrix.inverse();
-        }
-    }
-    
     /** 
      * 获取点在某子项内部
      * @param {Number} _x    重载1的参数 世界坐标x
@@ -527,7 +485,22 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
      * @returns {Number} 返回下标
     */
     inside_i(_x,_y){
-        // 2个重载
+        var x,y;
+        if(_x.x!==undefined){
+            x=_x.x;
+            y=_x.y
+        }else{
+            x=_x;
+            y=_y;
+        }
+        var v=this.worldToLocal(x,y);
+        for(var i=this.data.length-1;i>=0;--i){
+            if(this.data[i].isInside(v)){
+                console.log(i)
+                return i;
+            }
+        }
+        return -1;
     }
     
     /** 
@@ -538,10 +511,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
      * @returns {Boolean} 返回是否在子项内
      */
     isInside(_x,_y){
-        var i;
-        if(_x.constructor===Vector2) i=this.inside_i(_x)
-        else i=this.inside_i(_x,_y);
-        return i!==-1;
+        return this.inside_i(_x,_y)!==-1;
     }
     /**
      * 生成世界坐标的多边形集合
@@ -552,9 +522,9 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
     create_worldPolygons(f,_accuracy=def_accuracy){
         /**@type {PrimitivePolygonTGT[]}  */
         var rtn=[];
-        var i = this.children.length-1;
+        var i = this.data.length-1;
         for(;i>=0;--i){
-            rtn=rtn.concat(this.children[i].create_worldPolygons(true,_accuracy));
+            rtn=rtn.concat(this.data[i].create_worldPolygons(true,_accuracy));
         }
         console.log('rtn :>> ', rtn);
         for(i=rtn.length-1;i>=0;--i){
@@ -564,6 +534,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         return rtn;
     }
 }
+
 // PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
 
 function _PrimitiveTGT_isInside(_x,_y){
@@ -816,26 +787,6 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveSectorTGT],function(t
 
 PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch_Sector_Sector);
 
-
-function _PrimitiveTGT_Group_Inside_I(_x,_y){
-    var v=this.worldToLocal(_x,_y);
-    for(var i=this.children.length-1;i>=0;--i){
-        if(this.children[i].isInside(v)){
-            console.log(i)
-            return i;
-        }
-    }
-    return -1;
-}
-PrimitiveTGT_Group.prototype.inside_i=OlFunction.create();
-PrimitiveTGT_Group.prototype.inside_i.addOverload([Number,Number],_PrimitiveTGT_Group_Inside_I);
-PrimitiveTGT_Group.prototype.inside_i.addOverload([Vector2],function(_v){
-    return _PrimitiveTGT_Group_Inside_I.call(this,_v.x,_v.y);
-});
-// 此处直接使用了 PrimitiveTGT 的 重载函数对象
-PrimitiveTGT_Group.prototype.localToWorld=PrimitiveTGT.prototype.localToWorld;
-PrimitiveTGT_Group.prototype.worldToLocal=PrimitiveTGT.prototype.worldToLocal;
-
 /**
  * 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
  * @param {PrimitivePolygonTGT[]} _tgts 多边形对象数组 不要加矩阵
@@ -857,13 +808,13 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
     }
     for(i=tgts.length-1;i>=0;--i){
         tgts[i].transformMatrix=g.transformMatrix;
-        for(j=g.children.length-1;j>=0;--j){
-            if(g.children[j] instanceof PrimitiveTGT_Group){
-                if(isTouch_noTransformPolygons_Group(tgts,g.children[j],g)){
+        for(j=g.data.length-1;j>=0;--j){
+            if(g.data[j] instanceof PrimitiveTGT_Group){
+                if(isTouch_noTransformPolygons_Group(tgts,g.data[j],g)){
                     return true;
                 }
             }else{
-                if(PrimitiveTGT.isTouch(tgts[i],g.children[j])){
+                if(PrimitiveTGT.isTouch(tgts[i],g.data[j])){
                     return true;
                 }
             }
@@ -898,6 +849,6 @@ export{
     PrimitiveArcTGT,
     PrimitiveSectorTGT,
     PrimitivePolygonTGT,
-    PrimitiveTGT_Group,
-    PrimitiveBezierTGT
+    PrimitiveBezierTGT,
+    PrimitiveTGT_Group
 };
