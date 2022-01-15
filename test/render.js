@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-15 12:06:30
+ * @LastEditTime: 2022-01-15 14:50:59
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -31,11 +31,12 @@ var spritesMap_Material=new Canvas2d_Material(sp);
 
 var t1=new PrimitiveRectTGT(50,50,50,50);
 t1.fill_Material=spritesMap_Material;
-t1.fill_uv={x:0,y:2};
+t1.fill_uv={x:0,y:0};
 t1.stroke_Material=new Canvas2d_Material("#00f")
-var t2=new PrimitiveArcTGT(0,0,50,0,6.3);
+var t2=new PrimitiveArcTGT(0,0,50,0,180*deg);
 t2.fill_Material=spritesMap_Material;
-t2.fill_uv={x:1,y:2};
+t2.fill_uv={x:1,y:1};
+t2.fill_uvwh={x:0.5,y:1};
 t2.lineWidth=2;
 t2.stroke_Material=new Canvas2d_Material("#0f0");
 t2.transformMatrix=new Matrix2x2T().setTranslate(120,120).rotate(45*deg);

@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-12 10:41:54
+ * @LastEditTime: 2022-01-15 20:04:52
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -1549,14 +1549,7 @@ class Matrix2x2T extends Matrix2x2{
 
  
 
-/* 多边形 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
-
-/*!
- *  Polygon.js 
- *  这个文件依赖于 Vector2.js 和 Matrix2x2_mod.js
- *  用途主要是在 html canvas 
- */
-
+/** 多边形  */
 class Polygon{
     /** 多边形
      * @param {Vector2[]} nodes 装着顶点的数组
@@ -1693,7 +1686,6 @@ class Polygon{
     }
     /**
      * 使用局部坐标系判断某点是否在内部, 
-     * 也可以使用向量作为实参
      * @param {Number} x 局部坐标系中的坐标
      * @param {Number} y 局部坐标系中的坐标
      * @param {Boolean} f 是否认作是一个密封的多边形 为true时会多计算一个起点和终点的线
@@ -1965,7 +1957,7 @@ Polygon.EX_linearMapping_nt.addOverload([Matrix2x2,Polygon,Boolean],function(m,p
     return p;
 });
 
-
+/** 三阶贝塞尔曲线组(多边形)的节点 */
 class Bezier_Node{
     /**
      * @param {Vector2} node
@@ -2010,6 +2002,9 @@ class Bezier_Polygon{
         for(var i=0;i<nodes.length;i++){
             this.nodes.push(new Bezier_Node(nodes[i],hand_befores[i],hand_afters[i]));
         }
+        /**@type {BezierCurves} Bezier曲线实例 */
+        this._bezierCurves=[];
+        this.want_to_close=false;
     }
     static copy(tgt){
         var rtn=new Bezier_Polygon();
@@ -2059,11 +2054,12 @@ class Bezier_Polygon{
      */
     cut(index,z){
         if(this.nodes[index]===undefined||this.nodes[index+1]===undefined)return;
+        var i_next=index+1===this.node.length?index+1:0;
         var points=[
             this.nodes[index].node,
             this.nodes[index].hand_after,
-            this.nodes[index+1].hand_before,
-            this.nodes[index+1].node
+            this.nodes[i_next].hand_before,
+            this.nodes[i_next].node
         ];
         var newPoints=Math2D.BezierCut(points,z);
 
@@ -2077,10 +2073,124 @@ class Bezier_Polygon{
         // console.log(newPoints)
         this.nodes[index].hand_after.x=newPoints[0][1].x;
         this.nodes[index].hand_after.y=newPoints[0][1].y;
-        this.nodes[index+1].hand_before.x=newPoints[1][2].x;
-        this.nodes[index+1].hand_before.y=newPoints[1][2].y;
+        this.nodes[i_next].hand_before.x=newPoints[1][2].x;
+        this.nodes[i_next].hand_before.y=newPoints[1][2].y;
+        
+        i_next?this.nodes.splice(i_next,0,newNode):this.nodes.push(newNode);
+    }
+    isClosed(){
+        return  (this.nodes[0].node.x===this.nodes[this.nodes.length-1].node.x)&&
+                (this.nodes[0].node.y===this.nodes[this.nodes.length-1].node.y);
+    }
+    /**
+     * 使用局部坐标系判断某点是否在内部
+     * @param {Number} x 局部坐标系中的坐标
+     * @param {Number} y 局部坐标系中的坐标
+     */
+    isInside(x,y){
+        // todo 现在是cv了多边形的
+        // 如果图形不是密封的, 直接返回否
+        var _cf=this.isClosed()||f;
+        if(this.min.x>x||this.max.x<x||this.min.y>y||this.max.y<y) return false;
+        
+        if(!_cf){
+            return false;
+        }
 
-        this.nodes.splice(index+1,0,newNode);
+        var i,j,rtn=false,temp=0,tempK;
+        i=this.nodes.length-1;
+        if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;
+        for(;i>=0;--i){
+            j=i-1;
+            if(i<=0){
+                if(f){
+                    if(!_cf)
+                        j=this.nodes.length-1;
+                    else 
+                        break;
+                }else{
+                    break;
+                }
+            }
+            if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;//如果正好在顶点上直接算在内部
+            else if((this.nodes[i].y>=y)!=(this.nodes[j].y>=y)){
+                // 点的 y 坐标 在范围内
+                tempK=((temp=this.nodes[j].y-this.nodes[i].y)?
+                        (((this.nodes[j].x-this.nodes[i].x)*(y-this.nodes[i].y))/(temp)+this.nodes[i].x):
+                        (this.nodes[i].x)
+                    );
+                if(x==tempK){
+                    // 斜率相等, 点在边线上 直接算内部`
+                    return true;
+                }
+                else if(x>tempK){
+                    // 射线穿过
+                    rtn=!rtn;
+                }
+            }
+        }
+        return rtn;
+    }
+    /**
+     * 创建 BezierCurves 实例
+     * @returns {BezierCurves[]} 返回一组 BezierCurves
+     */
+    createBezierCurves(f){
+        var i =this.nodes.length;
+        var rtn=new Array(--i);
+        if(this.want_to_close){
+            rtn.push(BezierCurve.createBy_BezierNode(this.nodes[i],this.nodes[0]));
+        }
+        for(;i>0;--i){
+            rtn[i]=(BezierCurve.createBy_BezierNode(this.nodes[i],this.nodes[i-1]));
+        }
+        this._bezierCurves=rtn;
+        return rtn;
+    }
+    /**
+     * 设置node
+     * @param {Number} index 
+     * @param {Bezier_Node} node 
+     */
+    setNode(index,node){
+        this.nodes[index]=node;
+        this._bezierCurves[index]=null;
+    }
+    /**
+     * @param {Number} index 下标
+     * @returns {BezierCurve} 返回贝塞尔曲线实例
+     */
+    get_bezierCurve(index){
+        if(this._bezierCurves[index]===null){
+            if(this.nodes[index]){
+                var i=0;
+                if(this.nodes[index+1]){
+                    i=index+1;   
+                }
+                this._bezierCurves[index]=(BezierCurve.createBy_BezierNode(this.nodes[index],this.nodes[i]));
+            }
+        }
+        return this._bezierCurves[index];
+    }
+    get_aabb(){
+        var i=this.nodes.length;
+        if(!this.want_to_close){
+            --i;
+        }
+        var rtn={
+            max,
+            min
+        }
+        temp;
+        for(;i>=0;--i){
+            this.get_bezierCurve(i).get_aabb();
+        }
+    }
+    getMin(){
+        // todo
+    }
+    getMax(){
+
     }
 }
 
@@ -2092,14 +2202,16 @@ class BezierCurve{
      * @param {Vector2[]} points 控制点们 Vector2
      */
     constructor(points){
-        /**@type {Vector2[]}*/
+        /**@type {Vector2[]} 曲线控制点*/
         this._points=null;
-        /**@type {Number[]}*/
+        /**@type {Number[]} x 坐标的 计算系数*/
         this._coefficient_X=null;
-        /**@type {Number[]}*/
+        /**@type {Number[]} y 坐标的 计算系数*/
         this._coefficient_Y=null;
-        /**@type {BezierCurve}*/
+        /**@type {BezierCurve} 导函数*/
         this._derivatives=null;
+        /**@type {Rect_Data} 轴对齐边界框*/
+        this._aabb=null;
         /**@type {BezierCurve} 对齐后的曲线的代理 用于求紧包围框*/
         this._align_proxy=null;
         /**@type {Matrix2x2} 对齐曲线使用的矩阵 用于求紧包围框*/
@@ -2128,14 +2240,14 @@ class BezierCurve{
         this._polygon_proxy=null;
         this._polygon_proxy_sp=0;
         this._arc_length_table=null;
+        this._aabb=null;
     }
     /**
-     * 清理控制点
+     * 清空控制点
      */
     clearPoints(){
         this._points=null;
     }
-
     /**
      * 重新设置控制点
      * @param {Vector2} points 控制点们 Vector2
@@ -2151,7 +2263,6 @@ class BezierCurve{
         }
         this.clearProxy();
     }
-
     /**
      * 重新设置系数
      * @param {Number[]} coefficient_X X系数
@@ -2207,7 +2318,6 @@ class BezierCurve{
      static createBy_BezierNode(node1,node2){
         return new BezierCurve([node1.node,node1.hand_after,node2.hand_before,node2.node]);
     }
-    
     set points(points){
         this.reset_points(points);
     }
@@ -2263,7 +2373,6 @@ class BezierCurve{
         this._align_proxy=BezierCurve.copy(this);
         this._align_proxy.linearMapping(this._align_matrix,false,true);
     }
-
     /**
      * 设置控制点之后, 重新加载 各次幂的系数
      */
@@ -2294,7 +2403,6 @@ class BezierCurve{
         );
         this.clearProxy();
     }
-    
     /**
      * 使用矩阵进行线性变换
      * @param {Matrix2x2T}  m   变换矩阵
@@ -2441,20 +2549,23 @@ class BezierCurve{
      * @returns {Rect_Data} 轴对齐包围框 (边界框) axis aligned bounding box
      */
     get_aabb(){
-        var pts=this.get_root_v().concat([this.sampleCurve(0),this.sampleCurve(1)]),
-            max=new Vector2(),
-            min=new Vector2();
-        max.x=pts[0].x;
-        max.y=pts[0].y;
-        min.x=pts[0].x;
-        min.y=pts[0].y;
-        for(var i=pts.length-1;i>=0;--i){
-                 if(pts[i].x>max.x)max.x=pts[i].x;
-            else if(pts[i].x<min.x)min.x=pts[i].x;
-                 if(pts[i].y>max.y)max.y=pts[i].y;
-            else if(pts[i].y<min.y)min.y=pts[i].y;
+        if(this._aabb===null){
+            var pts=this.get_root_v().concat([this.sampleCurve(0),this.sampleCurve(1)]),
+                max=new Vector2(),
+                min=new Vector2();
+            max.x=pts[0].x;
+            max.y=pts[0].y;
+            min.x=pts[0].x;
+            min.y=pts[0].y;
+            for(var i=pts.length-1;i>=0;--i){
+                    if(pts[i].x>max.x)max.x=pts[i].x;
+                else if(pts[i].x<min.x)min.x=pts[i].x;
+                    if(pts[i].y>max.y)max.y=pts[i].y;
+                else if(pts[i].y<min.y)min.y=pts[i].y;
+            }
+            this._aabb = Rect_Data.createByVector2(min,max);
         }
-        return Rect_Data.createByVector2(min,max);
+        return this._aabb;
     }
     /**
      * 获取紧包围框
@@ -2541,7 +2652,6 @@ class BezierCurve{
         var tb=this.arc_length_table;
         return tb[tb.length-1];
     }
-
     /**
      * 使用弧长求t值
      * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时会出现错误的结果
@@ -2713,7 +2823,6 @@ class Unilateral_Bezier_Box{
         }
         return rtn;
     }
-    
     /**
      * 立刻使用向量求交, 如果曲线的导数差异较大可能会导致求交失败
      * @param {Unilateral_Bezier_Box} 
@@ -2756,10 +2865,8 @@ function bezier_i_bezier_v(bezier1,bezier2,_accuracy,f_lil){
     for(j=k;j>=0;--j){
         temp_group[j].sb=group.concat();
     }
-
     var rtn=[],d=0,f=false;
     temp_group=[];
-
     while(group.length){
         ++d;
         f=false;
@@ -2806,10 +2913,8 @@ function bezier_i_bezier_v(bezier1,bezier2,_accuracy,f_lil){
         group=temp_group;
         temp_group=[];
     }
-    
     return rtn;
 }
-
 /**
  * 坐标的中心点
  * @param {Vector2[]} ordinates 坐标集合

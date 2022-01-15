@@ -447,7 +447,20 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
             this.data=[]
         }
         this.dataType="Group";
-        
+    }
+    /** 
+     * 获取最小的(局部)坐标
+     * @returns {Vector2} 返回一个向量
+     */
+     getMin(){
+        return this.data.getMin();
+    }
+    /** 
+     * 获取最大的(局部)坐标
+     * @returns {Vector2} 返回一个向量
+     */
+    getMax(){
+        return this.data.getMax();
     }
     /**
      * 添加子项
