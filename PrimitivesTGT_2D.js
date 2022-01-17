@@ -405,7 +405,24 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
            /**@type {Bezier_Polygon} */
            this.data=Bezier_Polygon.copy(bezier_polygon);
            this.dataType="Bezier_Polygon";
+           this._want_to_closePath=false;
        }
+       
+        get want_to_closePath(){
+            return this._want_to_closePath;
+        }
+        set want_to_closePath(val){
+            this._want_to_closePath=val;
+            console.log(this.data);
+            if(this.data)this.data.closedFlag=val;
+        }
+        set data(val){
+            this._data=val;
+            this.data.closedFlag=this._want_to_closePath;
+        }
+        get data(){
+            return this._data;
+        }
        /**
         * 将局部坐标系的 nodes 转换到世界坐标系
         * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-15 16:40:55
+ * @LastEditTime: 2022-01-17 20:26:45
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  */
 
@@ -225,8 +225,12 @@ Canvas2D_TGT_Renderer.createCanvasPath={
             ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[i].hand_before.x,nodes[i].hand_before.y,nodes[i].node.x,nodes[i].node.y);
         }
         if(tgt.want_to_closePath&&!tgt.data.isClosed()){
-         //    ctx.closePath();
-         ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[0].hand_before.x,nodes[0].hand_before.y,nodes[0].node.x,nodes[0].node.y);
+            if(tgt.want_to_closePath===-1){
+                ctx.closePath();
+            }
+            else{
+                ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[0].hand_before.x,nodes[0].hand_before.y,nodes[0].node.x,nodes[0].node.y);
+            }
         }
     },
 }

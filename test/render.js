@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-17 18:20:23
+ * @LastEditTime: 2022-01-17 20:27:03
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -97,7 +97,7 @@ d.data.pushNode({
 });
 
 d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
-d.want_to_closePath=true;
+d.want_to_closePath=-1;
 renderer.tgtList.push(d);
 
 var cnm=document.getElementById("cnm");

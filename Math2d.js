@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-17 19:45:37
+ * @LastEditTime: 2022-01-17 20:48:45
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -426,7 +426,7 @@ class Math2D{
         return rtn;
     }
     /**
-     * x负方向射线 与 线段 判断相交情况
+     * x方向射线 与 线段 判断相交情况
      * @param {Number} x 射线起点
      * @param {Number} y 射线起点
      * @param {Vector2} v1 线段端点
@@ -434,10 +434,10 @@ class Math2D{
      * @returns {Number} 射线穿过情况
      */
     static x_radial_i_line(x,y,v1,v2){
-        
         if(v1.x==x&&v1.y==y) return 1;//如果正好在顶点上直接算在内部
         if(v2.x==x&&v2.y==y) return -1;//如果正好在顶点上直接算在内部
-        else if((v1.y>=y)!=(v2.y>=y)){
+        var tempK,temp;
+        if((v1.y>=y)!=(v2.y>=y)){
             // 点的 y 坐标 在范围内
             tempK=((temp=v2.y-v1.y)?
                     (((v2.x-v1.x)*(y-v1.y))/(temp)+v1.x):
@@ -2175,9 +2175,11 @@ class Bezier_Polygon{
         
         i=this.nodes.length-1;
         if(f===-1){
+            // 线段
+            console.log(Math2D.x_radial_i_line(x,y,this.nodes[i].node,this.nodes[0].node))
         }
         if(f==1){
-
+            // todo 射线穿过曲线
         }
     }
     /**
