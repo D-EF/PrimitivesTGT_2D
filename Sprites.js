@@ -232,8 +232,8 @@ class Sprites_Animation{
                 that._keepGo&&
                 (
                     (v["ed"+orderOBJ[1].k]===that["stepper"+orderOBJ[1].k].valueOf())&&
-                    (v["ed"+orderOBJ[0].k]*orderOBJ[0].v)>=(that["stepper"+orderOBJ[0].k].valueOf()*orderOBJ[0].v)||
-                    (v["ed"+orderOBJ[1].k]>that["stepper"+orderOBJ[1].k].valueOf())
+                    (v["ed"+orderOBJ[0].k]*orderOBJ[0].v)>=(that["stepper"+orderOBJ[0].k].valueOf()*(orderOBJ[0].v>=0?1:-1))||
+                    (v["ed"+orderOBJ[1].k]>that["stepper"+orderOBJ[1].k].valueOf()*(orderOBJ[1].v>=0?1:-1))
                 )
             ){
                 that._keepGo=!that.frameCallback(that.stepperx.valueOf(),that.steppery.valueOf(),that)

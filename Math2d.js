@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-15 20:04:52
+ * @LastEditTime: 2022-01-17 19:45:37
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -424,6 +424,35 @@ class Math2D{
         rtn.push(new BezierCurve(temp1[1]));
 
         return rtn;
+    }
+    /**
+     * x负方向射线 与 线段 判断相交情况
+     * @param {Number} x 射线起点
+     * @param {Number} y 射线起点
+     * @param {Vector2} v1 线段端点
+     * @param {Vector2} v2 线段端点
+     * @returns {Number} 射线穿过情况
+     */
+    static x_radial_i_line(x,y,v1,v2){
+        
+        if(v1.x==x&&v1.y==y) return 1;//如果正好在顶点上直接算在内部
+        if(v2.x==x&&v2.y==y) return -1;//如果正好在顶点上直接算在内部
+        else if((v1.y>=y)!=(v2.y>=y)){
+            // 点的 y 坐标 在范围内
+            tempK=((temp=v2.y-v1.y)?
+                    (((v2.x-v1.x)*(y-v1.y))/(temp)+v1.x):
+                    (v1.x)
+                );
+            if(x==tempK){
+                // 斜率相等, 点在边线上 直接算内部
+                return 1;
+            }
+            else if(x>tempK){
+                // 射线穿过
+                return 1;
+            }
+        }
+        return 0;
     }
 }
 
@@ -912,14 +941,19 @@ class Rect_Data{
                 var l2op=new Vector2(0,0);
                 var l2ed=new Vector2(x,y);
                 var ISF=Math2D.line_i_line(l1op,l1ed,l2op,l2ed);  //相交情况
-                if(arcA>=Math.PI){
+                if(arcA>Math.PI){
                     // 大于半圆
                     return ISF===0;
                 }
                 else{
+                    if(arcA===Math.PI){
+                        // 等于半圆
+                        return Math2D.in_angle_V(this.opv,this.edv,new Vector2(x,y),arcA>Math.PI);
+                    }
                     // 小于半圆
                     return ISF!==0;
                 }
+
             }
         }
         // 不在半径内直接判定为外
@@ -1691,22 +1725,21 @@ class Polygon{
      * @param {Boolean} f 是否认作是一个密封的多边形 为true时会多计算一个起点和终点的线
      */
     isInside(x,y,f){
-        // 如果图形不是密封的, 直接返回否
-        var _cf=this.isClosed()||f;
         if(this.min.x>x||this.max.x<x||this.min.y>y||this.max.y<y) return false;
-        
+        var _cf=this.isClosed()||f;
         if(!_cf){
+            // 如果图形不是密封的, 直接返回否
             return false;
         }
 
         var i,j,rtn=false,temp=0,tempK;
         i=this.nodes.length-1;
-        if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;
+        if(this.nodes[i].x===x&&this.nodes[i].y===y) return true;
         for(;i>=0;--i){
             j=i-1;
-            if(i<=0){
+            if(i===0){
                 if(f){
-                    if(!_cf)
+                    if(!this.isClosed())
                         j=this.nodes.length-1;
                     else 
                         break;
@@ -2004,7 +2037,9 @@ class Bezier_Polygon{
         }
         /**@type {BezierCurves} Bezier曲线实例 */
         this._bezierCurves=[];
-        this.want_to_close=false;
+        this._aabb=null;
+        /**@type {Number} 计算时使用的路径闭合情况: -1是使用直线闭合, 0是不闭合, 1是使用贝塞尔曲线闭合 */
+        this.closedFlag=0;
     }
     static copy(tgt){
         var rtn=new Bezier_Polygon();
@@ -2017,11 +2052,50 @@ class Bezier_Polygon{
         return Bezier_Polygon.copy(this);
     }
     /**
+     * 清空代理
+     */
+    clear_all_proxy(){
+        this._aabb=null;
+    }
+    /**
+     * 清空所有数学曲线
+     */
+    clear_bezierCurves(){
+        this._bezierCurves=[];
+    }
+    /**
+     * 卸载数学曲线 在顶点被编辑时使用
+     * @param {Number} index 修改顶点的下标
+     */
+    unins_bezierCurve(index){
+        this._bezierCurves[index]=null;
+    }
+    /**
+     * 腾出数学曲线 在插入/删除顶点时使用
+     * @param {Number} index 插入顶点的下标
+     * @param {Number} f    插入或删除
+     */
+    emptied_bezierCurve(index,f){
+        var i=index-1;
+        if(i<0){
+            if(f){
+                this._bezierCurves.splice(i,1,null,null);
+            }else{
+                this._bezierCurves.splice(i,2,null);
+            }
+        }
+        else{
+            this._bezierCurves.splice(0,0,null);
+            this._bezierCurves[this.nodes.length-1]=null;
+        }
+    }
+    /**
      * 追加顶点
      * @param {Bezier_Node} bezierNode  要追加的顶点
      */
     pushNode(bezierNode){
         this.nodes.push(Bezier_Node.copy(bezierNode));
+        this.clear_all_proxy();
     }
     /**
      * 追加顶点数组
@@ -2031,6 +2105,7 @@ class Bezier_Polygon{
         for(var i=0;i<nodes.length;++i){
             this.pushNode(bezierNodes[i]);
         }
+        this.clear_all_proxy();
     }
     /**
      * 插入顶点
@@ -2039,6 +2114,8 @@ class Bezier_Polygon{
      */
     insert(index,bezierNode){
         this.nodes.splice(index,0,bezierNode.copy());
+        this.emptied_bezierCurve(index,true);
+        this.clear_all_proxy();
     }
     /**
      * 移除顶点
@@ -2046,6 +2123,8 @@ class Bezier_Polygon{
      */
     remove(index){
         this.nodes.splice(index,1);
+        this.clear_all_proxy();
+        this.emptied_bezierCurve(index,false);
     }
     /**
      * 分割贝塞尔曲线
@@ -2077,75 +2156,29 @@ class Bezier_Polygon{
         this.nodes[i_next].hand_before.y=newPoints[1][2].y;
         
         i_next?this.nodes.splice(i_next,0,newNode):this.nodes.push(newNode);
+        this.emptied_bezierCurve(index,true);
     }
     isClosed(){
         return  (this.nodes[0].node.x===this.nodes[this.nodes.length-1].node.x)&&
-                (this.nodes[0].node.y===this.nodes[this.nodes.length-1].node.y);
+        (this.nodes[0].node.y===this.nodes[this.nodes.length-1].node.y);
+
     }
     /**
      * 使用局部坐标系判断某点是否在内部
      * @param {Number} x 局部坐标系中的坐标
      * @param {Number} y 局部坐标系中的坐标
+     * @return {Boolean} 返回是否在内部
      */
     isInside(x,y){
-        // todo 现在是cv了多边形的
-        // 如果图形不是密封的, 直接返回否
-        var _cf=this.isClosed()||f;
-        if(this.min.x>x||this.max.x<x||this.min.y>y||this.max.y<y) return false;
-        
-        if(!_cf){
-            return false;
-        }
-
+        var f=this.closedFlag;
         var i,j,rtn=false,temp=0,tempK;
+        
         i=this.nodes.length-1;
-        if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;
-        for(;i>=0;--i){
-            j=i-1;
-            if(i<=0){
-                if(f){
-                    if(!_cf)
-                        j=this.nodes.length-1;
-                    else 
-                        break;
-                }else{
-                    break;
-                }
-            }
-            if(this.nodes[i].x==x&&this.nodes[i].y==y) return true;//如果正好在顶点上直接算在内部
-            else if((this.nodes[i].y>=y)!=(this.nodes[j].y>=y)){
-                // 点的 y 坐标 在范围内
-                tempK=((temp=this.nodes[j].y-this.nodes[i].y)?
-                        (((this.nodes[j].x-this.nodes[i].x)*(y-this.nodes[i].y))/(temp)+this.nodes[i].x):
-                        (this.nodes[i].x)
-                    );
-                if(x==tempK){
-                    // 斜率相等, 点在边线上 直接算内部`
-                    return true;
-                }
-                else if(x>tempK){
-                    // 射线穿过
-                    rtn=!rtn;
-                }
-            }
+        if(f===-1){
         }
-        return rtn;
-    }
-    /**
-     * 创建 BezierCurves 实例
-     * @returns {BezierCurves[]} 返回一组 BezierCurves
-     */
-    createBezierCurves(f){
-        var i =this.nodes.length;
-        var rtn=new Array(--i);
-        if(this.want_to_close){
-            rtn.push(BezierCurve.createBy_BezierNode(this.nodes[i],this.nodes[0]));
+        if(f==1){
+
         }
-        for(;i>0;--i){
-            rtn[i]=(BezierCurve.createBy_BezierNode(this.nodes[i],this.nodes[i-1]));
-        }
-        this._bezierCurves=rtn;
-        return rtn;
     }
     /**
      * 设置node
@@ -2161,7 +2194,7 @@ class Bezier_Polygon{
      * @returns {BezierCurve} 返回贝塞尔曲线实例
      */
     get_bezierCurve(index){
-        if(this._bezierCurves[index]===null){
+        if(!this._bezierCurves[index]){
             if(this.nodes[index]){
                 var i=0;
                 if(this.nodes[index+1]){
@@ -2172,25 +2205,34 @@ class Bezier_Polygon{
         }
         return this._bezierCurves[index];
     }
-    get_aabb(){
-        var i=this.nodes.length;
-        if(!this.want_to_close){
-            --i;
+    /**@type {Rect_Data}  */
+    get aabb(){
+        if(this._aabb===null){
+            var i=this.nodes.length;
+            if(!this.want_to_close){
+                --i;
+            }
+            var max,
+                min;
+            var temp,tempMin,tempMax;
+            for(;i>=0;--i){
+                temp=this.get_bezierCurve(i).get_aabb().getMin();
+                tempMin=temp.getMin();
+                tempMax=temp.getMax();
+                if(min.x>tempMin.x)min.x=tempMin.x;
+                if(min.y>tempMin.y)min.y=tempMin.y;
+                if(max.x>tempMax.x)max.x=tempMax.x;
+                if(max.y>tempMax.y)max.y=tempMax.y;
+            }
+            this._aabb=Rect_Data.createByVector2(min,max);
         }
-        var rtn={
-            max,
-            min
-        }
-        temp;
-        for(;i>=0;--i){
-            this.get_bezierCurve(i).get_aabb();
-        }
+        return  this._aabb;
     }
     getMin(){
-        // todo
+        return this.aabb.getMin();
     }
     getMax(){
-
+        return this.aabb.getMax();
     }
 }
 
