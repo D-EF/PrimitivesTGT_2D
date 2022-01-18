@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-17 20:48:45
+ * @LastEditTime: 2022-01-18 11:08:14
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -453,6 +453,24 @@ class Math2D{
             }
         }
         return 0;
+    }
+    /**
+     * 射线穿过曲线
+     * @param {Number} x 射线起点
+     * @param {Number} y 射线起点
+     * @param {BezierCurve} bezier 曲线实例
+     * @returns {number} 射线穿过曲线次数 返回-1代表点正好在曲线坐标上
+     */
+    static x_radial_i_bezier(x,y,bezier){
+        var nbs=bezier.get_t_by_y(y),tx,rtn=0;
+        for(var i=nbs.length-1;i>=0;--i){
+            if(x>(tx=bezier.sampleCurveX(nbs[i]))){
+                ++rtn;
+            }else if(x===tx){
+                return -1;
+            }
+        }
+        return rtn;
     }
 }
 
@@ -2171,16 +2189,18 @@ class Bezier_Polygon{
      */
     isInside(x,y){
         var f=this.closedFlag;
-        var i,j,rtn=false,temp=0,tempK;
+        var i,rtn=0;
         
         i=this.nodes.length-1;
         if(f===-1){
             // 线段
-            console.log(Math2D.x_radial_i_line(x,y,this.nodes[i].node,this.nodes[0].node))
+            rtn+=Math2D.x_radial_i_line(x,y,this.nodes[i].node,this.nodes[0].node)
         }
-        if(f==1){
-            // todo 射线穿过曲线
+        // 射线穿过曲线
+        for(f==1?1:--i;i>=0;--i){
+            rtn+=Math2D.x_radial_i_bezier(x,y,this.get_bezierCurve(i));
         }
+        return !!(rtn%2);
     }
     /**
      * 设置node

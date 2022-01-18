@@ -413,7 +413,6 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         }
         set want_to_closePath(val){
             this._want_to_closePath=val;
-            console.log(this.data);
             if(this.data)this.data.closedFlag=val;
         }
         set data(val){
