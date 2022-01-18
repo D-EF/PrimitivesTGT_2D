@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-18 11:08:14
+ * @LastEditTime: 2022-01-18 20:58:12
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -25,6 +25,11 @@ import {
  * 放了一点2d静态函数
  */
 class Math2D{
+    static line_length(v1,v2){
+        var a=v2.x-v1.x,
+            b=v2.y-v1.y;
+        return Math.sqrt(a*a+b*b);
+    }
     /**
      * 判断两个圆形是否相交
      * @param {Vector2} c1  圆1 圆心坐标
@@ -471,6 +476,109 @@ class Math2D{
             }
         }
         return rtn;
+    }
+    /**
+     * 贝塞尔曲线求交
+     * @param {BezierCurve} bezier1 贝塞尔曲线1
+     * @param {BezierCurve} bezier2 贝塞尔曲线2
+     * @param {Number} _accuracy 采样临界值(最终包围框的宽高最大不超过) 默认 1 值越小精度越高
+     * @param {Boolean} f_lil 是否使用最后得到的向量配对进行交点计算, 默认为true, 注意 如果采样精度太低进行求交可能会导致交点丢失
+     * @returns {Vectore2[]}  返回交点的集合
+     */
+    static bezier_i_bezier_v(bezier1,bezier2,_accuracy,f_lil){
+        /**@type {BezierCurve[][]} 两条曲线的单调子曲线*/
+        var group_bezier=[Math2D.cut_bezier_to_unilateral_by_root(bezier1),Math2D.cut_bezier_to_unilateral_by_root(bezier2)],
+            l=group_bezier[0].length-1,
+            k=group_bezier[1].length-1,
+            i,j;
+        /**@type {Number} 精度 */
+        var accuracy=(_accuracy&&(_accuracy>0))?_accuracy:1;
+        /**@type {Unilateral_Bezier_Box[]} 用来配对的集合*/
+        var group=new Array(l),
+        /**@type {Unilateral_Bezier_Box[]} 暂存*/
+        temp_group=new Array(k);
+        var tempVector2;
+        
+        for(j=k;j>=0;--j){
+            temp_group[j]=new Unilateral_Bezier_Box(group_bezier[1][j]);
+        }
+        for(i=l;i>=0;--i){
+            group[i]=new Unilateral_Bezier_Box(group_bezier[0][i]);
+            group[i].sb=temp_group.concat();
+        }
+        for(j=k;j>=0;--j){
+            temp_group[j].sb=group.concat();
+        }
+        var rtn=[],d=0,f=false;
+        temp_group=[];
+        while(group.length){
+            ++d;
+            f=false;
+            // ctx.clearRect(0,0,1000,1000);
+            for(i=group.length-1;(i>=0)&&group[i].sb.length;--i){
+                group[i].weed_out();
+                if(!group[i].sb.length){
+                    // 左组i项无配对
+                    continue;
+                }
+                // tgt_d.render(ctx);
+                // tgt_d1.render(ctx);
+    
+                if(group[i].has_accuracy(accuracy)){
+                    // 左组i项精度达成
+                    f=true;
+                    temp_group.push(group[i]);
+                }else{
+                    // 左组的精度不足 左组派生细分
+                    temp_group=temp_group.concat(group[i].ex_box());
+                }
+                for(j=0;j<group[i].sb.length;++j){
+                    if(f&&group[i].sb[j].has_accuracy(accuracy)){
+                        // 精度都足够 剔除配对并增加返回
+                        if(f_lil){
+                            rtn.push(Math2D.center_v2([group[i].v1,group[i].v2,group[i].sb[j].v1,group[i].sb[j].v2]));
+                        }
+                        else{
+                            tempVector2=group[i].line_i_line(group[i].sb[j]);
+                            if(!(isNaN(tempVector2.x)||(tempVector2.x===Infinity)||(tempVector2.x===-Infinity)||
+                            isNaN(tempVector2.y)||(tempVector2.y===Infinity)||(tempVector2.y===-Infinity)))
+                            rtn.push(tempVector2);
+                        }
+                        group[i].sb.splice(j,1);
+                        --j;
+                    }
+                    else if(group[i].sb[j].iterations<d){
+                        // 精度未达成 并且这次迭代中未细分
+                        group[i].sb[j].ex_box();
+                        ++j;
+                    }
+                }
+            }
+            group=temp_group;
+            temp_group=[];
+        }
+        return rtn;
+    }
+    /**
+     * 一组坐标的边界框的中心点
+     * @param {Vector2[]} ordinates 坐标集合
+     * @returns {Vector2} 返回中心的坐标
+     */
+    static center_v2(ordinates){
+        var min=new Vector2(),max=new Vector2();
+        max.x=ordinates[0].x;
+        max.y=ordinates[0].y;
+        min.x=ordinates[0].x;
+        min.y=ordinates[0].y;
+    
+        for(var i=ordinates.length-1;i>0;--i){
+            if(ordinates[i].x>max.x)max.x=ordinates[i].x;
+       else if(ordinates[i].x<min.x)min.x=ordinates[i].x;
+            if(ordinates[i].y>max.y)max.y=ordinates[i].y;
+       else if(ordinates[i].y<min.y)min.y=ordinates[i].y;
+        }
+    
+        return new Vector2(0.5*(max.x-min.x),0.5*(max.y-min.y));
     }
 }
 
@@ -1582,21 +1690,6 @@ class Matrix2x2T extends Matrix2x2{
         var v3={x:v2.x-v1.x,y:v2.y-v1.y};
         return new Matrix2x2T(v3.x,v3.y,-1*v3.y,v3.x,v1.x,v1.y);
     }
-
-    // /**
-    //  * 齐次矩阵 乘 齐次矩阵
-    //  * @param {Matrix2x2T} m
-    //  */
-    // linearMapping(m){
-    //     var v=new Vector2(this.x,this.y);
-    //     v.linearMapping(m);
-    //     var rtn=this.multiplication(m);
-    //     rtn.e=v.x;
-    //     rtn.f=v.y;
-    //     console.log('m.x,m.y :>> ', m.e,m.f);
-    //     return rtn
-    //     // todo
-    // }
 }
 
  
@@ -1831,10 +1924,10 @@ class Polygon{
         var rtn=0;
         var i=this.nodes.length-1;
         if(closeFlag&&this.isClosed()&&this.node.length>2){
-            rtn+=this.nodes[0].dif(this.nodes[i-1]).mag();
+            rtn+=Math2D.line_length(this.nodes[0],this.nodes[i-1]);
         }
         for(;i>0;--i){
-            rtn+=this.nodes[i].dif(this.nodes[i-1]).mag();
+            rtn+=Math2D.line_length(this.nodes[i],this.nodes[i-1]);
         }
         return rtn;
     }
@@ -1906,7 +1999,7 @@ class Polygon{
      * @returns {Number}    相交的次数
      */
     static getImpactCount(_polygon1,_polygon2){
-        // TODO: 当两个多边形的角碰到角的时候，会出现两次计算，会比预算结果多1
+        //  当两个多边形的角碰到角的时候，会出现两次计算，会比预算结果多1
         if(_polygon1.minX>_polygon2.maxX||_polygon2.minX>_polygon1.maxX||_polygon1.minY>_polygon2.maxY||_polygon1.minY>_polygon1.maxY)return 0;
         var vl1=_polygon1.nodes,vl2=_polygon2.nodes;
         var i=vl1.length-1,j;
@@ -2734,7 +2827,7 @@ class BezierCurve{
         }
         return 0;
     }
-    /** 弧长表 */
+    /** 弧长记录表 */
     get arc_length_table(){
         var polygon=this.polygon_proxy;
         if(this._arc_length_table===null){
@@ -2748,6 +2841,7 @@ class BezierCurve{
         }
         return this._arc_length_table;
     }
+    /**@type {Polygon} 拟合曲线的多边形 */
     get polygon_proxy(){
         if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
             this._polygon_proxy=this.createPolygonProxy(this.polygon_proxy_want_sp);
@@ -2762,7 +2856,7 @@ class BezierCurve{
     createPolygonProxy(step_size){
         var sp=Math.abs(step_size)||0.1,
             temp=[];
-        for(var i = 0; i<1; i+=sp){
+        for(var i = 0; !approximately(i,1); i>=1?i=1:i+=sp){
             temp.push(this.sampleCurve(i));
         }
         temp.push(this.sampleCurve(1));
@@ -2800,6 +2894,85 @@ class BezierCurve{
             tgtData.r=kr;
         }
         return new Arc_Data(c.x,c.y,kr,0,2*Math.PI);
+    }
+    /**
+     * 点投影到曲线上 搜索基础点 (使用弧长)
+     * @param {Vector2} v    点的坐标
+     * @param {Number} step_size   搜索时的采样步长(0<sp<1) 值越小精度越高 默认0.1
+     * @param {Number} accuracy    逼近时的采样精度(0<sp<1) 值越小精度越高 默认0.001
+     * @returns {{v1,v2,v3}} 接近点坐标的三个采样
+     * @return {t:Number,v:Vector2,l:Number} v1 最近的点的前一个
+     * @return {t:Number,v:Vector2,l:Number} v2 最近的点的当前点
+     * @return {t:Number,v:Vector2,l:Number} v3 最近的点的后一个点
+     */
+    projection_point_first_by_arcLiength(v,type='t',step_size=0.1){
+        var al=this.get_arc_length(),
+            temp_t,
+            tv,
+            temp={v1:null,v2:null,v3:null},
+            rtn ={v1:null,v2:{l:Infinity},v3:null};
+        for(var i=0;i!==1;i+=step_size,i>=1?i=1:1){
+            temp.v1=temp.v2;
+            temp.v2=temp.v3;
+            temp.v3={
+                t:(temp_t=type==='t'?i:this.get_t_by_arc_length(al*i)),
+                v:(tv=this.sampleCurve(temp_t)),
+                l:Math2D.line_length(tv,v)
+            };
+            if(temp.v3.l<rtn.v2.l){
+                rtn.v1=temp.v2;
+                rtn.v2=temp.v3;
+                rtn.v3=null;
+            }
+            if(temp.v2===rtn.v2){
+                rtn.v3=temp.v3;
+            }
+        }
+        if(!rtn.v1){
+            rtn.v1=temp.v3;
+        }
+        if(!rtn.v3){
+            rtn.v3=temp.v1;
+        }
+        return rtn;
+    }
+    
+    /**
+     * 点投影到曲线上 二分法逼近
+     * @param {Vector2} v    点的坐标
+     * @param {{v1,v2,v3}} basics_points   基础点
+     * @param {Number} accuracy      逼近时的采样精度(0<sp<1) 值越小精度越高 默认0.0001
+     */
+    projection_point_refining(v,basics_points,accuracy=0.0001){
+        if(approximately(basics_points.v1.t,basics_points.v3.t,accuracy)){
+            return basics_points.v1.l<basics_points.v2.l?
+            basics_points.v1.l<basics_points.v3.l?basics_points.v1:basics_points.v3:
+            basics_points.v2.l<basics_points.v3.l?basics_points.v2:basics_points.v3;
+        }else{
+            var f=basics_points.v1.l<basics_points.v3.l,
+                temp=f?basics_points.v1:basics_points.v3,
+                nv2t,nv2v;
+            var nv2={
+                t:(nv2t=0.5*(basics_points.v2.t+temp.t)),
+                v:(nv2v=this.sampleCurve(nv2t)),
+                l:Math2D.line_length(nv2v,v)
+            }
+            return this.projection_point_refining(v,{
+                v1:basics_points.v2,
+                v2:nv2,
+                v3:temp,
+            })
+        }
+    }
+    /**
+     * 点在曲线的投影
+     * @param {Vector2} v 
+     * @param {String} type 粗搜索时使用的采样类型 默认使用t值搜索 "arcLiength"||"t"
+     * @param {Number} step_size 粗搜索采样步长 0~1 越小精度越高
+     * @param {Number} accuracy  逼近精度 0~1 越小精度越高
+     */
+    projection_point(v,type="arcLiength",step_size,accuracy){
+        return this.projection_point_refining(v,this.projection_point_first_by_arcLiength(v,type,step_size),accuracy);
     }
 }
 
@@ -2897,109 +3070,6 @@ class Unilateral_Bezier_Box{
     }
 }
 
-/**
- * 贝塞尔曲线求交
- * @param {BezierCurve} bezier1 贝塞尔曲线1
- * @param {BezierCurve} bezier2 贝塞尔曲线2
- * @param {Number} _accuracy 采样临界值(最终包围框的宽高最大不超过) 默认 1 值越小精度越高
- * @param {Boolean} f_lil 是否使用最后得到的向量配对进行交点计算, 默认为true, 注意 如果采样精度太低进行求交可能会导致交点丢失
- * @returns {Vectore2[]}  返回交点的集合
- */
-function bezier_i_bezier_v(bezier1,bezier2,_accuracy,f_lil){
-    /**@type {BezierCurve[][]} 两条曲线的单调子曲线*/
-    var group_bezier=[Math2D.cut_bezier_to_unilateral_by_root(bezier1),Math2D.cut_bezier_to_unilateral_by_root(bezier2)],
-        l=group_bezier[0].length-1,
-        k=group_bezier[1].length-1,
-        i,j;
-    /**@type {Number} 精度 */
-    var accuracy=(_accuracy&&(_accuracy>0))?_accuracy:1;
-    /**@type {Unilateral_Bezier_Box[]} 用来配对的集合*/
-    var group=new Array(l),
-    /**@type {Unilateral_Bezier_Box[]} 暂存*/
-    temp_group=new Array(k);
-    var tempVector2;
-    
-    for(j=k;j>=0;--j){
-        temp_group[j]=new Unilateral_Bezier_Box(group_bezier[1][j]);
-    }
-    for(i=l;i>=0;--i){
-        group[i]=new Unilateral_Bezier_Box(group_bezier[0][i]);
-        group[i].sb=temp_group.concat();
-    }
-    for(j=k;j>=0;--j){
-        temp_group[j].sb=group.concat();
-    }
-    var rtn=[],d=0,f=false;
-    temp_group=[];
-    while(group.length){
-        ++d;
-        f=false;
-        // ctx.clearRect(0,0,1000,1000);
-        for(i=group.length-1;(i>=0)&&group[i].sb.length;--i){
-            group[i].weed_out();
-            if(!group[i].sb.length){
-                // 左组i项无配对
-                continue;
-            }
-            // tgt_d.render(ctx);
-            // tgt_d1.render(ctx);
-
-            if(group[i].has_accuracy(accuracy)){
-                // 左组i项精度达成
-                f=true;
-                temp_group.push(group[i]);
-            }else{
-                // 左组的精度不足 左组派生细分
-                temp_group=temp_group.concat(group[i].ex_box());
-            }
-            for(j=0;j<group[i].sb.length;++j){
-                if(f&&group[i].sb[j].has_accuracy(accuracy)){
-                    // 精度都足够 剔除配对并增加返回
-                    if(f_lil){
-                        rtn.push(center_v2([group[i].v1,group[i].v2,group[i].sb[j].v1,group[i].sb[j].v2]));
-                    }
-                    else{
-                        tempVector2=group[i].line_i_line(group[i].sb[j]);
-                        if(!(isNaN(tempVector2.x)||(tempVector2.x===Infinity)||(tempVector2.x===-Infinity)||
-                        isNaN(tempVector2.y)||(tempVector2.y===Infinity)||(tempVector2.y===-Infinity)))
-                        rtn.push(tempVector2);
-                    }
-                    group[i].sb.splice(j,1);
-                    --j;
-                }
-                else if(group[i].sb[j].iterations<d){
-                    // 精度未达成 并且这次迭代中未细分
-                    group[i].sb[j].ex_box();
-                    ++j;
-                }
-            }
-        }
-        group=temp_group;
-        temp_group=[];
-    }
-    return rtn;
-}
-/**
- * 坐标的中心点
- * @param {Vector2[]} ordinates 坐标集合
- * @returns {Vector2} 返回中心的坐标
- */
-function center_v2(ordinates){
-    var min=new Vector2(),max=new Vector2();
-    max.x=ordinates[0].x;
-    max.y=ordinates[0].y;
-    min.x=ordinates[0].x;
-    min.y=ordinates[0].y;
-
-    for(var i=ordinates.length-1;i>0;--i){
-        if(ordinates[i].x>max.x)max.x=ordinates[i].x;
-   else if(ordinates[i].x<min.x)min.x=ordinates[i].x;
-        if(ordinates[i].y>max.y)max.y=ordinates[i].y;
-   else if(ordinates[i].y<min.y)min.y=ordinates[i].y;
-    }
-
-    return new Vector2(0.5*(max.x-min.x),0.5*(max.y-min.y));
-}
 
 
 export{
@@ -3014,6 +3084,4 @@ export{
     Bezier_Node,
     Bezier_Polygon,
     BezierCurve,
-    bezier_i_bezier_v,
-    center_v2,
 }

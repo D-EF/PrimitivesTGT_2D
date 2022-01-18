@@ -19,9 +19,7 @@ import {
     Bezier_Node,
     Bezier_Polygon,
     BezierCurve,
-    bezier_i_bezier_v,
-    center_v2,
-}from "./Math2d.js";
+        }from "./Math2d.js";
 
 /** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */
 var def_accuracy=20;
@@ -407,7 +405,6 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
            this.dataType="Bezier_Polygon";
            this._want_to_closePath=false;
        }
-       
         get want_to_closePath(){
             return this._want_to_closePath;
         }
@@ -419,6 +416,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
             this._data=val;
             this.data.closedFlag=this._want_to_closePath;
         }
+        /**@type {Bezier_Polygon} */
         get data(){
             return this._data;
         }
@@ -436,11 +434,6 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
            if(clear_tfm_f){
                this.transformMatrix=new Matrix2x2T();
            }
-       }
-       /**
-        * @param {CanvasRenderingContext2D} ctx 
-        */
-       createCanvasPath(ctx){
        }
 }
 

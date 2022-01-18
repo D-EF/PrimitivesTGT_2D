@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-17 20:27:03
+ * @LastEditTime: 2022-01-18 20:52:15
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -21,10 +21,11 @@ import {
     Vector2,
     Matrix2x2T,
     Polygon,
-    Bezier_Polygon  
+    Bezier_Polygon,  
+    BezierCurve
 } from "../Math2d.js";
 
-
+/**@type {CanvasRenderingContext2D} */
 var ctx=document.getElementById("cnm").getContext("2d");
 
 var sp=new Sprites(6,6,"SpritesMap.png",0.2,0.2,0.2,0.2);
@@ -96,9 +97,11 @@ d.data.pushNode({
     },
 });
 
-d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
+// d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
 d.want_to_closePath=-1;
 renderer.tgtList.push(d);
+d.fill_Material=new Canvas2d_Material("#0000");
+window.ka=d.data.get_bezierCurve(0);
 
 var cnm=document.getElementById("cnm");
 cnm.style.left="30px";
@@ -113,4 +116,14 @@ cnm.onclick=function(e){
             console.log("is clicking",renderer.tgtList[i]);
         }
     }
+}
+cnm.onmousemove=function (e){
+    var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
+    
+    /**@type {BezierCurve} */
+    // var ka;
+    console.log(ka.projection_point(v));
+    ctx.clearRect(0,0,1000,1000)
+    renderer.render(d);
+    CtrlCanvas2d.dot(ctx,ka.projection_point(v).v,3,"#0f0");
 }

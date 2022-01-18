@@ -29,9 +29,7 @@ import {
     Bezier_Node,
     Bezier_Polygon,
     BezierCurve,
-    bezier_i_bezier_v,
-    center_v2,
-}from "../Math2d.js";
+        }from "../Math2d.js";
 
 var canvas=document.getElementById("canvas");
 var ctx=canvas.getContext('2d');
