@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-18 20:58:12
+ * @LastEditTime: 2022-01-19 20:10:53
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -25,10 +25,30 @@ import {
  * 放了一点2d静态函数
  */
 class Math2D{
+    /**
+     * 线段长度
+     * @param {Vector2} v1 线段端点
+     * @param {Vector2} v2 线段端点
+     * @returns {Number} 返回线段长度
+     */
     static line_length(v1,v2){
         var a=v2.x-v1.x,
             b=v2.y-v1.y;
         return Math.sqrt(a*a+b*b);
+    }
+    /**
+     * 点到线段的距离
+     * @param {Vector2} point 点
+     * @param {Vector2} line_p1 线段端点
+     * @param {Vector2} line_p2 线段端点
+     * @return {Number} 返回点到线段的距离
+     */
+    static point_line_length(point,line_p1,line_p2){
+        var d1=Vector2.dif(line_p2,line_p1),
+            d2=Vector2.dif(point,line_p1),
+            k=Vector2.ip(d1,d2)/(d1.x*d1.x+d1.y*d1.y),
+            d=k>0?k<1?Vector2.add(line_p1,Vector2.np(d1,k)):line_p2:line_p1;
+        return Math2D.line_length(point,d);
     }
     /**
      * 判断两个圆形是否相交
@@ -1259,8 +1279,7 @@ class Sector_Data extends Arc_Data{
     add(v2){return new Vector2(this.x+v2.x,this.y+v2.y);}
     /**数字乘向量 
      * @param {Number} n
-     * @param {Vector2} v
-     * @returns{Vector2} 返回新的向量
+     * @returns {Vector2} 返回新的向量
     */
     np(n){return new Vector2(this.x*n,this.y*n);}
     /**向量差
@@ -1352,6 +1371,12 @@ class Sector_Data extends Arc_Data{
      */
     static op(v1,v2){return v1.x*v2.y-v1.y*v2.x;}
     
+    /**数字乘向量 
+     * @param {Vector2} v
+     * @param {Number} n
+     * @returns {Vector2} 返回新的向量
+    */
+    static np(v,n){return new Vector2(v.x*n,v.y*n);}
     /**
      * 线性变换(矩阵和向量的乘法), 根据实参的顺序重载后乘对象
      * (v,m)行向量后乘矩阵
@@ -1914,6 +1939,21 @@ class Polygon{
         }
         return rtn;
     }
+    /**
+     * 分割线段生成新顶点
+     * @param {Number} index 前驱顶点下标
+     * @param {Number} z     t参数
+     * @returns {Vector2} 新加入到顶点
+     */
+    cut(index,z){
+        var i_next=index+1===this.node.length?index+1:0;
+        if(this.nodes[index]===undefined||this.nodes[i_next]===undefined)return;
+        var zd=1-z,
+            newNode=new Vector2(zd*this.nodes[index].x+z*this.nodes[i_next].x,zd*this.nodes[index].y+z*this.nodes[i_next].y)
+        
+        i_next?this.nodes.splice(i_next,0,newNode):this.nodes.push(newNode);
+        return newNode;
+    }
 
     /**
      * 多边形所有边的长度和
@@ -2239,12 +2279,13 @@ class Bezier_Polygon{
     }
     /**
      * 分割贝塞尔曲线
-     * @param {Number} index 下标
+     * @param {Number} index 前驱端点下标
      * @param {Number} z     t参数 
+     * @return {Bezier_Node} 新加入的端点
      */
     cut(index,z){
-        if(this.nodes[index]===undefined||this.nodes[index+1]===undefined)return;
         var i_next=index+1===this.node.length?index+1:0;
+        if(this.nodes[index]===undefined||this.nodes[i_next]===undefined)return;
         var points=[
             this.nodes[index].node,
             this.nodes[index].hand_after,
@@ -2268,6 +2309,7 @@ class Bezier_Polygon{
         
         i_next?this.nodes.splice(i_next,0,newNode):this.nodes.push(newNode);
         this.emptied_bezierCurve(index,true);
+        return newNode;
     }
     isClosed(){
         return  (this.nodes[0].node.x===this.nodes[this.nodes.length-1].node.x)&&
@@ -2510,9 +2552,11 @@ class BezierCurve{
         }
         return this._align_proxy;
     }
+    /** @type {Number} 拟合多边形 t 步长 */
     get polygon_proxy_want_sp(){
         return this._polygon_proxy_want_sp;
     }
+    /** @type {Number} 拟合多边形 t 步长 */
     set polygon_proxy_want_sp(step_size){
         var sp=Math.abs(step_size);
         this._polygon_proxy_want_sp=sp>1?1:sp;
@@ -2898,27 +2942,37 @@ class BezierCurve{
     /**
      * 点投影到曲线上 搜索基础点 (使用弧长)
      * @param {Vector2} v    点的坐标
-     * @param {Number} step_size   搜索时的采样步长(0<sp<1) 值越小精度越高 默认0.1
-     * @param {Number} accuracy    逼近时的采样精度(0<sp<1) 值越小精度越高 默认0.001
+     * @param {Number} step_size   搜索时的采样步长(0<sp<1) 值越小精度越高 默认为 this.polygon_proxy_want_sp
      * @returns {{v1,v2,v3}} 接近点坐标的三个采样
      * @return {t:Number,v:Vector2,l:Number} v1 最近的点的前一个
      * @return {t:Number,v:Vector2,l:Number} v2 最近的点的当前点
      * @return {t:Number,v:Vector2,l:Number} v3 最近的点的后一个点
      */
-    projection_point_first_by_arcLiength(v,type='t',step_size=0.1){
+    projection_point_first_by_arcLiength(v,type,step_size){
+        var type=type||'t',
+            step_size=step_size===undefined?this.polygon_proxy_want_sp:(this.polygon_proxy_want_sp=step_size);
+
         var al=this.get_arc_length(),
             temp_t,
             tv,
             temp={v1:null,v2:null,v3:null},
             rtn ={v1:null,v2:{l:Infinity},v3:null};
-        for(var i=0;i!==1;i+=step_size,i>=1?i=1:1){
+        for(var i=0,j=0;i!==1;i+=step_size,i>=1?i=1:1,++j){
             temp.v1=temp.v2;
             temp.v2=temp.v3;
-            temp.v3={
-                t:(temp_t=type==='t'?i:this.get_t_by_arc_length(al*i)),
-                v:(tv=this.sampleCurve(temp_t)),
-                l:Math2D.line_length(tv,v)
-            };
+            if(type==='t'){
+                temp.v3={
+                    t:(temp_t=i),
+                    v:(tv=this.polygon_proxy.nodes[j]),
+                };
+            }else{
+                temp.v3={
+                    t:(temp_t=this.get_t_by_arc_length(al*i)),
+                    v:(tv=this.sampleCurve(temp_t)),
+                };
+            }
+            temp.v3.l=Math2D.line_length(tv,v);
+            
             if(temp.v3.l<rtn.v2.l){
                 rtn.v1=temp.v2;
                 rtn.v2=temp.v3;
@@ -2929,10 +2983,10 @@ class BezierCurve{
             }
         }
         if(!rtn.v1){
-            rtn.v1=temp.v3;
+            rtn.v1=rtn.v3;
         }
         if(!rtn.v3){
-            rtn.v3=temp.v1;
+            rtn.v3=rtn.v1;
         }
         return rtn;
     }
@@ -2943,8 +2997,9 @@ class BezierCurve{
      * @param {{v1,v2,v3}} basics_points   基础点
      * @param {Number} accuracy      逼近时的采样精度(0<sp<1) 值越小精度越高 默认0.0001
      */
-    projection_point_refining(v,basics_points,accuracy=0.0001){
-        if(approximately(basics_points.v1.t,basics_points.v3.t,accuracy)){
+    projection_point_refining(v,basics_points,accuracy){
+        var accuracy=accuracy||0.0001;
+        if(approximately(basics_points.v2.t,basics_points.v3.t,accuracy)){
             return basics_points.v1.l<basics_points.v2.l?
             basics_points.v1.l<basics_points.v3.l?basics_points.v1:basics_points.v3:
             basics_points.v2.l<basics_points.v3.l?basics_points.v2:basics_points.v3;
@@ -2968,10 +3023,10 @@ class BezierCurve{
      * 点在曲线的投影
      * @param {Vector2} v 
      * @param {String} type 粗搜索时使用的采样类型 默认使用t值搜索 "arcLiength"||"t"
-     * @param {Number} step_size 粗搜索采样步长 0~1 越小精度越高
+     * @param {Number} step_size 粗搜索采样步长 0~1 越小精度越高 默认为 this.polygon_proxy_want_sp
      * @param {Number} accuracy  逼近精度 0~1 越小精度越高
      */
-    projection_point(v,type="arcLiength",step_size,accuracy){
+    projection_point(v,type="t",step_size,accuracy=0.001){
         return this.projection_point_refining(v,this.projection_point_first_by_arcLiength(v,type,step_size),accuracy);
     }
 }
@@ -3069,8 +3124,6 @@ class Unilateral_Bezier_Box{
             return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
     }
 }
-
-
 
 export{
     Math2D,

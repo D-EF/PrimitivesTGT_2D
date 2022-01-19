@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-18 20:52:15
+ * @LastEditTime: 2022-01-19 16:01:07
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -22,9 +22,16 @@ import {
     Matrix2x2T,
     Polygon,
     Bezier_Polygon,  
-    BezierCurve
+    BezierCurve,
+    Math2D
 } from "../Math2d.js";
 
+window.Vector2=Vector2;
+window.Matrix2x2T=Matrix2x2T;
+window.Polygon=Polygon;
+window.Bezier_Polygon=Bezier_Polygon;
+window.BezierCurve=BezierCurve;
+window.Math2D=Math2D
 /**@type {CanvasRenderingContext2D} */
 var ctx=document.getElementById("cnm").getContext("2d");
 
