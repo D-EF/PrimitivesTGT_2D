@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-19 20:10:53
+ * @LastEditTime: 2022-01-21 15:09:06
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -2424,7 +2424,7 @@ class BezierCurve{
         /**@type {Number} 目标的多边形代理的步长,如果和_polygon_proxy_sp不同时，get访问器会重新生成多边形代理*/
         this._polygon_proxy_want_sp;
         this.polygon_proxy_want_sp=0.1;
-        /**@type {Number[]} 弧长记录表 */
+        /**@type {{t:Number,l:Number}[]} 弧长记录表 */
         this._arc_length_table=null;
         if(points) this.reset_points(points);
     }
@@ -2851,11 +2851,11 @@ class BezierCurve{
     get_arc_length(step_size){
         if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
         var tb=this.arc_length_table;
-        return tb[tb.length-1];
+        return tb[tb.length-1].l;
     }
     /**
      * 使用弧长求t值
-     * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时会出现错误的结果
+     * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时取0
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
      * @returns {Number} 对应的时间参数t
      */
@@ -2865,8 +2865,12 @@ class BezierCurve{
             i=tb.length-1,
             l=length>=0?length:tb[i]+length;
         for(--i;i>=0;--i){
-            if(tb[i]<l){
-                return this._polygon_proxy_sp*(i+(l-tb[i])/(tb[i+1]-tb[i]))
+            if(tb[i].l<l){
+                // return this._polygon_proxy_sp*(i+(l-tb[i])/(tb[i+1]-tb[i]))
+                if(tb[i+1]){
+                    return tb[i].t+(l-tb[i].l)/(tb[i+1].l-tb[i].l)*(tb[i+1].t-tb[i].t);
+                }
+                return 0
             }
         }
         return 0;
@@ -2874,13 +2878,13 @@ class BezierCurve{
     /** 弧长记录表 */
     get arc_length_table(){
         var polygon=this.polygon_proxy;
-        if(this._arc_length_table===null){
+        if(this._arc_length_table[0].l===null){
             this._arc_length_table=[];
             var temp;
-            this._arc_length_table[0]=0;
+            this._arc_length_table[0].l=0;
             for(var i=1;i<polygon.nodes.length;++i){
                 temp=polygon.nodes[i].dif(polygon.nodes[i-1]).mag();
-                this._arc_length_table[i]=this._arc_length_table[i-1]+temp;
+                this._arc_length_table[i].l=this._arc_length_table[i-1]+temp;
             }
         }
         return this._arc_length_table;
@@ -2900,10 +2904,13 @@ class BezierCurve{
     createPolygonProxy(step_size){
         var sp=Math.abs(step_size)||0.1,
             temp=[];
-        for(var i = 0; !approximately(i,1); i>=1?i=1:i+=sp){
+        this._arc_length_table=[];
+        for(var i = 0; i<1; i+=sp){
             temp.push(this.sampleCurve(i));
+            this._arc_length_table.push({t:i,l:null});
         }
         temp.push(this.sampleCurve(1));
+        this._arc_length_table.push({t:1,l:null});
         this._arc_length_table===null;
         this._polygon_proxy_sp=step_size;
         return new Polygon(temp);
