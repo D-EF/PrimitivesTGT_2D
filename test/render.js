@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-19 16:01:07
+ * @LastEditTime: 2022-01-21 16:55:35
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -31,10 +31,10 @@ window.Matrix2x2T=Matrix2x2T;
 window.Polygon=Polygon;
 window.Bezier_Polygon=Bezier_Polygon;
 window.BezierCurve=BezierCurve;
-window.Math2D=Math2D
+window.Math2D=Math2D;
 /**@type {CanvasRenderingContext2D} */
 var ctx=document.getElementById("cnm").getContext("2d");
-
+// ctx.globalAlpha=0.5
 var sp=new Sprites(6,6,"SpritesMap.png",0.2,0.2,0.2,0.2);
 var spritesMap_Material=new Canvas2d_Material(sp);
 
@@ -51,6 +51,7 @@ t2.lineWidth=2;
 t2.want_to_closePath=true;
 t2.stroke_Material=new Canvas2d_Material("#0f0");
 t2.transformMatrix=new Matrix2x2T().setTranslate(120,120).rotate(45*deg);
+t2.globalAlpha=0.5;
 
 var t3=new PrimitivePolygonTGT(new Polygon([
     {x:0,y:0},
@@ -104,11 +105,14 @@ d.data.pushNode({
     },
 });
 
-// d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
-d.want_to_closePath=-1;
+d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
+d.want_to_closePath=1;
+d.fill_Material=spritesMap_Material;
+d.fill_uv={x:4,y:6};
+d.fill_uvwh={x:0.5,y:0.5};
 renderer.tgtList.push(d);
-d.fill_Material=new Canvas2d_Material("#0000");
-window.ka=d.data.get_bezierCurve(0);
+var ka=window.ka=d.data.get_bezierCurve(0);
+var l=ka.get_arc_length(),spl=l/15;
 
 var cnm=document.getElementById("cnm");
 cnm.style.left="30px";
@@ -124,13 +128,10 @@ cnm.onclick=function(e){
         }
     }
 }
-cnm.onmousemove=function (e){
-    var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
-    
-    /**@type {BezierCurve} */
-    // var ka;
-    console.log(ka.projection_point(v));
-    ctx.clearRect(0,0,1000,1000)
-    renderer.render(d);
-    CtrlCanvas2d.dot(ctx,ka.projection_point(v).v,3,"#0f0");
-}
+// cnm.onmousemove=function (e){
+//     var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
+//     console.log(ka.projection_point(v));
+//     ctx.clearRect(0,0,1000,1000)
+//     renderer.render(d);
+//     CtrlCanvas2d.dot(ctx,ka.projection_point(v,"arcLiength").v,3,"#0f0");
+// }

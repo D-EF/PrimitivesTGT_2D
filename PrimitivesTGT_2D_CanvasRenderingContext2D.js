@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-17 20:26:45
+ * @LastEditTime: 2022-01-21 16:41:55
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  */
 
@@ -146,6 +146,9 @@ class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
         var ctx=this.ctx;
         ctx.save();
         ctx.beginPath();
+        ctx.globalAlpha=tgt.globalAlpha;
+        ctx.setLineDash(tgt.lineDash);
+        ctx.lineDashOffset=tgt.lineDashOffset;
         ctx.transform(tgt.transformMatrix.a,tgt.transformMatrix.b,tgt.transformMatrix.c,tgt.transformMatrix.d,tgt.transformMatrix.e||0,tgt.transformMatrix.f||0);
         if(tgt.fill_Material){
             ctx.fillStyle=tgt.fill_Material.get(tgt,this.ctx,"fill");

@@ -117,6 +117,12 @@ class PrimitiveTGT{
         this.stroke_uvwh=new Vector2(1,1);
         /**@type {Number} 描边线宽度 */
         this.lineWidth=1;
+        /**@type {Number} 图形不透明度 */
+        this.globalAlpha=1;
+        /**@type {Number[]} 虚线间隔和长度*/
+        this.lineDash=[0];
+        /**@type {Number} 虚线起始偏移*/
+        this.lineDashOffset=0;
 
         /**
          * tgt的 data的类型 用于将json实例化为 PrimitiveTGT
@@ -456,20 +462,24 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
             this.data=[]
         }
         this.dataType="Group";
+        /** 用于控制绘制 精灵图 贴图的 属性 */
+        this.sp_min=new Vector2(0,0);
+        /** 用于控制绘制 精灵图 贴图的 属性 */
+        this.sp_max=new Vector2(100,100);
     }
     /** 
      * 获取最小的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
      getMin(){
-        return this.data.getMin();
+        return this.min;
     }
     /** 
      * 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
     getMax(){
-        return this.data.getMax();
+        return this.max;
     }
     /**
      * 添加子项

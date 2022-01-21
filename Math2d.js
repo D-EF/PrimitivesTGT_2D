@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-21 15:09:06
+ * @LastEditTime: 2022-01-21 18:09:09
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -1954,7 +1954,14 @@ class Polygon{
         i_next?this.nodes.splice(i_next,0,newNode):this.nodes.push(newNode);
         return newNode;
     }
+    /**
+     * todo
+     * @param {Vector2} point 
+     * @param {Number} tolerance 最大距离max distance
+     */
+    cut_by_point(point,tolerance){
 
+    }
     /**
      * 多边形所有边的长度和
      * @param {Boolean} closeFlag 是否闭合多边形
@@ -2325,7 +2332,10 @@ class Bezier_Polygon{
     isInside(x,y){
         var f=this.closedFlag;
         var i,rtn=0;
-        
+        if(!f){
+            // 没闭合的图形, 直接返回否
+            return false;
+        }
         i=this.nodes.length-1;
         if(f===-1){
             // 线段
@@ -2369,17 +2379,17 @@ class Bezier_Polygon{
             if(!this.want_to_close){
                 --i;
             }
-            var max,
-                min;
+            var max=new Vector2(-Infinity,-Infinity),
+                min=new Vector2( Infinity, Infinity);
             var temp,tempMin,tempMax;
             for(;i>=0;--i){
-                temp=this.get_bezierCurve(i).get_aabb().getMin();
+                temp=this.get_bezierCurve(i).get_aabb();
                 tempMin=temp.getMin();
                 tempMax=temp.getMax();
                 if(min.x>tempMin.x)min.x=tempMin.x;
                 if(min.y>tempMin.y)min.y=tempMin.y;
-                if(max.x>tempMax.x)max.x=tempMax.x;
-                if(max.y>tempMax.y)max.y=tempMax.y;
+                if(max.x<tempMax.x)max.x=tempMax.x;
+                if(max.y<tempMax.y)max.y=tempMax.y;
             }
             this._aabb=Rect_Data.createByVector2(min,max);
         }
@@ -2879,12 +2889,11 @@ class BezierCurve{
     get arc_length_table(){
         var polygon=this.polygon_proxy;
         if(this._arc_length_table[0].l===null){
-            this._arc_length_table=[];
             var temp;
             this._arc_length_table[0].l=0;
             for(var i=1;i<polygon.nodes.length;++i){
                 temp=polygon.nodes[i].dif(polygon.nodes[i-1]).mag();
-                this._arc_length_table[i].l=this._arc_length_table[i-1]+temp;
+                this._arc_length_table[i].l=this._arc_length_table[i-1].l+temp;
             }
         }
         return this._arc_length_table;
@@ -2911,7 +2920,6 @@ class BezierCurve{
         }
         temp.push(this.sampleCurve(1));
         this._arc_length_table.push({t:1,l:null});
-        this._arc_length_table===null;
         this._polygon_proxy_sp=step_size;
         return new Polygon(temp);
     }
