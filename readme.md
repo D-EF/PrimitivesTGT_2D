@@ -7,3 +7,5 @@
 包含有图形学 Math2d.js 和 面向对象操作图形的 PrimitivesTGT   
 # <a href="/Math2D.md">Math2D</a>
 # <a href="/PrimitivesTGT.md">PrimitivesTGT</a>
+
+文档没写，可以看注释
