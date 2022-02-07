@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-21 18:09:09
+ * @LastEditTime: 2022-02-07 14:16:24
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -37,6 +37,18 @@ class Math2D{
         return Math.sqrt(a*a+b*b);
     }
     /**
+     * 点在线段上的投影
+     * @param {Vector2} point   点
+     * @param {Vector2} lp1     线段起点
+     * @param {Vector2} lp2     线段终点
+     * @returns {Number} 投影系数
+     */
+    static point_in_line(point,lp1,lp2){
+        var tp1=Vector2.dif(point,lp1),
+            tp2=Vector2.dif(lp2,lp1);
+        return Vector2.ip(tp1,tp2)/tp2.mag();
+    }
+    /**
      * 点到线段的距离
      * @param {Vector2} point 点
      * @param {Vector2} line_p1 线段端点
@@ -49,6 +61,17 @@ class Math2D{
             k=Vector2.ip(d1,d2)/(d1.x*d1.x+d1.y*d1.y),
             d=k>0?k<1?Vector2.add(line_p1,Vector2.np(d1,k)):line_p2:line_p1;
         return Math2D.line_length(point,d);
+    }
+    /**
+     * 与 point_line_length 相似, 多返回个 k 值(点在线上的投影的系数)
+     * @return {length:Number,k:Number}
+     */
+    static point_line_length_k(point,line_p1,line_p2){
+        var d1=Vector2.dif(line_p2,line_p1),
+            d2=Vector2.dif(point,line_p1),
+            k=Vector2.ip(d1,d2)/(d1.x*d1.x+d1.y*d1.y),
+            d=k>0?k<1?Vector2.add(line_p1,Vector2.np(d1,k)):line_p2:line_p1;
+        return {length:Math2D.line_length(point,d),k:k};
     }
     /**
      * 判断两个圆形是否相交
@@ -1943,7 +1966,7 @@ class Polygon{
      * 分割线段生成新顶点
      * @param {Number} index 前驱顶点下标
      * @param {Number} z     t参数
-     * @returns {Vector2} 新加入到顶点
+     * @returns {Vector2} 新加入的顶点
      */
     cut(index,z){
         var i_next=index+1===this.node.length?index+1:0;
@@ -1955,12 +1978,74 @@ class Polygon{
         return newNode;
     }
     /**
-     * todo
-     * @param {Vector2} point 
-     * @param {Number} tolerance 最大距离max distance
+     * 点趋向于哪条边
+     * @param {Vector2} point 点
+     * @param {Boolean} want_to_close 将没闭合的路径视作闭合路径
+     * @returns {{i:Number,l:Number,k:Number}}  i:线段前驱顶点的下标, l:点到线段的距离, k:点投影到线段的系数
      */
-    cut_by_point(point,tolerance){
-
+    point_in_line(point,want_to_close){
+        var nodes=this.nodes;
+        var min_l=Infinity,temp=0,ti=0,i=nodes.length-1,k=0;
+        if(want_to_close){
+            temp=Math2D.point_line_length(point,nodes[i],nodes[0]);
+            min_l=temp;
+            ti=i;
+            k=temp.k;
+        }
+        --i;
+        for(;i>=0;--i){
+            if(min_l>(temp=Math2D.point_line_length(point,nodes[i],nodes[i+1])).length){
+                min_l=temp.length;
+                ti=i;
+                k=temp.k;
+            }
+        }
+        return {i:ti,l:min_l,k:k};
+    }
+    /**
+     * 点在顶点上或在多边形线段上 顶点优先
+     * @param {Vector2} point 点
+     * @param {Number} r 顶点的计算半径 取负数将无法取到顶点
+     * @param {Number} line_width 线段容差宽度 超出距离不计 取负数将无法取到边
+     * @param {Boolean} want_to_close 将没闭合的路径视作闭合路径
+     * @returns {{type:Number,i:Number,l:Number,k:Number}}
+     * @return type 在顶点上(0) 或 在边上(1)
+     * @return i 当前顶点下标 或边的前驱顶点下标
+     * @return l 点到目标的距离
+     * @retutn k 目标为边时点到边的投影的系数
+     */
+    point_in_node_or_line(point,r,line_width,want_to_close){
+        var nodes=this.nodes;
+        var i=nodes.length-1,min=Infinity,temp=0,ti=i;
+        if(r>0){
+            for(;i>=0;--i){
+                if(min<(temp=Math2D.line_length(point,nodes[i]))){
+                    min=temp;
+                    ti=i;
+                }
+            }
+            if(min<r){
+                return {
+                    type:0,
+                    i:ti,
+                    l:min,
+                    k:0
+                }
+            }
+        }
+        if(line_width>0){
+            var rtn=this.point_in_line(point,want_to_close);
+            if(rtn.length<line_width){
+                rtn.type=1;
+                return rtn;
+            }
+        }
+        return {
+            type:-1,
+            i:-1,
+            l:Infinity,
+            k:0
+        }
     }
     /**
      * 多边形所有边的长度和
