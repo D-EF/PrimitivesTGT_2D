@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-07 14:16:24
+ * @LastEditTime: 2022-02-07 19:22:56
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -19,6 +19,7 @@ import {
 } from "../basics/math_ex.js";
 
 import {
+    Delegate,
     OlFunction,
 } from "../basics/Basics.js";
 /**
@@ -1406,19 +1407,21 @@ class Sector_Data extends Arc_Data{
      * (m,v)矩阵后乘列向量
      * @param {Vector2} v 向量
      * @param {Matrix2x2} m 矩阵
+     * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static baseLinearMapping(v,m){
+    static baseLinearMapping(v,m,anchorPoint){
     }
     /**
      * 先进行2x2变换 再平移
      * @param {Vector2} v 
      * @param {Matrix2x2T} m 
+     * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static afterTranslate_linearMapping(v,m){
-        var rtnv=Vector2.baseLinearMapping(v,m),
-            tm=(arguments[0].constructor==Vector2)?arguments[1]:arguments[0];
+    static afterTranslate_linearMapping(v,m,anchorPoint){
+        var rtnv=Vector2.baseLinearMapping(Vector2.copy(v),m,anchorPoint),
+            tm=(v.a===undefined)?arguments[1]:arguments[0];
         rtnv.x+=tm.e;
         rtnv.y+=tm.f;
         return rtnv;
@@ -1427,27 +1430,30 @@ class Sector_Data extends Arc_Data{
      * 先平移 再 进行2x2变换, 根据实参的顺序重载后乘对象
      * @param {Vector2} v 
      * @param {Matrix2x2T} m 
+     * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static beforeTranslate_linearMapping(v,m){
+    static beforeTranslate_linearMapping(v,m,anchorPoint){
         var tv,tm,rtn;
-        if(arguments[0].constructor==Vector2){
-            tv=arguments[0].copy();
+        if(v.a===undefined){
+            tv=Vector2.copy(arguments[0]);
             tm=arguments[1];
             if(tm.constructor==Matrix2x2T){
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            rtn=Vector2.baseLinearMapping(tv,tm);
+            tv=Vector2.dif(tv,anchorPoint);
+            rtn=Vector2.baseLinearMapping(tv,tm).add(anchorPoint);
         }
         else{
             tm=arguments[0];
-            tv=arguments[1].copy();
+            tv=Vector2.copy(arguments[1]);
             if(tm.constructor==Matrix2x2T){
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            rtn=Vector2.baseLinearMapping(tm,tv);
+            tv=Vector2.dif(tv,anchorPoint);
+            rtn=Vector2.baseLinearMapping(tm,tv).add(anchorPoint);
         }
         
         return rtn;
@@ -1459,13 +1465,14 @@ class Sector_Data extends Arc_Data{
      * @param {Vector2} v 向量
      * @param {Matrix2x2} m 矩阵
      * @param {Boolean} translate_befroeOrAfter 先平移或后平移; 默认后平移
+     * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static linearMapping(v,m,translate_befroeOrAfter=false){
+    static linearMapping(v,m,translate_befroeOrAfter=false,anchorPoint){
         if(translate_befroeOrAfter){
-            return Vector2.beforeTranslate_linearMapping(v,m)
+            return Vector2.beforeTranslate_linearMapping(v,m,anchorPoint);
         }else{
-            return Vector2.afterTranslate_linearMapping(v,m)
+            return Vector2.afterTranslate_linearMapping(v,m,anchorPoint);
         }
     }
     /**
@@ -2193,7 +2200,7 @@ Vector2.baseLinearMapping.addOverload([Vector2,Matrix2x2],function(v,m){
 /**
  * 矩阵后乘列向量
  */
-Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2],function(m,v){
+Vector2.baseLinearMapping.addOverload([Matrix2x2,Vector2,],function(m,v){
     var rtn = new Vector2(
         v.x*m.a+v.y*m.b,
         v.x*m.c+v.y*m.d
@@ -2273,7 +2280,7 @@ class Bezier_Polygon{
      * @param {Vector2[]} hand_afters 
      */
     constructor(nodes,hand_befores,hand_afters){
-        this.nodes=[];
+        this._nodes=[];
         if(nodes)
         for(var i=0;i<nodes.length;i++){
             this.nodes.push(new Bezier_Node(nodes[i],hand_befores[i],hand_afters[i]));
@@ -2283,6 +2290,34 @@ class Bezier_Polygon{
         this._aabb=null;
         /**@type {Number} 计算时使用的路径闭合情况: -1是使用直线闭合, 0是不闭合, 1是使用贝塞尔曲线闭合 */
         this.closedFlag=0;
+        /**@type {Delegate} 在修改节点数据后执行的委托 */
+        this.unins_bezierCurve_Delegate = Delegate.ctrate();
+        /**@type {Delegate} 在插入/删除节点后执行的委托 */
+        this.emptied_bezierCurve_Delegate = Delegate.ctrate();
+        
+    }
+    /**
+     * 线性变换
+     * @param {Bezier_Polygon} bezier_Polygon 变换的多边形
+     * @param {Matrix2x2T} transform_m 变换矩阵
+     * @param {Boolean} f 先平移或后平移
+     */
+    static linearMapping(bezier_Polygon,transform_m,f){
+        var rtn=new Bezier_Polygon();
+        var tf=bezier_Polygon instanceof Bezier_Polygon;
+        var m,p=tf?(m=transform_m,bezier_Polygon):(m=bezier_Polygon,transform_m);
+        for(var i=0;i<p._nodes.length;++i){
+            rtn.pushNode(tf?{
+                node:Vector2.linearMapping(p.nodes[0].node,m,f),
+                hand_before:Vector2.linearMapping(p.nodes[0].hand_before,m,f),
+                hand_after:Vector2.linearMapping(p.nodes[0].hand_after,m,f)
+            }:{
+                node:Vector2.linearMapping(m,p.nodes[0].node,f),
+                hand_before:Vector2.linearMapping(m,p.nodes[0].hand_before,f),
+                hand_after:Vector2.linearMapping(m,p.nodes[0].hand_after,f)
+            });
+        }
+        return rtn;
     }
     static copy(tgt){
         var rtn=new Bezier_Polygon();
@@ -2293,6 +2328,28 @@ class Bezier_Polygon{
     }
     copy(){
         return Bezier_Polygon.copy(this);
+    }
+    /**@type {Bezier_Node[]} 只读属性, 应该使用 Bezier_Polygon 类的成员函数修改内容 */ 
+    get nodes(){
+        return this._nodes;
+    }
+    /**
+     * 设置node
+     * @param {Number} index 
+     * @param {Bezier_Node} node 
+     */
+    setNode(index,node){
+        this.nodes[index]=node;
+        this.unins_bezierCurve();
+    }
+    /**
+     * 修改节点数据
+     * @param {Number} index 要修改的下标
+     * @param {Bezier_Node} source 新的节点数据
+     */
+    change_node(index,source){ 
+        Object.assign(this._nodes[index],source);
+        this.unins_bezierCurve();
     }
     /**
      * 清空代理
@@ -2312,6 +2369,7 @@ class Bezier_Polygon{
      */
     unins_bezierCurve(index){
         this._bezierCurves[index]=null;
+        this.unins_bezierCurve_Delegate(index)
     }
     /**
      * 腾出数学曲线 在插入/删除顶点时使用
@@ -2331,6 +2389,7 @@ class Bezier_Polygon{
             this._bezierCurves.splice(0,0,null);
             this._bezierCurves[this.nodes.length-1]=null;
         }
+        this.emptied_bezierCurve_Delegate(index,f);
     }
     /**
      * 追加顶点
@@ -2338,6 +2397,7 @@ class Bezier_Polygon{
      */
     pushNode(bezierNode){
         this.nodes.push(Bezier_Node.copy(bezierNode));
+        this.emptied_bezierCurve(this.nodes.length-1,true)
         this.clear_all_proxy();
     }
     /**
@@ -2356,7 +2416,7 @@ class Bezier_Polygon{
      * @param {Bezier_Node[]} bezierNodes 要插入的顶点
      */
     insert(index,bezierNode){
-        this.nodes.splice(index,0,bezierNode.copy());
+        this.nodes.splice(index,0,Bezier_Node.copy(bezierNode));
         this.emptied_bezierCurve(index,true);
         this.clear_all_proxy();
     }
@@ -2433,16 +2493,7 @@ class Bezier_Polygon{
         return !!(rtn%2);
     }
     /**
-     * 设置node
-     * @param {Number} index 
-     * @param {Bezier_Node} node 
-     */
-    setNode(index,node){
-        this.nodes[index]=node;
-        this._bezierCurves[index]=null;
-    }
-    /**
-     * @param {Number} index 下标
+     * @param {Number} index 前驱顶点的下标
      * @returns {BezierCurve} 返回贝塞尔曲线实例
      */
     get_bezierCurve(index){
@@ -3121,7 +3172,7 @@ class BezierCurve{
     }
     /**
      * 点在曲线的投影
-     * @param {Vector2} v 
+     * @param {Vector2} v 点
      * @param {String} type 粗搜索时使用的采样类型 默认使用t值搜索 "arcLiength"||"t"
      * @param {Number} step_size 粗搜索采样步长 0~1 越小精度越高 默认为 this.polygon_proxy_want_sp
      * @param {Number} accuracy  逼近精度 0~1 越小精度越高
@@ -3129,6 +3180,7 @@ class BezierCurve{
     projection_point(v,type="t",step_size,accuracy=0.001){
         return this.projection_point_refining(v,this.projection_point_first_by_arcLiength(v,type,step_size),accuracy);
     }
+
 }
 
 /**

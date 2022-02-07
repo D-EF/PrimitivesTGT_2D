@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-21 16:55:35
+ * @LastEditTime: 2022-02-07 19:00:02
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -24,7 +24,15 @@ import {
     Bezier_Polygon,  
     BezierCurve,
     Math2D
-} from "../Math2d.js";
+}  from "../Math2d.js";
+Object.assign(window,{
+    Vector2,
+    Matrix2x2T,
+    Polygon,
+    Bezier_Polygon,  
+    BezierCurve,
+    Math2D
+})
 
 window.Vector2=Vector2;
 window.Matrix2x2T=Matrix2x2T;
@@ -128,6 +136,8 @@ cnm.onclick=function(e){
         }
     }
 }
+window.tgtbezier=d;
+
 // cnm.onmousemove=function (e){
 //     var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
 //     console.log(ka.projection_point(v));

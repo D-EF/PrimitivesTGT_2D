@@ -6,6 +6,7 @@
 
 import {
     OlFunction,
+    Delegate
 } from "../basics/basics.js";
 import {
     Math2D,
@@ -404,43 +405,56 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
      * @param {Bezier_Polygon} bezier_polygon 
      */
     constructor(bezier_polygon){
-           super();
-           if(bezier_polygon)
-           /**@type {Bezier_Polygon} */
-           this.data=Bezier_Polygon.copy(bezier_polygon);
-           this.dataType="Bezier_Polygon";
-           this._want_to_closePath=false;
-       }
-        get want_to_closePath(){
-            return this._want_to_closePath;
-        }
-        set want_to_closePath(val){
-            this._want_to_closePath=val;
-            if(this.data)this.data.closedFlag=val;
-        }
-        set data(val){
-            this._data=val;
-            this.data.closedFlag=this._want_to_closePath;
-        }
+        super();
+        if(bezier_polygon)
         /**@type {Bezier_Polygon} */
-        get data(){
-            return this._data;
+        this.data=Bezier_Polygon.copy(bezier_polygon);
+        this.dataType="Bezier_Polygon";
+        this._want_to_closePath=false;
+        /**@type {Bezier_Polygon} */
+    }
+    get want_to_closePath(){
+        return this._want_to_closePath;
+    }
+    set want_to_closePath(val){
+        this._want_to_closePath=val;
+        if(this.data)this.data.closedFlag=val;
+    }
+    set data(val){
+        this._data=val;
+        this.data.closedFlag=this._want_to_closePath;
+    }
+    /**@type {Bezier_Polygon} */
+    get data(){
+        return this._data;
+    }
+    /**
+     * 
+     * @param {Number} index 节点下标
+     * @returns 世界坐标的节点
+     */
+    get_worldNode(index){
+        return new Bezier_Node(
+            this.data.nodes[index].node=this.localToWorld(this.data.nodes[i].node),
+            this.data.nodes[index].hand_before=this.localToWorld(this.data.nodes[i].hand_before),
+            this.data.nodes[index].hand_after=this.localToWorld(this.data.nodes[i].hand_after)
+        );
+    }
+    /**
+    * 将局部坐标系的 nodes 转换到世界坐标系
+    * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
+    */
+    nodesToWorld(clear_tfm_f=true){
+        // this.data.linearMapping(this.transformMatrix,true)
+        for(var i=this.data.nodes.length-1;i>=0;--i){
+            this.data.nodes[i].node=this.localToWorld(this.data.nodes[i].node);
+            this.data.nodes[i].hand_before=this.localToWorld(this.data.nodes[i].hand_before);
+            this.data.nodes[i].hand_after=this.localToWorld(this.data.nodes[i].hand_after);
         }
-       /**
-        * 将局部坐标系的 nodes 转换到世界坐标系
-        * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
-        */
-       nodesToWorld(clear_tfm_f=true){
-           // this.data.linearMapping(this.transformMatrix,true)
-           for(var i=this.data.nodes.length-1;i>=0;--i){
-               this.data.nodes[i].node=this.localToWorld(this.data.nodes[i].node);
-               this.data.nodes[i].hand_before=this.localToWorld(this.data.nodes[i].hand_before);
-               this.data.nodes[i].hand_after=this.localToWorld(this.data.nodes[i].hand_after);
-           }
-           if(clear_tfm_f){
-               this.transformMatrix=new Matrix2x2T();
-           }
-       }
+        if(clear_tfm_f){
+            this.transformMatrix=new Matrix2x2T();
+        }
+    }
 }
 
 /**
@@ -818,6 +832,55 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveSectorTGT],function(t
 }
 
 PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch_Sector_Sector);
+
+/**
+ * 碰撞检测函数 贝塞尔曲线 多边形
+ * @param {PrimitiveBezierTGT} tgt1 
+ * @param {PrimitivePolygonTGT} tgt2 
+ */
+function isTouch_Bezier_Polygon(tgt1,tgt2){
+    // todo
+    var tempBezier=null;
+    var world_bezier_polygon=tgt1.world_bezier_polygon;
+    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    var t2d=Polygon.linearMapping(t2d1,tgt1.worldToLocalM,true);
+    
+
+    Math2D.line_i_bezier_v(p_nodes[i],p_nodes[i+1],tempBezier)
+}
+/**
+ * 碰撞检测函数 贝塞尔曲线 矩形
+ * @param {PrimitiveBezierTGT} tgt1 
+ * @param {PrimitiveRectTGT} tgt2 
+ */
+function isTouch_Bezier_Rect(tgt1,tgt2){
+
+}
+/**
+ * 碰撞检测函数 贝塞尔曲线 弧形
+ * @param {PrimitiveBezierTGT} tgt1 
+ * @param {PrimitiveArcTGT} tgt2 
+ */
+function isTouch_Bezier_Arc(tgt1,tgt2){
+    
+}
+/**
+ * 碰撞检测函数 贝塞尔曲线 扇形
+ * @param {PrimitiveBezierTGT} tgt1 
+ * @param {PrimitiveSectorTGT} tgt2 
+ */
+ function isTouch_Bezier_Sector(tgt1,tgt2){
+    
+}
+/**
+ * 碰撞检测函数 贝塞尔曲线 贝塞尔曲线
+ * @param {PrimitiveBezierTGT} tgt1 
+ * @param {PrimitiveBezierTGT} tgt2 
+ */
+function isTouch_Bezier_Bezier(tgt1,tgt2){
+    
+}
+
 
 /**
  * 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
