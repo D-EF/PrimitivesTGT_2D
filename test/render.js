@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-07 19:00:02
+ * @LastEditTime: 2022-02-08 17:36:23
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -25,6 +25,7 @@ import {
     BezierCurve,
     Math2D
 }  from "../Math2d.js";
+import { PrimitiveTGT } from "../PrimitivesTGT_2D.js";
 Object.assign(window,{
     Vector2,
     Matrix2x2T,
@@ -86,30 +87,30 @@ var d=new PrimitiveBezierTGT();
 d.data=new Bezier_Polygon();
 d.data.pushNode({
     node:{
-        x:100,
-        y:100
+        x:100-100,
+        y:100-100
     },
     hand_before:{
-        x:100,
-        y:200
+        x:100-100,
+        y:200-100
     },
     hand_after:{
-        x:200,
-        y:100
+        x:200-100,
+        y:100-100
     },
 });
 d.data.pushNode({
     node:{
-        x:200,
-        y:200
+        x:200-100,
+        y:200-100
     },
     hand_before:{
-        x:100,
-        y:200
+        x:100-100,
+        y:200-100
     },
     hand_after:{
-        x:200,
-        y:100
+        x:200-100,
+        y:100-100
     },
 });
 
@@ -135,6 +136,12 @@ cnm.onclick=function(e){
             console.log("is clicking",renderer.tgtList[i]);
         }
     }
+}
+cnm.onmousemove=function(e){
+    d.transformMatrix=new Matrix2x2T().translate(e.offsetX,e.offsetY).rotate(90*deg);
+    ctx.clearRect(0,0,1000,1000)
+    renderer.render_all();
+    if(PrimitiveTGT.isTouch(d,t3))console.log("is touching t3")
 }
 window.tgtbezier=d;
 

@@ -413,12 +413,12 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         this.data=Bezier_Polygon.copy(bezier_polygon);
         this.dataType="Bezier_Polygon";
         this._want_to_closePath=false;
-        /**@type {Bezier_Node[]} */
-        this._temp_Bezier=[];
+        /**@type {Bezier_Polygon} */
+        this._world_bezier=null;
     }
     set transformMatrix(m){
         super.transformMatrix=m;
-        this._temp_Bezier=[];
+        this._world_bezier=null;
     }
     get transformMatrix(){
         return this._transformMatrix;
@@ -435,18 +435,23 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         this.data.closedFlag=this._want_to_closePath;
         this.data.unins_bezierCurve_Delegate.addAct(this,   this.in_data_nodeChange);
         this.data.emptied_bezierCurve_Delegate.addAct(this, this.in_data_nodesChange);
-        this._temp_Bezier=[];
+        this._world_bezier=null;
     }
     /**@type {Bezier_Polygon} */
     get data(){
         return this._data;
+    }
+    get world_bezier(){
+        if(this._world_bezier)this.reload_worldBezier();
+        return this._world_bezier;
     }
     /**
      * data顶点修改时的回调委托
      * @param {Number} i 被修改的点的下标
      */
     in_data_nodeChange(i){
-        this._temp_Bezier[i]=undefined;
+        if(this._world_bezier)
+        this.world_bezier.setNode(i,this.calc_worldNode(i));
     }
     /**
      * data顶点被增加或删除的回调委托
@@ -454,19 +459,47 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
      * @param {Boolean} f 插入或删除
      */
     in_data_nodesChange(i,f){
-        if(f)this._temp_Bezier.splice(i,0,undefined);
-        else this._temp_Bezier.splice(i,1);
+        if(this._world_bezier)
+        if(f){
+            this.world_bezier.insert(i,this.calc_worldNode(i));
+        }
+        else{
+            this.world_bezier.remove(i);
+        }
     }
     /**
-     * @param {Number} index 节点下标
+     * 重新加载世界坐标系的所有节点 在变换矩阵或data被修改后使用
+     * @returns {Bezier_Polygon}
+     */
+    reload_worldBezier(){
+        return this._world_bezier=Bezier_Polygon.linearMapping(this.data,this.transformMatrix);
+    }
+    /**
+     * 获取世界坐标的节点
+     * @param {Number} i 节点下标
      * @returns 世界坐标的节点
      */
     get_worldNode(i){
-        if(this._temp_Bezier[i])return this._temp_Bezier[i];
-        else return this._temp_Bezier[i]=new Bezier_Node(
-                this.localToWorld(this.data.nodes[i].node),
-                this.localToWorld(this.data.nodes[i].hand_before),
-                this.localToWorld(this.data.nodes[i].hand_after)
+        return this.world_bezier.nodes[i];
+    }
+    /**
+     * 获取世界坐标下的节点的数学曲线对象
+     * @param {Number} i 前驱节点下标
+     * @return {BezierCurve}
+     */
+    get_worldBezierCurve(i){
+        return this.world_bezier.get_bezierCurve(i);
+    }
+    /**
+     * 计算世界坐标的节点
+     * @param {Number} i 节点下标
+     * @returns 世界坐标的节点
+     */
+    calc_worldNode(i){
+        return new Bezier_Node(
+            this.localToWorld(this.data.nodes[i].node),
+            this.localToWorld(this.data.nodes[i].hand_before),
+            this.localToWorld(this.data.nodes[i].hand_after)
         );
     }
     /**
@@ -869,14 +902,45 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch
  */
 function isTouch_Bezier_Polygon(tgt1,tgt2){
     // todo
-    var tempBezier=null;
-    var world_bezier_polygon=tgt1.world_bezier_polygon;
+    var t1d_w=tgt1.reload_worldBezier();
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
-    var t2d=Polygon.linearMapping(t2d1,tgt1.worldToLocalM,true);
-    
+    if(t2d1.isInside(t1d_w.nodes[0].node)||t1d_w.isInside(t2d1.nodes[0])){
+        return true;
+    }
+    var i=0,j=0;
+    var tempBezierCurve=null;
 
-    Math2D.line_i_bezier_v(p_nodes[i],p_nodes[i+1],tempBezier)
+    i=t1d_w.nodes.length-1;
+    if(tgt1._want_to_closePath!==1)--i;
+    for(;i>=0;--i){
+        tempBezierCurve=t1d_w.get_bezierCurve(i);
+
+        j=t2d1.nodes.length-1;
+        if(tgt2.want_to_closePath){
+            if(Math2D.line_i_bezier_v(t2d1.nodes[j],t2d1.nodes[0],tempBezierCurve).length>0)return true;
+        }
+        for(--j;j>=0;--j){
+            if(Math2D.line_i_bezier_v(t2d1.nodes[j+1],t2d1.nodes[j],tempBezierCurve).length>0)return true;
+        }
+    }
+    if(tgt1._want_to_closePath===-1){
+        // 曲线对象正在使用直线闭合起点~终点 
+        i=t1d_w.nodes.length-1;
+        j=t2d1.nodes.length-1;
+        if(tgt2.want_to_closePath){
+            if(Math2D.line_i_line(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
+        }
+        for(--j;j>=0;--j){
+            if(Math2D.line_i_line(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1[j],t2d1[j+1]))return true;
+        }
+    }
+    return false
 }
+PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitivePolygonTGT],isTouch_Bezier_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+    return isTouch_Bezier_Polygon(tgt2,tgt1);
+});
+
 /**
  * 碰撞检测函数 贝塞尔曲线 矩形
  * @param {PrimitiveBezierTGT} tgt1 

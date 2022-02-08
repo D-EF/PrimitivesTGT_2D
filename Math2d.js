@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-08 11:34:44
+ * @LastEditTime: 2022-02-08 17:42:20
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -2295,24 +2295,25 @@ class Bezier_Polygon{
         
     }
     /**
-     * 线性变换
+     * 线性变换 切换前两个参数的顺序以控制前乘矩阵还是后乘矩阵 arg1*arg2
      * @param {Bezier_Polygon} bezier_Polygon 变换的多边形
      * @param {Matrix2x2T} transform_m 变换矩阵
      * @param {Boolean} f 先平移或后平移
+     * @param {Vector2} anchorPoint 变换使用的基准点
      */
-    static linearMapping(bezier_Polygon,transform_m,f){
+    static linearMapping(bezier_Polygon,transform_m,f,anchorPoint){
         var rtn=new Bezier_Polygon();
         var tf=bezier_Polygon instanceof Bezier_Polygon;
         var m,p=tf?(m=transform_m,bezier_Polygon):(m=bezier_Polygon,transform_m);
         for(var i=0;i<p._nodes.length;++i){
             rtn.pushNode(tf?{
-                node:Vector2.linearMapping(p.nodes[0].node,m,f),
-                hand_before:Vector2.linearMapping(p.nodes[0].hand_before,m,f),
-                hand_after:Vector2.linearMapping(p.nodes[0].hand_after,m,f)
+                node:Vector2.linearMapping(p.nodes[i].node,m,f,anchorPoint),
+                hand_before:Vector2.linearMapping(p.nodes[i].hand_before,m,f,anchorPoint),
+                hand_after:Vector2.linearMapping(p.nodes[i].hand_after,m,f,anchorPoint)
             }:{
-                node:Vector2.linearMapping(m,p.nodes[0].node,f),
-                hand_before:Vector2.linearMapping(m,p.nodes[0].hand_before,f),
-                hand_after:Vector2.linearMapping(m,p.nodes[0].hand_after,f)
+                node:Vector2.linearMapping(m,p.nodes[i].node,f,anchorPoint),
+                hand_before:Vector2.linearMapping(m,p.nodes[i].hand_before,f,anchorPoint),
+                hand_after:Vector2.linearMapping(m,p.nodes[i].hand_after,f,anchorPoint)
             });
         }
         return rtn;
@@ -2338,7 +2339,7 @@ class Bezier_Polygon{
      */
     setNode(index,node){
         this.nodes[index]=node;
-        this.unins_bezierCurve();
+        this.unins_bezierCurve(index);
     }
     /**
      * 修改节点数据
@@ -2365,29 +2366,28 @@ class Bezier_Polygon{
      * 卸载数学曲线 在顶点被编辑时使用
      * @param {Number} index 修改顶点的下标
      */
-    unins_bezierCurve(index){
-        this._bezierCurves[index]=null;
-        this.unins_bezierCurve_Delegate(index)
+    unins_bezierCurve(i){
+        var j=i?i-1:this.nodes.length-1;
+        this._bezierCurves[i]=null;
+        this._bezierCurves[j]=null;
+        this.unins_bezierCurve_Delegate(i)
     }
     /**
      * 腾出数学曲线 在插入/删除顶点时使用
      * @param {Number} index 插入顶点的下标
      * @param {Number} f    插入或删除
      */
-    emptied_bezierCurve(index,f){
-        var i=index-1;
-        if(i<0){
-            if(f){
-                this._bezierCurves.splice(i,1,null,null);
-            }else{
-                this._bezierCurves.splice(i,2,null);
-            }
+    emptied_bezierCurve(i,f){
+        var j=i?i-1:this.nodes.length-1;
+        if(f){
+            this._bezierCurves[j]=null;
+            this._bezierCurves.splice(i,0,null);
         }
         else{
-            this._bezierCurves.splice(0,0,null);
-            this._bezierCurves[this.nodes.length-1]=null;
+            this._bezierCurves[j]=null;
+            this._bezierCurves.splice(i,1);
         }
-        this.emptied_bezierCurve_Delegate(index,f);
+        this.emptied_bezierCurve_Delegate(i,f);
     }
     /**
      * 追加顶点
@@ -2658,7 +2658,7 @@ class BezierCurve{
      * @param {Bezier_Node} node1
      * @param {Bezier_Node} node2
      */
-     static createBy_BezierNode(node1,node2){
+    static createBy_BezierNode(node1,node2){
         return new BezierCurve([node1.node,node1.hand_after,node2.hand_before,node2.node]);
     }
     set points(points){
