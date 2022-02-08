@@ -171,7 +171,9 @@ class PrimitiveTGT{
     getMax(){
         return this.data.getMax();
     }
-    /** 如果需要使用逆变换矩阵的话,不要直接修改矩阵的参数 */
+    /** 如果需要使用逆变换矩阵的话,不要直接修改矩阵的参数 
+     * @param {Matrix2x2T} m 
+     */
     set transformMatrix(m){
         this._transformMatrix=m.copy();
         this._worldToLocalM=undefined;
@@ -411,7 +413,15 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         this.data=Bezier_Polygon.copy(bezier_polygon);
         this.dataType="Bezier_Polygon";
         this._want_to_closePath=false;
-        /**@type {Bezier_Polygon} */
+        /**@type {Bezier_Node[]} */
+        this._temp_Bezier=[];
+    }
+    set transformMatrix(m){
+        super.transformMatrix=m;
+        this._temp_Bezier=[];
+    }
+    get transformMatrix(){
+        return this._transformMatrix;
     }
     get want_to_closePath(){
         return this._want_to_closePath;
@@ -423,21 +433,40 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
     set data(val){
         this._data=val;
         this.data.closedFlag=this._want_to_closePath;
+        this.data.unins_bezierCurve_Delegate.addAct(this,   this.in_data_nodeChange);
+        this.data.emptied_bezierCurve_Delegate.addAct(this, this.in_data_nodesChange);
+        this._temp_Bezier=[];
     }
     /**@type {Bezier_Polygon} */
     get data(){
         return this._data;
     }
     /**
-     * 
+     * data顶点修改时的回调委托
+     * @param {Number} i 被修改的点的下标
+     */
+    in_data_nodeChange(i){
+        this._temp_Bezier[i]=undefined;
+    }
+    /**
+     * data顶点被增加或删除的回调委托
+     * @param {Number} i 被修改的点的下标
+     * @param {Boolean} f 插入或删除
+     */
+    in_data_nodesChange(i,f){
+        if(f)this._temp_Bezier.splice(i,0,undefined);
+        else this._temp_Bezier.splice(i,1);
+    }
+    /**
      * @param {Number} index 节点下标
      * @returns 世界坐标的节点
      */
-    get_worldNode(index){
-        return new Bezier_Node(
-            this.data.nodes[index].node=this.localToWorld(this.data.nodes[i].node),
-            this.data.nodes[index].hand_before=this.localToWorld(this.data.nodes[i].hand_before),
-            this.data.nodes[index].hand_after=this.localToWorld(this.data.nodes[i].hand_after)
+    get_worldNode(i){
+        if(this._temp_Bezier[i])return this._temp_Bezier[i];
+        else return this._temp_Bezier[i]=new Bezier_Node(
+                this.localToWorld(this.data.nodes[i].node),
+                this.localToWorld(this.data.nodes[i].hand_before),
+                this.localToWorld(this.data.nodes[i].hand_after)
         );
     }
     /**

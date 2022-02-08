@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-07 19:22:56
+ * @LastEditTime: 2022-02-08 11:34:44
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -1332,8 +1332,8 @@ class Sector_Data extends Arc_Data{
      */ 
     linearMapping(m,fln=false,f=false,anchorPoint){
         if(anchorPoint){
-            this.x-=anchorPoint.x
-            this.y-=anchorPoint.y
+            this.x-=anchorPoint.x||0;
+            this.y-=anchorPoint.y||0;
         }
 
         if(f){
@@ -1362,8 +1362,8 @@ class Sector_Data extends Arc_Data{
             }
         }
         if(anchorPoint){
-            this.x+=anchorPoint.x
-            this.y+=anchorPoint.y
+            this.x+=anchorPoint.x||0;
+            this.y+=anchorPoint.y||0;
         }
         return this;
     }
@@ -1442,8 +1442,7 @@ class Sector_Data extends Arc_Data{
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            tv=Vector2.dif(tv,anchorPoint);
-            rtn=Vector2.baseLinearMapping(tv,tm).add(anchorPoint);
+            rtn=Vector2.baseLinearMapping(tv,tm,anchorPoint);
         }
         else{
             tm=arguments[0];
@@ -1452,8 +1451,7 @@ class Sector_Data extends Arc_Data{
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            tv=Vector2.dif(tv,anchorPoint);
-            rtn=Vector2.baseLinearMapping(tm,tv).add(anchorPoint);
+            rtn=Vector2.baseLinearMapping(tm,tv,anchorPoint);
         }
         
         return rtn;
