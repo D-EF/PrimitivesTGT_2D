@@ -3,7 +3,6 @@
  *  坐标系 大部分情况是 x 正方向向右, y 正方向向下的。
  *  默认渲染时的变换矩阵 是向量后乘矩阵再偏移, 如果需要修改, 自己派生
  */
-
 import {
     OlFunction,
     Delegate
@@ -171,7 +170,7 @@ class PrimitiveTGT{
     getMax(){
         return this.data.getMax();
     }
-    /** 如果需要使用逆变换矩阵的话,不要直接修改矩阵的参数 
+    /** 变换矩阵 不要直接修改矩阵的参数 
      * @param {Matrix2x2T} m 
      */
     set transformMatrix(m){
@@ -179,6 +178,7 @@ class PrimitiveTGT{
         this._worldToLocalM=undefined;
         return this._transformMatrix;
     }
+    /**@type {Matrix2x2T} 变换矩阵 不要直接修改矩阵的参数 */
     get transformMatrix(){
         return this._transformMatrix;
     }
@@ -442,7 +442,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         return this._data;
     }
     get world_bezier(){
-        if(this._world_bezier)this.reload_worldBezier();
+        if(!this._world_bezier)this.reload_worldBezier();
         return this._world_bezier;
     }
     /**
@@ -901,8 +901,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch
  * @param {PrimitivePolygonTGT} tgt2 
  */
 function isTouch_Bezier_Polygon(tgt1,tgt2){
-    // todo
-    var t1d_w=tgt1.reload_worldBezier();
+    var t1d_w=tgt1.world_bezier;
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
     if(t2d1.isInside(t1d_w.nodes[0].node)||t1d_w.isInside(t2d1.nodes[0])){
         return true;
@@ -934,7 +933,7 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
             if(Math2D.line_i_line(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1[j],t2d1[j+1]))return true;
         }
     }
-    return false
+    return false;
 }
 PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitivePolygonTGT],isTouch_Bezier_Polygon);
 PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
@@ -947,15 +946,21 @@ PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveBezierTGT],functi
  * @param {PrimitiveRectTGT} tgt2 
  */
 function isTouch_Bezier_Rect(tgt1,tgt2){
-
+    var t_tgt2=tgt2.toPolygon();
+    return isTouch_Bezier_Polygon(tgt1,t_tgt2);
 }
+PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveRectTGT],isTouch_Bezier_Rect);
+PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+    return isTouch_Bezier_Rect(tgt2,tgt1);
+});
 /**
  * 碰撞检测函数 贝塞尔曲线 弧形
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitiveArcTGT} tgt2 
  */
 function isTouch_Bezier_Arc(tgt1,tgt2){
-    
+    var t1d_l2=Bezier_Polygon.linearMapping(tgt1.world_bezier,tgt2.worldToLocalM,true);
+    isTouch_Bezier_Arc
 }
 /**
  * 碰撞检测函数 贝塞尔曲线 扇形

@@ -1,8 +1,10 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-21 16:41:55
+ * @LastEditTime: 2022-02-08 19:29:57
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
+ * 
+ * 材质和渲染器具体类
  */
 
 import {

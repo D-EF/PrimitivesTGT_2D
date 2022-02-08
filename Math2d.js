@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-08 17:42:20
+ * @LastEditTime: 2022-02-08 21:01:35
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -3178,7 +3178,6 @@ class BezierCurve{
     projection_point(v,type="t",step_size,accuracy=0.001){
         return this.projection_point_refining(v,this.projection_point_first_by_arcLiength(v,type,step_size),accuracy);
     }
-
 }
 
 /**
@@ -3196,7 +3195,9 @@ class Unilateral_Bezier_Box{
         /**@type {Unilateral_Bezier_Box[]} 配对的边界框 */
         this.sb=[];
     }
-    /**进一步细分 */
+    /**进一步细分
+     * @returns {Unilateral_Bezier_Box[]}
+     */
     ex_box(){
         var b=this.b,
             b1=new Unilateral_Bezier_Box(b),
@@ -3272,6 +3273,16 @@ class Unilateral_Bezier_Box{
      */
     line_i_line(bb){
             return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
+    }
+    /**
+     * 
+     * @param {Number} cx 圆心的坐标
+     * @param {Number} cy 圆心的坐标
+     * @returns {Number} 返回 0:无相交, 1:相交, 
+     */
+    in_arc_R(cx,cy){
+        // todo
+        return true
     }
 }
 
