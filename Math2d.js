@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-08 21:01:35
+ * @LastEditTime: 2022-02-09 20:28:20
  */
 /**
  * 提供一点点2d数学支持的js文件
@@ -27,7 +27,7 @@ import {
  */
 class Math2D{
     /**
-     * 线段长度
+     * 计算线段长度
      * @param {Vector2} v1 线段端点
      * @param {Vector2} v2 线段端点
      * @returns {Number} 返回线段长度
@@ -91,7 +91,6 @@ class Math2D{
         }
         return true;
     }
-
     /**
      * 获得两个圆形的交点
      * @param {Vector2} c1  圆1 圆心坐标
@@ -151,7 +150,7 @@ class Math2D{
      * @param {Vector2} led 线段终点
      * @param {Vector2} c   圆心
      * @param {Number}  r   圆形的半径
-     * @returns {Vector2[]} 长度最多为2的数组，两个交点的坐标
+     * @returns {Vector2[]} 长度最多为2的数组, 交点的坐标
      */
     static circle_i_line_V(lop,led,c,r) {
         var d=Vector2.dif(led,lop);
@@ -405,16 +404,17 @@ class Math2D{
      */
     static line_i_bezier_v(v1,v2,bezierCurve){
         var temp=BezierCurve.copy(bezierCurve),
-            nd=Vector2.dif(v1,v2).normalize(),
+            nd=Vector2.dif(v2,v1).normalize(),
             m=Matrix2x2T.createByVector2(nd).setTranslate(-v1.x,-v1.y);
+        var tv2=Vector2.linearMapping(m,v2,true)
         temp.linearMapping(m,false,true);
         
         var ts=temp.get_t_by_y(0),
         tv,
         rtn=[];
         for(var i=ts.length-1;i>=0;--i){
-            tv=bezierCurve.sampleCurve(ts[[i]]);
-            if( ((tv.x>v1.x&&tv.x<v2.x)||(tv.x>v2.x&&tv.x<v1.x)) && ((tv.y>v1.y&&tv.y<v2.y)||(tv.y>v2.y&&tv.y<v1.y)) ){
+            tv=temp.sampleCurve(ts[[i]]);
+            if((tv.x>0&&tv.x<tv2.x)||(tv.x>tv2.x&&tv.x<0)){
                 rtn.push(tv);
             }
         }
@@ -602,6 +602,44 @@ class Math2D{
             temp_group=[];
         }
         return rtn;
+    }
+    /**
+     * 线段刺入圆形
+     * @param {Vector2} c 圆心的坐标
+     * @param {Number} r   半径
+     * @param {Vector2} v1  点1
+     * @param {Vector2} v2  点2
+     * @returns {Number} 返回 0:无相交, -1:刺入, 1:正好点1在线上, 2:正好点2在圆上
+     */
+    static line_stabbed_circular(c,r,v1,v2){
+        var l1=Math2D.line_length(c,v1),
+            l2=Math2D.line_length(c,v2);
+        if(l1===r){
+            return 1;
+        }
+        if(l2===r){
+            return 2;
+        }
+        if((l1>r)===(l2>r)){
+            return -1;
+        }
+        return 0;
+    }
+    /**
+     * 弧形和曲线相交
+     * @param {Arc_Data} arc 
+     * @param {BezierCurve} bezier 
+     */
+    static arc_i_bezier_v(arc,bezier){
+        var points=bezier.intersect_circular(arc.c,arc.r);
+        if(arc.angle<2*Math.PI){
+            for(var i = points.length-1;i>=0;--i){
+                if(!Math2D.in_angle_V(arc.opv,arc.edv,points[i],arc.angle>Math.PI)){
+                    points.splice(i,1);
+                }
+            }
+        }
+        return points;
     }
     /**
      * 一组坐标的边界框的中心点
@@ -1861,7 +1899,7 @@ class Polygon{
     }
     /**移除所有顶点 */
     removeAll(){
-        this.nodes=[];
+        this.nodes.length=0;
     }
     /** 闭合路径 */
     seal(){
@@ -2360,7 +2398,7 @@ class Bezier_Polygon{
      * 清空所有数学曲线
      */
     clear_bezierCurves(){
-        this._bezierCurves=[];
+        this._bezierCurves.length=0;
     }
     /**
      * 卸载数学曲线 在顶点被编辑时使用
@@ -2571,6 +2609,8 @@ class BezierCurve{
         /**@type {{t:Number,l:Number}[]} 弧长记录表 */
         this._arc_length_table=null;
         if(points) this.reset_points(points);
+        /**@type {Object} t参数对应的点的集合 */
+        this._point_t={};
     }
     /**
      * 清空所有代理对象和导函数, 应该在控制点或计算系数改动时使用
@@ -2584,6 +2624,7 @@ class BezierCurve{
         this._polygon_proxy_sp=0;
         this._arc_length_table=null;
         this._aabb=null;
+        this._point_t={};
     }
     /**
      * 清空控制点
@@ -2796,7 +2837,7 @@ class BezierCurve{
      * @returns {Vector2} 返回坐标
      */
     sampleCurve(t){
-        return new Vector2(this.sampleCurveX(t),this.sampleCurveY(t));
+        return this._point_t[t]||(this._point_t[t]=new Vector2(this.sampleCurveX(t),this.sampleCurveY(t)));
     }
     /**
      * 导函数
@@ -3089,13 +3130,14 @@ class BezierCurve{
         return new Arc_Data(c.x,c.y,kr,0,2*Math.PI);
     }
     /**
-     * 点投影到曲线上 搜索基础点 (使用弧长)
+     * 点投影到曲线上 搜索基础点
      * @param {Vector2} v    点的坐标
+     * @param {String} type 使用什么搜索 "arcLiength"||"t" 默认用t
      * @param {Number} step_size   搜索时的采样步长(0<sp<1) 值越小精度越高 默认为 this.polygon_proxy_want_sp
      * @returns {{v1,v2,v3}} 接近点坐标的三个采样
-     * @return {t:Number,v:Vector2,l:Number} v1 最近的点的前一个
-     * @return {t:Number,v:Vector2,l:Number} v2 最近的点的当前点
-     * @return {t:Number,v:Vector2,l:Number} v3 最近的点的后一个点
+     * @return {{t:Number,v:Vector2,l:Number}} v1 最近的点的前一个
+     * @return {{t:Number,v:Vector2,l:Number}} v2 最近的点的当前点
+     * @return {{t:Number,v:Vector2,l:Number}} v3 最近的点的后一个点
      */
     projection_point_first_by_arcLiength(v,type,step_size){
         var type=type||'t',
@@ -3139,20 +3181,22 @@ class BezierCurve{
         }
         return rtn;
     }
-    
     /**
      * 点投影到曲线上 二分法逼近
      * @param {Vector2} v    点的坐标
      * @param {{v1,v2,v3}} basics_points   基础点
      * @param {Number} accuracy      逼近时的采样精度(0<sp<1) 值越小精度越高 默认0.0001
+     * @returns {{t:Number,v:Vector2,l:Number}} 投影信息
      */
     projection_point_refining(v,basics_points,accuracy){
         var accuracy=accuracy||0.0001;
         if(approximately(basics_points.v2.t,basics_points.v3.t,accuracy)){
+            // 精度足够
             return basics_points.v1.l<basics_points.v2.l?
             basics_points.v1.l<basics_points.v3.l?basics_points.v1:basics_points.v3:
             basics_points.v2.l<basics_points.v3.l?basics_points.v2:basics_points.v3;
         }else{
+            // 精度不足
             var f=basics_points.v1.l<basics_points.v3.l,
                 temp=f?basics_points.v1:basics_points.v3,
                 nv2t,nv2v;
@@ -3174,9 +3218,105 @@ class BezierCurve{
      * @param {String} type 粗搜索时使用的采样类型 默认使用t值搜索 "arcLiength"||"t"
      * @param {Number} step_size 粗搜索采样步长 0~1 越小精度越高 默认为 this.polygon_proxy_want_sp
      * @param {Number} accuracy  逼近精度 0~1 越小精度越高
+     * @returns {{t:Number,v:Vector2,l:Number}} 投影信息
      */
     projection_point(v,type="t",step_size,accuracy=0.001){
         return this.projection_point_refining(v,this.projection_point_first_by_arcLiength(v,type,step_size),accuracy);
+    }
+    
+    /**
+     * 圆形与曲线的交点
+     * @param {Vector2} c 圆心
+     * @param {Vector2} r 半径
+     * @param {String} type 粗搜索时使用的采样类型 默认使用t值搜索 "arcLiength"||"t"
+     * @param {Number} step_size 粗搜索采样步长 0~1 越小精度越高 默认为 this.polygon_proxy_want_sp
+     * @param {Number} accuracy  逼近精度 0~1 越小精度越高
+     * @returns {Vector2[]} 返回 交点的坐标集合
+     */
+    intersect_circular(c,r,type="t",step_size,accuracy=0.001){
+        return this.intersect_circular_point_refining(c,r,this.intersect_circular_first_by_arcLiength(c,r,type,step_size),accuracy);
+    }
+    
+    /**
+     * 圆形与曲线的交点 搜索基础点
+     * @param {Vector2} c 圆心
+     * @param {Vector2} r 半径
+     * @param {String} type 使用什么搜索 "arcLiength"||"t" 默认用t
+     * @param {Number} step_size   搜索时的采样步长(0<sp<1) 值越小精度越高 默认为 this.polygon_proxy_want_sp
+     * @returns {{t:Number,v:Vector2}[][2]} 返回 交点坐标组合的集合
+     */
+    intersect_circular_first_by_arcLiength(c,r,type,step_size){
+        var type=type||'t',
+            step_size=step_size===undefined?this.polygon_proxy_want_sp:(this.polygon_proxy_want_sp=step_size);
+
+        var al=this.get_arc_length(),
+            temp_t,
+            tv,
+            temp= {v1:null,v2:null,v3:null},
+            rtn = [];
+        for(var i=0,j=0;i!==1;i+=step_size,i>=1?i=1:1,++j){
+            temp.v1=temp.v2;
+            if(type==='t'){
+                temp.v2={
+                    t:(temp_t=i),
+                    v:(tv=this.polygon_proxy.nodes[j]),
+                };
+            }else{
+                temp.v2={
+                    t:(temp_t=this.get_t_by_arc_length(al*i)),
+                    v:(tv=this.sampleCurve(temp_t)),
+                };
+            }
+            if(temp.v1&&(Math2D.circle_i_line_V(temp.v1.v,temp.v2.v,c,r).length)){
+                // 相交
+                rtn.push([
+                    temp.v1,
+                    temp.v2
+                ])
+            }
+        }
+        return rtn;
+    }
+    /**
+     * 圆形与曲线的交点 二分逼近
+     * @param {Vector2} c 圆心
+     * @param {Vector2} r 半径
+     * @param {{t:Number,v:Vector2}[][]} basics_points   基础交点组合集合
+     * @param {Number} accuracy      逼近时的采样精度(0<sp<1) 值越小精度越高 默认0.0001
+     * @returns {Vector2[]} 返回 交点的坐标集合
+     */
+    intersect_circular_point_refining(c,r,basics_points,accuracy){
+        var accuracy=accuracy||0.0001;
+        var rtn=[],temp,tp1,tp2,tp;
+        var nv2t,nv2v;
+        
+        while(basics_points[0]){
+            temp=basics_points[0];
+            basics_points.shift();
+            if(approximately(Math2D.line_length(tp=temp[0].v,c),r,accuracy)||approximately(Math2D.line_length(tp=temp[1],c),r)){
+                // 点到圆心距离相近半径 精度足够
+                rtn.unshift(tp);
+                continue;
+            }
+            // 精度不足
+            if(Math2D.circle_i_line_V(temp[0].v,temp[1].v,c,r).length){
+                // 有相交
+                tp1=[
+                    temp[0],
+                    {
+                        t:(nv2t=0.5*(temp[0].t+temp[1].t)),
+                        v:(nv2v=this.sampleCurve(nv2t)),
+                    }
+                ];
+                tp2=[
+                    tp1[1],
+                    temp[1]
+                ];
+                basics_points.unshift(tp1,tp2);
+            }
+            // 无相交无动作
+        }
+        return rtn;
     }
 }
 
@@ -3188,7 +3328,9 @@ class Unilateral_Bezier_Box{
         this.b=b;
         this.t1=t1||0;
         this.t2=t2||1;
+        /**@type {Vector2}  */
         this.v1;
+        /**@type {Vector2}  */
         this.v2;
         /**@type {Number} 细分迭代次数 */
         this.iterations=0;
@@ -3273,16 +3415,6 @@ class Unilateral_Bezier_Box{
      */
     line_i_line(bb){
             return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
-    }
-    /**
-     * 
-     * @param {Number} cx 圆心的坐标
-     * @param {Number} cy 圆心的坐标
-     * @returns {Number} 返回 0:无相交, 1:相交, 
-     */
-    in_arc_R(cx,cy){
-        // todo
-        return true
     }
 }
 

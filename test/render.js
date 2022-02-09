@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-08 17:36:23
+ * @LastEditTime: 2022-02-09 20:32:40
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -66,10 +66,10 @@ var t3=new PrimitivePolygonTGT(new Polygon([
     {x:0,y:0},
     {x:0,y:100},
     {x:100,y:0},
-    {x:100,y:100},
+    // {x:100,y:100},
     // {x:0,y:0},
 ]));
-t3.want_to_closePath=true;
+t3.want_to_closePath=false;
 t3.fill_Material=spritesMap_Material;
 t3.fill_uv={x:2,y:2};
 t3.lineWidth=2;
@@ -115,7 +115,7 @@ d.data.pushNode({
 });
 
 d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
-d.want_to_closePath=1;
+d.want_to_closePath=0;
 d.fill_Material=spritesMap_Material;
 d.fill_uv={x:4,y:6};
 d.fill_uvwh={x:0.5,y:0.5};
@@ -141,7 +141,9 @@ cnm.onmousemove=function(e){
     d.transformMatrix=new Matrix2x2T().translate(e.offsetX,e.offsetY).rotate(90*deg);
     ctx.clearRect(0,0,1000,1000)
     renderer.render_all();
-    if(PrimitiveTGT.isTouch(d,t3))console.log("is touching t3")
+    if(PrimitiveTGT.isTouch(d,t1))console.log("is touching t1");
+    if(PrimitiveTGT.isTouch(d,t2))console.log("is touching t2");
+    if(PrimitiveTGT.isTouch(d,t3))console.log("is touching t3");
 }
 window.tgtbezier=d;
 

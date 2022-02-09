@@ -910,6 +910,16 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
     var tempBezierCurve=null;
 
     i=t1d_w.nodes.length-1;
+    if(tgt1._want_to_closePath===-1){
+        // 曲线对象正在使用直线闭合起点~终点 
+        j=t2d1.nodes.length-1;
+        if(tgt2.want_to_closePath){
+            if(Math2D.line_i_line(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
+        }
+        for(--j;j>=0;--j){
+            if(Math2D.line_i_line(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1[j],t2d1[j+1]))return true;
+        }
+    }
     if(tgt1._want_to_closePath!==1)--i;
     for(;i>=0;--i){
         tempBezierCurve=t1d_w.get_bezierCurve(i);
@@ -920,17 +930,6 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
         }
         for(--j;j>=0;--j){
             if(Math2D.line_i_bezier_v(t2d1.nodes[j+1],t2d1.nodes[j],tempBezierCurve).length>0)return true;
-        }
-    }
-    if(tgt1._want_to_closePath===-1){
-        // 曲线对象正在使用直线闭合起点~终点 
-        i=t1d_w.nodes.length-1;
-        j=t2d1.nodes.length-1;
-        if(tgt2.want_to_closePath){
-            if(Math2D.line_i_line(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
-        }
-        for(--j;j>=0;--j){
-            if(Math2D.line_i_line(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1[j],t2d1[j+1]))return true;
         }
     }
     return false;
@@ -959,16 +958,85 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveBezierTGT],function(
  * @param {PrimitiveArcTGT} tgt2 
  */
 function isTouch_Bezier_Arc(tgt1,tgt2){
-    var t1d_l2=Bezier_Polygon.linearMapping(tgt1.world_bezier,tgt2.worldToLocalM,true);
-    isTouch_Bezier_Arc
+    var t1d_l2=Bezier_Polygon.linearMapping(tgt1.world_bezier,tgt2.worldToLocalM,true),
+        t2d=tgt2.data;
+
+    var i=t1d_l2.nodes.length-1;
+    var temp;
+    if(t1d_l2.isInside(t2d.opv)||t1d_l2.isInside(t2d.edv)||t2d.isInside(t1d_l2.nodes[0].node)){
+        return true;
+    }
+    if(tgt1._want_to_closePath===-1){
+        // 曲线对象正在使用直线闭合起点~终点 
+        if(tgt2.want_to_closePath){
+            // 弧形自闭合,多计算一个直线段(弦)
+            if(Math2D.line_i_line(t2d.opv,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+                return true;
+            }
+        }
+        if(Math2D.arc_i_line(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+            return true;
+        }
+    }
+    if(tgt1._want_to_closePath!==1)--i;
+    for(;i>=0;--i){
+        temp=t1d_l2.get_bezierCurve(i);
+        if(tgt2.want_to_closePath){
+            // 弧形自闭合,多计算一个直线段(弦)
+            if(Math2D.line_i_bezier_v(t2d.opv,t2d.edv,temp).length){
+                return true;
+            }
+        }
+        if(Math2D.arc_i_bezier_v(t2d,temp).length){
+            return true;
+        }
+    }
+    return false;
 }
+PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveArcTGT],isTouch_Bezier_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+    return isTouch_Bezier_Arc(tgt2,tgt1);
+});
 /**
  * 碰撞检测函数 贝塞尔曲线 扇形
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitiveSectorTGT} tgt2 
  */
- function isTouch_Bezier_Sector(tgt1,tgt2){
-    
+function isTouch_Bezier_Sector(tgt1,tgt2){
+    var t1d_l2=Bezier_Polygon.linearMapping(tgt1.world_bezier,tgt2.worldToLocalM,true),
+        t2d=tgt2.data;
+
+    var i=t1d_l2.nodes.length-1;
+    var temp;
+    if(t1d_l2.isInside(t2d.opv)||t1d_l2.isInside(t2d.edv)||t2d.isInside(t1d_l2.nodes[0].node)){
+        return true;
+    }
+    if(tgt1._want_to_closePath===-1){
+        // 曲线对象正在使用直线闭合起点~终点 
+        if(tgt2.want_to_closePath){
+            // 弧形自闭合,多计算一个直线段(弦)
+            if( Math2D.line_i_line(t2d.c,t2d.opv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)||
+                Math2D.line_i_line(t2d.c,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+                return true;
+            }
+        }
+        if(Math2D.arc_i_line(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+            return true;
+        }
+    }
+    if(tgt1._want_to_closePath!==1)--i;
+    for(;i>=0;--i){
+        temp=t1d_l2.get_bezierCurve(i);
+        // 弧形自闭合,多计算一个直线段(弦)
+        if( Math2D.line_i_bezier_v(t2d.c,t2d.edv,temp).length||
+            Math2D.line_i_bezier_v(t2d.c,t2d.opv,temp).length){
+            return true;
+        }
+        if(Math2D.arc_i_bezier_v(t2d,temp).length){
+            return true;
+        }
+    }
+    return false;
 }
 /**
  * 碰撞检测函数 贝塞尔曲线 贝塞尔曲线
