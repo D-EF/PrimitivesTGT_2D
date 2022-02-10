@@ -917,7 +917,7 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
             if(Math2D.line_i_line(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
         }
         for(--j;j>=0;--j){
-            if(Math2D.line_i_line(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1[j],t2d1[j+1]))return true;
+            if(Math2D.line_i_line(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1.nodes[j],t2d1.nodes[j+1]))return true;
         }
     }
     if(tgt1._want_to_closePath!==1)--i;
@@ -1038,15 +1038,52 @@ function isTouch_Bezier_Sector(tgt1,tgt2){
     }
     return false;
 }
+PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveSectorTGT],isTouch_Bezier_Sector);
+PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+    return isTouch_Bezier_Arc(tgt2,tgt1);
+});
 /**
  * 碰撞检测函数 贝塞尔曲线 贝塞尔曲线
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitiveBezierTGT} tgt2 
  */
 function isTouch_Bezier_Bezier(tgt1,tgt2){
-    
-}
+    var t1d_w=tgt1.world_bezier;
+    var t2d_w=tgt2.world_bezier;
+    if(t2d_w.isInside(t1d_w.nodes[0].node)||t1d_w.isInside(t2d_w.nodes[0].node)){
+        return true;
+    }
+    var i=0,j=0;
+    var tempBezierCurve=null,tempBezierCurve2;
 
+    i=t1d_w.nodes.length-1;
+    if(tgt1._want_to_closePath===-1){
+        // 曲线对象1正在使用直线闭合起点~终点 
+        j=t2d_w.nodes.length-1;
+        if(tgt2.want_to_closePath===-1){
+            if(Math2D.line_i_line(t2d_w.nodes[j].node,t2d_w.nodes[0].node,t1d_w.nodes[j].node,t1d_w.nodes[0].node))return true;
+        }
+        if(tgt2._want_to_closePath!==1)--j;
+        for(;j>=0;--j){
+            tempBezierCurve=t2d_w.get_bezierCurve(j);
+            if(Math2D.line_i_bezier_v(t1d_w.nodes[i].node,t1d_w.nodes[0].node,tempBezierCurve).length>0)return true;
+        }
+    }
+    if(tgt1._want_to_closePath!==1)--i;
+    for(;i>=0;--i){
+        tempBezierCurve=t1d_w.get_bezierCurve(i);
+        j=t2d_w.nodes.length-1;
+        if(tgt2._want_to_closePath!==1)--j;
+        for(;j>=0;--j){
+            tempBezierCurve2=t2d_w.get_bezierCurve(j);
+            if(Math2D.bezier_i_bezier_v(tempBezierCurve,tempBezierCurve2,0.01,true).length){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveBezierTGT],isTouch_Bezier_Bezier);
 
 /**
  * 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测

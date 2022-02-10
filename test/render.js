@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-09 20:32:40
+ * @LastEditTime: 2022-02-10 10:38:24
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -52,22 +52,22 @@ t1.fill_Material=spritesMap_Material;
 t1.fill_uv={x:0,y:0};
 t1.stroke_Material=new Canvas2d_Material("#00f")
 
-var t2=new PrimitiveArcTGT(0,0,50,0,180*deg);
+var t2=new PrimitiveSectorTGT(0,0,50,0,120*deg);
 t2.fill_Material=spritesMap_Material;
 t2.fill_uv={x:1,y:1};
 t2.fill_uvwh={x:0.5,y:1};
 t2.lineWidth=2;
 t2.want_to_closePath=true;
 t2.stroke_Material=new Canvas2d_Material("#0f0");
-t2.transformMatrix=new Matrix2x2T().setTranslate(120,120).rotate(45*deg);
+t2.transformMatrix=new Matrix2x2T().setTranslate(120,200).rotate(45*deg);
 t2.globalAlpha=0.5;
 
 var t3=new PrimitivePolygonTGT(new Polygon([
     {x:0,y:0},
     {x:0,y:100},
     {x:100,y:0},
-    // {x:100,y:100},
-    // {x:0,y:0},
+    {x:100,y:100},
+    {x:0,y:0},
 ]));
 t3.want_to_closePath=false;
 t3.fill_Material=spritesMap_Material;
@@ -82,6 +82,44 @@ sp.img.onload=function (){
     renderer.render_all();
 }
 
+
+var t4=new PrimitiveBezierTGT();
+t4.data=new Bezier_Polygon();
+t4.data.pushNode({
+    node:{
+        x:100-100,
+        y:100-100
+    },
+    hand_before:{
+        x:100-100,
+        y:200-100
+    },
+    hand_after:{
+        x:200-100,
+        y:100-100
+    },
+});
+t4.data.pushNode({
+    node:{
+        x:200-100,
+        y:200-100
+    },
+    hand_before:{
+        x:100-100,
+        y:200-100
+    },
+    hand_after:{
+        x:200-100,
+        y:100-100
+    },
+});
+
+t4.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
+t4.want_to_closePath=1;
+t4.fill_Material=spritesMap_Material;
+t4.fill_uv={x:4,y:6};
+t4.fill_uvwh={x:0.5,y:0.5};
+renderer.tgtList.push(t4);
 
 var d=new PrimitiveBezierTGT();
 d.data=new Bezier_Polygon();
@@ -115,7 +153,7 @@ d.data.pushNode({
 });
 
 d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
-d.want_to_closePath=0;
+d.want_to_closePath=-1;
 d.fill_Material=spritesMap_Material;
 d.fill_uv={x:4,y:6};
 d.fill_uvwh={x:0.5,y:0.5};
@@ -144,6 +182,7 @@ cnm.onmousemove=function(e){
     if(PrimitiveTGT.isTouch(d,t1))console.log("is touching t1");
     if(PrimitiveTGT.isTouch(d,t2))console.log("is touching t2");
     if(PrimitiveTGT.isTouch(d,t3))console.log("is touching t3");
+    if(PrimitiveTGT.isTouch(d,t4))console.log("is touching t4");
 }
 window.tgtbezier=d;
 
