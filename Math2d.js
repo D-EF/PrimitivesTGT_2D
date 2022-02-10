@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-10 17:06:46
+ * @LastEditTime: 2022-02-10 19:44:44
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1693,8 +1693,6 @@ class Matrix2x2T extends Matrix2x2{
     }
 }
 
- 
-
 /** 多边形  */
 class Polygon{
     /** 多边形
@@ -1988,6 +1986,12 @@ class Polygon{
             l:Infinity,
             k:0
         }
+    }
+    /** 获取边的长度
+     * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
+     */
+    get_line(index){
+        
     }
     /** 多边形所有边的长度和
      * @param {Boolean} closeFlag 是否闭合多边形
@@ -3055,7 +3059,6 @@ class BezierCurve{
     projection_point(v,type="t",step_size,accuracy=0.001){
         return this.projection_point_refining(v,this.projection_point_first_by_arcLiength(v,type,step_size),accuracy);
     }
-    
     /** 圆形与曲线的交点
      * @param {Vector2} c 圆心
      * @param {Vector2} r 半径
@@ -3067,7 +3070,6 @@ class BezierCurve{
     intersect_circular(c,r,type="t",step_size,accuracy=0.001){
         return this.intersect_circular_point_refining(c,r,this.intersect_circular_first_by_arcLiength(c,r,type,step_size),accuracy);
     }
-    
     /** 圆形与曲线的交点 搜索基础点
      * @param {Vector2} c 圆心
      * @param {Vector2} r 半径
