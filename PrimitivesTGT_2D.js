@@ -30,8 +30,7 @@ class Material{
         /**@type {Sprites} */
         this.texture=texture;
     }
-    /**
-     * 获取2d材质
+    /** 获取2d材质
      * @param {PrimitiveTGT} tgt 图元对象
      * @param {*} ctx 渲染上下文
      * @param {String} type 类型 (用于选择使用哪个 uv)
@@ -42,8 +41,7 @@ class Material{
 }
 /**渲染器抽象类 */
 class PrimitiveTGT_Renderer{
-    /**
-     * @param {PrimitiveTGT[]} tgtList 等待渲染的对象列表
+    /** @param {PrimitiveTGT[]} tgtList 等待渲染的对象列表
      */
     constructor(tgtList){
         this.tgtList=tgtList.concat();
@@ -54,8 +52,7 @@ class PrimitiveTGT_Renderer{
     static rendererIndex=0;
     /**@type {PrimitiveTGT_Renderer[]} 已有的渲染器列表 */
     static rendererList=[];
-    /**
-     * 将渲染器从静态渲染器列表中移除
+    /** 将渲染器从静态渲染器列表中移除
      * @param {PrimitiveTGT_Renderer} renderer 渲染器实例
      */
     static remove_in_rendererList(renderer){
@@ -63,8 +60,7 @@ class PrimitiveTGT_Renderer{
             PrimitiveTGT_Renderer.rendererList.indexOf(renderer),1
         )
     }
-    /**
-     * 拷贝函数
+    /** 拷贝函数
      * @param {PrimitiveTGT_Renderer} tgt 
      * @returns 
      */
@@ -76,8 +72,7 @@ class PrimitiveTGT_Renderer{
     copy(){
         return this.constructor.copy(this);
     }
-    /**
-     * @param {PrimitiveTGT} tgt 
+    /** @param {PrimitiveTGT} tgt 
      */
     render(tgt){}
     render_all(){
@@ -88,8 +83,7 @@ class PrimitiveTGT_Renderer{
 }
 
 
-/**
- * 图元抽象类
+/** 图元抽象类
  */
 class PrimitiveTGT{
     constructor(){
@@ -124,14 +118,12 @@ class PrimitiveTGT{
         /**@type {Number} 虚线起始偏移*/
         this.lineDashOffset=0;
 
-        /**
-         * tgt的 data的类型 用于将json实例化为 PrimitiveTGT
+        /** tgt的 data的类型 用于将json实例化为 PrimitiveTGT
          * @type {String}
          */
         this.dataType="Object";
     }
-    /**
-     * 拷贝函数 注:json互相转化时,无法正常转换成json的类型 fillStyle strokeStyle 会丢失
+    /** 拷贝函数 注:json互相转化时,无法正常转换成json的类型 fillStyle strokeStyle 会丢失
      * @param {PrimitiveTGT} tgt
      * @return {PrimitiveTGT} 返回一个拷贝
      */
@@ -149,22 +141,19 @@ class PrimitiveTGT{
         rtn.uvwh              = Vector2.copy(this.uvwh);
         return rtn;
     }
-    /**
-     * 拷贝函数
+    /** 拷贝函数
      * @return {PrimitiveTGT} 返回一个拷贝
      */
     copy(){
         return PrimitiveTGT.copy(this);
     }
-    /** 
-     * 获取最小的(局部)坐标
+    /** 获取最小的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
     getMin(){
         return this.data.getMin();
     }
-    /** 
-     * 获取最大的(局部)坐标
+    /** 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
     getMax(){
@@ -188,8 +177,7 @@ class PrimitiveTGT{
         return this._worldToLocalM;
     }
     // 这是个有多个重载的函数 , 在class定义的外面实现
-    /**
-     * 将局部坐标系变换到世界坐标系
+    /** 将局部坐标系变换到世界坐标系
      * @method localToWorld 拥有两个重载
      * @param {Number} x 重载1的参数 局部坐标x
      * @param {Number} y 重载1的参数 局部坐标y
@@ -199,8 +187,7 @@ class PrimitiveTGT{
     localToWorld (x,y){
         // 这是个有多个重载的函数 , 在class定义的外面实现
     }
-    /**
-     * 将世界坐标系变换到局部坐标系
+    /** 将世界坐标系变换到局部坐标系
      * @method localToWorld 拥有两个重载
      * @param {Number} x 重载1的参数 世界坐标x
      * @param {Number} y 重载1的参数 世界坐标y
@@ -210,16 +197,14 @@ class PrimitiveTGT{
     worldToLocal (x,y){
         // 在class定义的外面, 实现重载
     }
-    /**
-     * 刷新逆变换矩阵
+    /** 刷新逆变换矩阵
      */
     re_worldToLocalM(){
         if(this._worldToLocalM===undefined){
             this._worldToLocalM=this.transformMatrix.inverse();
         }
     }
-    /** 
-     * 判断某一点是否在目标内部
+    /** 判断某一点是否在目标内部
      * @param {Number} _x    重载1的参数 世界坐标x
      * @param {Number} _y    重载1的参数 世界坐标y
      * @param {Vector2} _v   重载2的参数 世界坐标向量
@@ -241,8 +226,7 @@ class PrimitiveTGT{
         return rtn;
     }
     
-    /**
-     * 生成世界坐标的多边形集合
+    /** 生成世界坐标的多边形集合
      * @param {Boolean} f 是否作拷贝 默认 true, 为 false 时会影响 this
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
      * @returns {PrimitivePolygonTGT[]} 因为只有一个tgt所以是 length 为 1 的数组
@@ -260,32 +244,27 @@ class PrimitiveTGT{
         rtn.nodesToWorld(true);
         return [rtn];
     }
-    /**
-     * 碰撞检测 有多个重载, 在class外面实现
+    /** 碰撞检测 有多个重载, 在class外面实现
      * @param {PrimitiveTGT} primitiveTGT1 需要检测碰撞的对象
      * @param {PrimitiveTGT} primitiveTGT2 需要检测碰撞的对象
      */
     static isTouch(primitiveTGT1,primitiveTGT2){}
-    /** 
-     * 根据数据类型创建
+    /** 根据数据类型创建
      */
     static create_ByDataType={
-        /**
-         * @param {Arc_Data} data 
+        /** @param {Arc_Data} data 
          * @returns {PrimitiveArcTGT}
          */
         "Arc_Data":function(data){
             return new PrimitiveArcTGT(data.c.x,data.c.y,data._r,data._startAngle,data._endAngle);
         },
-        /**
-         * @param {Rect_Data} data 
+        /** @param {Rect_Data} data 
          * @returns {PrimitiveRectTGT}
          */
         "Rect_Data":function(data){
             return new PrimitiveRectTGT(data.x,data.y,data.w,data.h);
         },
-        /**
-         * @param {Polygon} data 
+        /** @param {Polygon} data 
          * @returns {PrimitivePolygonTGT}
          */
         "Polygon":function(data){
@@ -321,13 +300,11 @@ class PrimitiveRectTGT extends PrimitiveTGT{
     }
 }
 
-/**
- * 弧形
+/** 弧形
  * 需要注意旋转方向因为坐标系不同而有所变动
  */
 class PrimitiveArcTGT extends PrimitiveTGT{
-    /**
-     * @param {Number} cx 圆心的坐标
+    /** @param {Number} cx 圆心的坐标
      * @param {Number} cy 圆心的坐标
      * @param {Number} r  半径
      * @param {Number} startAngle       起点的弧度
@@ -340,12 +317,10 @@ class PrimitiveArcTGT extends PrimitiveTGT{
         this.dataType="Arc_Data";
     }
 }
-/**
- * 扇形
+/** 扇形
  */
 class PrimitiveSectorTGT extends PrimitiveTGT{
-    /**
-     * @param {Number} cx 圆心的坐标
+    /** @param {Number} cx 圆心的坐标
      * @param {Number} cy 圆心的坐标
      * @param {Number} r  半径
      * @param {Number} startAngle       起点的弧度
@@ -361,25 +336,21 @@ class PrimitiveSectorTGT extends PrimitiveTGT{
     }
 }
 
-/** 
- * 多边形
+/** 多边形
  */
 class PrimitivePolygonTGT extends PrimitiveTGT{
-    /**
-     * @param {Polygon} _polygon 多边形
+    /** @param {Polygon} _polygon 多边形
      */
     constructor(_polygon){
         super();
-        /**
-         * @type {Polygon}
+        /** @type {Polygon}
          */
         this.data=Polygon.copy(_polygon);
         if(this.data)this.data.reMinMax();
         this.dataType="Polygon"
     }
 
-    /**
-     * 将局部坐标系的 nodes 转换到世界坐标系
+    /** 将局部坐标系的 nodes 转换到世界坐标系
      * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
      */
     nodesToWorld(clear_tfm_f=true){
@@ -399,12 +370,10 @@ class PrimitivePolygonTGT extends PrimitiveTGT{
 
 
 // todo BezierTGT
-/**
- * 贝塞尔曲线多边形
+/** 贝塞尔曲线多边形
  */
 class PrimitiveBezierTGT extends PrimitiveTGT{
-    /**
-     * @param {Bezier_Polygon} bezier_polygon 
+    /** @param {Bezier_Polygon} bezier_polygon 
      */
     constructor(bezier_polygon){
         super();
@@ -445,16 +414,14 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         if(!this._world_bezier)this.reload_worldBezier();
         return this._world_bezier;
     }
-    /**
-     * data顶点修改时的回调委托
+    /** data顶点修改时的回调委托
      * @param {Number} i 被修改的点的下标
      */
     in_data_nodeChange(i){
         if(this._world_bezier)
         this.world_bezier.setNode(i,this.calc_worldNode(i));
     }
-    /**
-     * data顶点被增加或删除的回调委托
+    /** data顶点被增加或删除的回调委托
      * @param {Number} i 被修改的点的下标
      * @param {Boolean} f 插入或删除
      */
@@ -467,31 +434,27 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
             this.world_bezier.remove(i);
         }
     }
-    /**
-     * 重新加载世界坐标系的所有节点 在变换矩阵或data被修改后使用
+    /** 重新加载世界坐标系的所有节点 在变换矩阵或data被修改后使用
      * @returns {Bezier_Polygon}
      */
     reload_worldBezier(){
         return this._world_bezier=Bezier_Polygon.linearMapping(this.data,this.transformMatrix);
     }
-    /**
-     * 获取世界坐标的节点
+    /** 获取世界坐标的节点
      * @param {Number} i 节点下标
      * @returns 世界坐标的节点
      */
     get_worldNode(i){
         return this.world_bezier.nodes[i];
     }
-    /**
-     * 获取世界坐标下的节点的数学曲线对象
+    /** 获取世界坐标下的节点的数学曲线对象
      * @param {Number} i 前驱节点下标
      * @return {BezierCurve}
      */
     get_worldBezierCurve(i){
         return this.world_bezier.get_bezierCurve(i);
     }
-    /**
-     * 计算世界坐标的节点
+    /** 计算世界坐标的节点
      * @param {Number} i 节点下标
      * @returns 世界坐标的节点
      */
@@ -502,8 +465,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
             this.localToWorld(this.data.nodes[i].hand_after)
         );
     }
-    /**
-    * 将局部坐标系的 nodes 转换到世界坐标系
+    /** 将局部坐标系的 nodes 转换到世界坐标系
     * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
     */
     nodesToWorld(clear_tfm_f=true){
@@ -519,12 +481,10 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
     }
 }
 
-/**
- * PrimitiveTGT 组
+/** PrimitiveTGT 组
  */
  class PrimitiveTGT_Group extends PrimitiveTGT{
-    /**
-     * 
+    /** 
      * @param {PrimitiveTGT[],PrimitiveTGT_Group[]} tgts 
      */
     constructor(tgts){
@@ -543,50 +503,43 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         /** 用于控制绘制 精灵图 贴图的 属性 */
         this.sp_max=new Vector2(100,100);
     }
-    /** 
-     * 获取最小的(局部)坐标
+    /** 获取最小的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
      getMin(){
         return this.min;
     }
-    /** 
-     * 获取最大的(局部)坐标
+    /** 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
     getMax(){
         return this.max;
     }
-    /**
-     * 添加子项
+    /** 添加子项
      * @param {PrimitiveTGT} tgt PrimitiveTGT对象
      */
     addChildren(tgt){
         this.data.push(tgt);
     }
-    /**
-     * 添加子项
+    /** 添加子项
      * @param {PrimitiveTGT[]} tgt PrimitiveTGT对象
      */
     addChildrens(tgts){
         this.data=this.data.concat(tgts);
     }
-    /**
-     * 移除一个子项
+    /** 移除一个子项
      * @param {Number} index 下标
      */
     removeChildrenByIndex(index){
         this.data.splice(index,1);
     }
-    /**
-     * 移除一个子项
+    /** 移除一个子项
      * @param {PrimitiveTGT} tgt 必须是同一个子项
      */
     removeChildren(tgt){
         this.data.splice(this.data.indexOf,1);
     }
-    /** 
-     * 获取点在某子项内部
+    /** 获取点在某子项内部
      * @param {Number} _x    重载1的参数 世界坐标x
      * @param {Number} _y    重载1的参数 世界坐标y
      * @param {Vector2} _v   重载2的参数 世界坐标向量
@@ -611,8 +564,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         return -1;
     }
     
-    /** 
-     * 获取点是否在子项内部
+    /** 获取点是否在子项内部
      * @param {Number} _x    重载1的参数 世界坐标x
      * @param {Number} _y    重载1的参数 世界坐标y
      * @param {Vector2} _v   重载2的参数 世界坐标向量
@@ -621,8 +573,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
     isInside(_x,_y){
         return this.inside_i(_x,_y)!==-1;
     }
-    /**
-     * 生成世界坐标的多边形集合
+    /** 生成世界坐标的多边形集合
      * @param {Boolean} f 组的该方法中的是无用的属性
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
      * @returns {PrimitivePolygonTGT[]}
@@ -682,8 +633,7 @@ PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT_worldToL
 PrimitiveTGT.accuracy=20;
 PrimitiveTGT.isTouch=OlFunction.create(isTouch_base);
 
-/**
- * 可以通用的碰撞检测函数 将对象转换成多边形 开销较大
+/** 可以通用的碰撞检测函数 将对象转换成多边形 开销较大
  * @param {PrimitiveTGT} primitiveTGT1
  * @param {PrimitiveTGT} primitiveTGT2
  */
@@ -706,8 +656,7 @@ function isTouch_base(primitiveTGT1,primitiveTGT2){
     return primitiveTGT1.isInside(primitiveTGT2.localToWorld(primitiveTGT2.data.nodes[0]))||primitiveTGT2.isInside(primitiveTGT1.localToWorld(primitiveTGT1.data.nodes[0]));
 }
 
-/**
- * 碰撞检测函数 矩形 弧形(圆形)
+/** 碰撞检测函数 矩形 弧形(圆形)
  * @param {PrimitiveRectTGT} tgt1 进行碰撞检测的对象
  * @param {PrimitiveArcTGT}  tgt2 进行碰撞检测的对象
  */
@@ -720,8 +669,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveRectTGT],function(tgt
     return isTouch_Rect_Arc(tgt2,tgt1)
 });
 
-/**
- * 碰撞检测函数 矩形 多边形
+/** 碰撞检测函数 矩形 多边形
  * @param {PrimitiveRectTGT} tgt1
  * @param {PrimitivePolygonTGT} tgt2
  */
@@ -753,8 +701,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveRectTGT],function
     return isTouch_Rect_Polygon(tgt2,tgt1);
 });
 
-/**
- * 碰撞检测函数 弧形(圆形) 多边形
+/** 碰撞检测函数 弧形(圆形) 多边形
  * @param {PrimitiveArcTGT} tgt1
  * @param {PrimitivePolygonTGT} tgt2
  */
@@ -804,8 +751,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveArcTGT],function(
     return isTouch_Arc_Polygon(tgt2,tgt1);
 });
 
-/**
- * 碰撞检测函数 弧形(圆形) 弧形
+/** 碰撞检测函数 弧形(圆形) 弧形
  * @param {PrimitiveArcTGT} tgt1 
  * @param {PrimitiveArcTGT} tgt2 
  */
@@ -818,8 +764,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveArcTGT],isTouch_Arc_A
 
 // 扇形碰撞 -------------------------------------------------------------------------------------------------
 
-/**
- * 碰撞检测函数 矩形 扇形(圆形)
+/** 碰撞检测函数 矩形 扇形(圆形)
  * @param {PrimitiveRectTGT} tgt1 进行碰撞检测的对象
  * @param {PrimitiveSectorTGT}  tgt2 进行碰撞检测的对象
  */
@@ -832,8 +777,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveRectTGT],function(
     return isTouch_Rect_Sector(tgt2,tgt1);
 });
 
-/**
- * 碰撞检测函数 扇形(圆形) 多边形
+/** 碰撞检测函数 扇形(圆形) 多边形
  * @param {PrimitiveSectorTGT} tgt1 
  * @param {PrimitivePolygonTGT} tgt2 
  */
@@ -868,8 +812,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveSectorTGT],functi
     return isTouch_Sector_Polygon(tgt2,tgt1)
 });
 
-/**
- * 碰撞检测函数 扇形(圆形) 弧形
+/** 碰撞检测函数 扇形(圆形) 弧形
  * @param {PrimitiveSectorTGT} tgt1 
  * @param {PrimitiveArcTGT} tgt2 
  */
@@ -883,8 +826,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveSectorTGT],function(t
     return isTouch_Sector_Arc(tgt2,tgt1)
 });
 
-/**
- * 碰撞检测函数 扇形(圆形) 弧形
+/** 碰撞检测函数 扇形(圆形) 弧形
  * @param {PrimitiveSectorTGT} tgt1 
  * @param {PrimitiveSectorTGT} tgt2 
  */
@@ -895,8 +837,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveSectorTGT],function(t
 
 PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch_Sector_Sector);
 
-/**
- * 碰撞检测函数 贝塞尔曲线 多边形
+/** 碰撞检测函数 贝塞尔曲线 多边形
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitivePolygonTGT} tgt2 
  */
@@ -939,8 +880,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveBezierTGT],functi
     return isTouch_Bezier_Polygon(tgt2,tgt1);
 });
 
-/**
- * 碰撞检测函数 贝塞尔曲线 矩形
+/** 碰撞检测函数 贝塞尔曲线 矩形
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitiveRectTGT} tgt2 
  */
@@ -952,8 +892,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveRectTGT],isTouch_B
 PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
     return isTouch_Bezier_Rect(tgt2,tgt1);
 });
-/**
- * 碰撞检测函数 贝塞尔曲线 弧形
+/** 碰撞检测函数 贝塞尔曲线 弧形
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitiveArcTGT} tgt2 
  */
@@ -997,8 +936,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveArcTGT],isTouch_Be
 PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
     return isTouch_Bezier_Arc(tgt2,tgt1);
 });
-/**
- * 碰撞检测函数 贝塞尔曲线 扇形
+/** 碰撞检测函数 贝塞尔曲线 扇形
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitiveSectorTGT} tgt2 
  */
@@ -1042,8 +980,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveSectorTGT],isTouch
 PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
     return isTouch_Bezier_Arc(tgt2,tgt1);
 });
-/**
- * 碰撞检测函数 贝塞尔曲线 贝塞尔曲线
+/** 碰撞检测函数 贝塞尔曲线 贝塞尔曲线
  * @param {PrimitiveBezierTGT} tgt1 
  * @param {PrimitiveBezierTGT} tgt2 
  */
@@ -1085,8 +1022,7 @@ function isTouch_Bezier_Bezier(tgt1,tgt2){
 }
 PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveBezierTGT],isTouch_Bezier_Bezier);
 
-/**
- * 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
+/** 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
  * @param {PrimitivePolygonTGT[]} _tgts 多边形对象数组 不要加矩阵
  * @param {PrimitiveTGT_Group} g 组
  * @param {PrimitiveTGT_Group} pg g的父组
@@ -1120,8 +1056,7 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
     }
     return false;
 }
-/**
- * 碰撞检测函数 组 组
+/** 碰撞检测函数 组 组
  * @param {PrimitiveTGT_Group} group1
  * @param {PrimitiveTGT_Group} group2
  */

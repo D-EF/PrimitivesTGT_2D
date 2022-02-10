@@ -41,12 +41,10 @@ import {
     Sprites_Animation
 }from "./Sprites.js"
 
-/**
- * temp
+/** temp
  */
  class CtrlCanvas2d{
-    /**
-     * 
+    /** 
      * @param {CanvasRenderingContext2D} ctx 2d渲染上下文 
      * @param {Vector2} v 位置坐标
      * @param {Number} r  半径
@@ -62,8 +60,7 @@ import {
        ctx.stroke();
    }
    
-   /**
-    * 
+   /** 
     * @param {CanvasRenderingContext2D} ctx 
     * @param {BezierCurve} bc 
     */
@@ -73,8 +70,7 @@ import {
        ctx.quadraticCurveTo(bc.points[1].x,bc.points[1].y,bc.points[2].x,bc.points[2].y);
        ctx.stroke();
    }
-   /**
-    * 
+   /** 
     * @param {CanvasRenderingContext2D} ctx 
     * @param {Vector2[]} vs 
     */
@@ -84,8 +80,7 @@ import {
        ctx.lineTo(vs[1].x,vs[1].y);
        ctx.stroke();
    }
-   /**
-    * 
+   /** 
     * @param {CanvasRenderingContext2D} ctx 
     * @param {Rect_Data} cd 
     */
@@ -111,8 +106,7 @@ class Canvas2d_Material extends Material{
         /**@type {Sprites} */
         this.texture=texture;
     }
-    /**
-     * 获取2d材质
+    /** 获取2d材质
      * @param {Number} x 精灵图元素 x 坐标
      * @param {Number} y 精灵图元素 y 坐标
      * @param {PrimitiveTGT} tgt 图元对象
@@ -132,16 +126,14 @@ class Canvas2d_Material extends Material{
 }
 
 class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
-    /**
-     * @param {CanvasRenderingContext2D} ctx 
+    /** @param {CanvasRenderingContext2D} ctx 
      */
      constructor(renderList,ctx){
         super(renderList);
         /**@type {CanvasRenderingContext2D} 渲染上下文 */
         this.ctx=ctx;
     }
-    /** 
-     * 渲染图形 
+    /** 渲染图形 
      * @param {PrimitiveTGT} tgt
     */
     render(tgt){
@@ -167,8 +159,7 @@ class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
         ctx.beginPath();
         ctx.restore();
     }
-    /**
-     * 根据 tgt 的属性 创建用于绘制的路径
+    /** 根据 tgt 的属性 创建用于绘制的路径
      * @param {PrimitiveTGT} tgt
      */
     createCanvasPath(tgt){

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-15 10:51:54
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-10 10:38:24
+ * @LastEditTime: 2022-02-10 15:38:45
  * @FilePath: \def-web\js\visual\test\render.js
  */
 import {
@@ -179,17 +179,12 @@ cnm.onmousemove=function(e){
     d.transformMatrix=new Matrix2x2T().translate(e.offsetX,e.offsetY).rotate(90*deg);
     ctx.clearRect(0,0,1000,1000)
     renderer.render_all();
+    var v=t4.worldToLocal(Vector2.copy({x:e.offsetX,y:e.offsetY}));
+    CtrlCanvas2d.dot(ctx,t4.localToWorld(ka.projection_point(v,"t").v),3,"#0f0");
+    
     if(PrimitiveTGT.isTouch(d,t1))console.log("is touching t1");
     if(PrimitiveTGT.isTouch(d,t2))console.log("is touching t2");
     if(PrimitiveTGT.isTouch(d,t3))console.log("is touching t3");
     if(PrimitiveTGT.isTouch(d,t4))console.log("is touching t4");
 }
 window.tgtbezier=d;
-
-// cnm.onmousemove=function (e){
-//     var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
-//     console.log(ka.projection_point(v));
-//     ctx.clearRect(0,0,1000,1000)
-//     renderer.render(d);
-//     CtrlCanvas2d.dot(ctx,ka.projection_point(v,"arcLiength").v,3,"#0f0");
-// }

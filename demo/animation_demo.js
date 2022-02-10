@@ -111,8 +111,7 @@ var animation_curve=new BezierCurve([
     {x:0,y:1.2},
     {x:1,y:1},
 ]);
-/**
- * 把看上去是矩形的东西变成一块logo
+/** 把看上去是矩形的东西变成一块logo
  */
 function rect_to_logoItem(t){
     var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
@@ -129,16 +128,14 @@ function rect_to_logoItem(t){
     itemPolygonNodes[6].y=d2.y;
     ctxRender();
 }
-/**
- * 把logo缩小
+/** 把logo缩小
  */
 function logoScale(t){
     var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
     tgt_group._transformMatrix=m2tAnimation(gm,gm_end,t);
     ctxRender();
 }
-/**
- * 把logo从item变成完整的一块
+/** 把logo从item变成完整的一块
  */
 function logoItemShow(t){
     var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
