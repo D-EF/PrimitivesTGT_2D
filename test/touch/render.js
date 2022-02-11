@@ -1,9 +1,3 @@
-/*
- * @Date: 2022-01-15 10:51:54
- * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-10 15:38:45
- * @FilePath: \def-web\js\visual\test\render.js
- */
 import {
     PrimitiveRectTGT,
     PrimitiveArcTGT,
@@ -16,7 +10,7 @@ import {
     Canvas2D_TGT_Renderer,
     Sprites,
     Sprites_Animation
-} from "../PrimitivesTGT_2D_CanvasRenderingContext2D.js";
+} from "../../PrimitivesTGT_2D_CanvasRenderingContext2D.js";
 import {
     Vector2,
     Matrix2x2T,
@@ -24,8 +18,8 @@ import {
     Bezier_Polygon,  
     BezierCurve,
     Math2D
-}  from "../Math2d.js";
-import { PrimitiveTGT } from "../PrimitivesTGT_2D.js";
+}  from "../../Math2d.js";
+import { PrimitiveTGT } from "../../PrimitivesTGT_2D.js";
 Object.assign(window,{
     Vector2,
     Matrix2x2T,

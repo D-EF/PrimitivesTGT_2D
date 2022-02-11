@@ -75,10 +75,9 @@ function colorToRGBA(str) {
 }
 
 class AnimationCtrl{
-    /**
-     * 
-     * @param {Function} frameCallback 
-     * @param {Function} stopCallback 
+    /** 动画控制器
+     * @param {Function} frameCallback 每次进行动作的回调 frameCallback(t,this)
+     * @param {Function} stopCallback 结束时的回调 stopCallback(this)
      */
     constructor(frameCallback,stopCallback){
         /**@type {Boolean}表示是否正在进行动作 设置为false可以急停动画*/

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-08 19:29:57
+ * @LastEditTime: 2022-02-11 15:24:17
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -126,7 +126,9 @@ class Canvas2d_Material extends Material{
 }
 
 class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
-    /** @param {CanvasRenderingContext2D} ctx 
+    /** Canvas2D渲染器
+     * @param {PrimitiveTGT[]} renderList 等待渲染的对象列表
+     * @param {CanvasRenderingContext2D} ctx 
      */
      constructor(renderList,ctx){
         super(renderList);

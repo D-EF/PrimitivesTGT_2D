@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-10 19:44:44
+ * @LastEditTime: 2022-02-11 16:25:58
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -15,6 +15,7 @@ import {
     derivative,
     root_of_1_3,
     coefficientToPoints,
+    Stepper,
 } from "../basics/math_ex.js";
 
 import {
@@ -44,6 +45,18 @@ class Math2D{
         var tp1=Vector2.dif(point,lp1),
             tp2=Vector2.dif(lp2,lp1);
         return Vector2.ip(tp1,tp2)/tp2.mag();
+    }
+    /** 用时间参数t获取线段上的点
+     * @param {Vector2} lop 线段起点  
+     * @param {Vector2} led 线段终点  
+     * @param {Number} t  时间参数t
+     * @returns {Vector2} 返回线段上的点
+     */
+    static line_pt(lop,led,t){
+        var td=1-t,
+            x=lop.x*td+led.x*t,
+            y=lop.y*td+led.y*t;
+        return new Vector2(x,y);
     }
     /** 点到线段的距离
      * @param {Vector2} point 点
@@ -1244,15 +1257,13 @@ class Sector_Data extends Arc_Data{
     copy(){
         return new Vector2(this.x,this.y);
     }
-    /**
-	 * @brief 求模
+    /**求模
      * @returns {Number} 
 	*/
 	mag() {
 		return Math.sqrt(this.x*this.x+this.y*this.y);
     }
-	/**
-	 * @brief 标准化向量
+	/**标准化向量
 	*/
 	normalize() {
         if(this.x==0&&this.y==0)return;
@@ -1268,7 +1279,6 @@ class Sector_Data extends Arc_Data{
      * @returns{Boolean}
      */
     judgeZero(){return !(this.x||this.y);}
-    
     /**取反
      * @returns{Vector2} 返回新的向量
      */
@@ -1709,6 +1719,14 @@ class Polygon{
         if(nodes&&nodes.constructor==Array){
             this.pushNodes(nodes);
         }
+        /**@type {Number[]} 边线长度暂存表 */
+        this._lines_length=[];
+        /**@type {Number} 所有边线总长度 为负数时说明是未计算状态*/
+        this._all_lines_length=-1;
+        /**@type {Delegate} 顶点插入或删除后的委托  */
+        this.after_nodes_move_Delegate=Delegate.ctrate();
+        /**@type {Delegate} 顶点修改后的委托  */
+        this.after_node_change_Delegate=Delegate.ctrate();
     }
     static copy(polygon){
         var ret=new Polygon();
@@ -1773,7 +1791,7 @@ class Polygon{
             this.pushNode(nodes[i]);
         }
     }
-    /**插入顶点
+    /** 插入顶点
      * @param {Number} index    要插入的顶点的下标
      * @param {Vector2} v       要插入的顶点
      */
@@ -1787,8 +1805,9 @@ class Polygon{
         }else{
             this.reMinMax();
         }
+        this.after_nodes_move(index,true);
     }
-    /**移除顶点
+    /** 移除顶点
      * @param {Number} index 要删除的顶点的下标
      */
     remove(index){
@@ -1801,10 +1820,51 @@ class Polygon{
             }
         this.nodes.splice(index,1);
         if(tflag)this.reMinMax();
+        this.after_nodes_move(index,false);
     }
     /**移除所有顶点 */
     removeAll(){
         this.nodes.length=0;
+        this._lines_length.length=0;
+        this._all_lines_length=-1;
+    }
+    /** 在插入顶点或删除顶点后的操作
+     * @param {Number} index 修改的点的下标
+     * @param {Boolean} f 插入还是删除
+     */
+    after_nodes_move(index,f){
+        var j=index?index-1:this.nodes.length-1,i=index;
+        this._lines_length[j]=undefined;
+        if(f){
+            this._lines_length.splice(i,0,null);
+        }
+        else{
+            this._lines_length.splice(i,1);
+        }
+        this._all_lines_length=-1;
+        this.after_nodes_move_Delegate(i,f);
+    }
+    /** 修改顶点后的操作
+     * @param {Number} index 修改的点的下标
+     */
+    after_node_change(index){
+        this._lines_length[index]=undefined;
+        this._all_lines_length=-1;
+        this.after_node_change_Delegate(i);
+    }
+    /** 修改顶点
+     * @param {Number} index 修改顶点的下标
+     * @param {Vector2} v 点的坐标
+     * @return {Vector2} 返回当前修改的点
+     */
+    setNode(index,v){
+        this.nodes[index].x=v.x;
+        this.nodes[index].y=v.y;
+        if(v.x>this.max.x)this.max.x=v.x;
+            else if(v.y<this.min.x)this.min.x=v.x;
+                 if(v.y>this.max.y)this.max.y=v.y;
+            else if(v.y<this.min.y)this.min.y=v.y;
+        return this.nodes[index];
     }
     /** 闭合路径 */
     seal(){
@@ -1949,10 +2009,10 @@ class Polygon{
      * @param {Number} line_width 线段容差宽度 超出距离不计 取负数将无法取到边
      * @param {Boolean} want_to_close 将没闭合的路径视作闭合路径
      * @returns {{type:Number,i:Number,l:Number,k:Number}}
-     * @return type 在顶点上(0) 或 在边上(1)
-     * @return i 当前顶点下标 或边的前驱顶点下标
-     * @return l 点到目标的距离
-     * @retutn k 目标为边时点到边的投影的系数
+     * @return {Number} type 在顶点上(0) 或 在边上(1)
+     * @return {Number} i 当前顶点下标 或边的前驱顶点下标
+     * @return {Number} l 点到目标的距离
+     * @return {Number} k 目标为边时点到边的投影的系数
      */
     point_in_node_or_line(point,r,line_width,want_to_close){
         var nodes=this.nodes;
@@ -1989,24 +2049,52 @@ class Polygon{
     }
     /** 获取边的长度
      * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
+     * @returns {Number} 返回线段的长度
      */
-    get_line(index){
-        
+    get_line_length(index){
+        var j=index===this.nodes.length-1?0:index+1;
+        if(this._lines_length[index]===undefined||this._lines_length[index]<0){
+            this._lines_length[index]=Math2D.line_length(this.nodes[index],this.nodes[j]);
+        }
+        return this._lines_length[index];
     }
     /** 多边形所有边的长度和
      * @param {Boolean} closeFlag 是否闭合多边形
      * @returns {Number}
      */
-    line_length(closeFlag){
-        var rtn=0;
-        var i=this.nodes.length-1;
-        if(closeFlag&&this.isClosed()&&this.node.length>2){
-            rtn+=Math2D.line_length(this.nodes[0],this.nodes[i-1]);
+    get_all_line_length(closeFlag){
+        if(this._all_lines_length<0||this._all_lines_length===undefined){
+            var rtn=0;
+            var i=this.nodes.length-1;
+            if((!closeFlag)&&this.nodes.length>2){
+                --i;
+            }
+            for(;i>=0;--i){
+                rtn+=this.get_line_length(i);
+            }
+            this._all_lines_length=rtn;
         }
-        for(;i>0;--i){
-            rtn+=Math2D.line_length(this.nodes[i],this.nodes[i-1]);
+        return this._all_lines_length;
+    }
+    /** 使用权值参数t获取多边形上的点的坐标和法向
+     * @param {Number} t 全多边形的时间参数t
+     * @param {Boolean} closeFlag 是否闭合多边形
+     * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
+     */
+    sampleCurve(t,closeFlag){
+        var l=t%1*this.get_all_line_length(closeFlag),temp,
+            i=0,j=0,
+            lt,
+            v,n;
+        while(l>(temp=this.get_line_length(i))){
+            l-=temp;
+            ++i;
         }
-        return rtn;
+        lt=l/this.get_line_length(i);
+        j=i===this.nodes.length-1?0:i+1;
+        v=Math2D.line_pt(this.nodes[i],this.nodes[j],lt);
+        n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.rotate90);
+        return {v:v,n:n};
     }
     /** 创建矩形
      */
@@ -2299,12 +2387,11 @@ class Bezier_Polygon{
      */
     emptied_bezierCurve(i,f){
         var j=i?i-1:this.nodes.length-1;
+        this._bezierCurves[j]=null;
         if(f){
-            this._bezierCurves[j]=null;
             this._bezierCurves.splice(i,0,null);
         }
         else{
-            this._bezierCurves[j]=null;
             this._bezierCurves.splice(i,1);
         }
         this.emptied_bezierCurve_Delegate(i,f);
@@ -2447,6 +2534,59 @@ class Bezier_Polygon{
     }
     getMax(){
         return this.aabb.getMax();
+    }
+    /** 获取子线的长度
+     * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
+     * @param {Boolean} closeFlag 如何闭合多边形 1为曲线闭合 -1为直线闭合 0为不闭合
+     * @returns {Number} 返回线段的长度
+     */
+    get_curve_length(index,closeFlag){
+        if(index===this.nodes.length&&closeFlag===-1){
+            return Math2D.line_length(this.nodes[index].node,this.nodes[0].node);
+        }
+        var d=this.get_bezierCurve(index).arc_length_table;
+        return d[d.length-1].l
+
+        
+    }
+    /** 多边形所有边的长度和
+     * @param {Boolean} closeFlag 如何闭合多边形 1为曲线闭合 -1为直线闭合 0为不闭合
+     * @returns {Number}
+     */
+    get_all_curve_length(closeFlag){
+        if(this._all_lines_length<0||this._all_lines_length===undefined){
+            var cf=closeFlag===undefined?this.closedFlag:closeFlag;
+            var rtn=0;
+            var i=this.nodes.length-1;
+            if(cf!==1){
+                --i;
+            }
+            for(;i>=0;--i){
+                rtn+=this.get_curve_length(i,cf);
+            }
+            this._all_lines_length=rtn;
+        }
+        return this._all_lines_length;
+    }
+    /** 使用权值参数t获取多边形上的点的坐标和法向
+     * @param {Number} t 全多边形的时间参数t
+     * @param {Boolean} closeFlag 如何否闭合图形
+     * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
+     */
+    sampleCurve(t,closeFlag){
+        var l=t%1*this.get_all_curve_length(closeFlag),temp,temp_bezier,
+            i=0,
+            lt,
+            v,n;
+        while(l>(temp=this.get_curve_length(i))){
+            l-=temp;
+            ++i;
+        }
+        lt=l/this.get_curve_length(i);
+        temp_bezier=this.get_bezierCurve(i)
+        v=temp_bezier.sampleCurve(lt);
+        n=temp_bezier.normal(lt).normalize();
+        return {v:v,n:n};
     }
 }
 
@@ -2733,7 +2873,7 @@ class BezierCurve{
     }
     /** 当前点的法线
      * @param {Number} 时间参数 t
-     * @param {Vector2} 返回一个相对坐标
+     * @param {Vector2} 返回一个相对 pt 的坐标 请自行修改模长或进行标准化
      */
     normal(t){
         var d=this.derivatives.sampleCurve(t);
