@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-02-11 15:18:07
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-11 16:30:00
+ * @LastEditTime: 2022-02-11 16:48:04
  * @FilePath: \def-web\js\visual\test\path\path.js
  */
 import {
@@ -92,8 +92,36 @@ d.data.pushNode({
         y:100-100
     },
 });
+d.data.pushNode({
+    node:{
+        x:300-100,
+        y:100-100
+    },
+    hand_before:{
+        x:300-100,
+        y:200-100
+    },
+    hand_after:{
+        x:300-100,
+        y:0-100
+    },
+});
+d.data.pushNode({
+    node:{
+        x:200-100,
+        y:100-100
+    },
+    hand_before:{
+        x:300-100,
+        y:100-100
+    },
+    hand_after:{
+        x:200-100,
+        y:100-100
+    },
+});
 renderer.tgtList.push(d);
-d.transformMatrix=new Matrix2x2T().translate(300,300).scale(2,2);
+d.transformMatrix=new Matrix2x2T().translate(0,200).scale(2,2);
 
 
 var a=new AnimationCtrl(function(t){
