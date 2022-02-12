@@ -1,3 +1,4 @@
 [submodule "PrimitivesTGT-2D_Exiter"]
-	path = PrimitivesTGT-2D_Exiter
-	url = https://gitee.com/darth_ef/PrimitivesTGT-2D_Exiter.git
+	path = Editor
+	url  = https://gitee.com/darth_ef/PrimitivesTGT-2D_Editor
+
