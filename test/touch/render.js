@@ -38,7 +38,7 @@ window.Math2D=Math2D;
 /**@type {CanvasRenderingContext2D} */
 var ctx=document.getElementById("cnm").getContext("2d");
 // ctx.globalAlpha=0.5
-var sp=new Sprites(6,6,"SpritesMap.png",0.2,0.2,0.2,0.2);
+var sp=new Sprites(6,6,"../SpritesMap.png",0.2,0.2,0.2,0.2);
 var spritesMap_Material=new Canvas2d_Material(sp);
 
 var t1=new PrimitiveRectTGT(50,50,50,50);

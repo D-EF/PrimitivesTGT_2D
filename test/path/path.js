@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-02-11 15:18:07
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-11 16:48:04
+ * @LastEditTime: 2022-02-14 20:16:42
  * @FilePath: \def-web\js\visual\test\path\path.js
  */
 import {
@@ -123,7 +123,7 @@ d.data.pushNode({
 renderer.tgtList.push(d);
 d.transformMatrix=new Matrix2x2T().translate(0,200).scale(2,2);
 
-
+var i=1;
 var a=new AnimationCtrl(function(t){
     ctx.clearRect(0,0,500,500)
     renderer.render_all();
@@ -138,6 +138,8 @@ var a=new AnimationCtrl(function(t){
     CtrlCanvas2d.dot(ctx,temp1.v,4);
     CtrlCanvas2d.dot(ctx,temp1.n,4);
 },function(){
-    a.start(2000);
-})
-a.start(2000);
+    i-=0.1;
+    if(i>0)
+    a.start(5000*i);
+});
+a.start(5000);
