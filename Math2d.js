@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-11 16:25:58
+ * @LastEditTime: 2022-02-15 21:24:51
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1485,6 +1485,15 @@ class Sector_Data extends Arc_Data{
         this.c= c===undefined ? 0 : c;
         this.d= d===undefined ? 1 : d;
     }
+    
+    /** 将矩阵 单位化(标准化) 
+     */
+    normalize(){
+        this.a= 1;
+        this.b= 0;
+        this.c= 0;
+        this.d= 1;
+    }
     static copy(m){
         return new Matrix2x2(m.a,m.b,m.c,m.d);
     }
@@ -1643,7 +1652,11 @@ class Matrix2x2T extends Matrix2x2{
         this.e=e||0;    //tx
         this.f=f||0;    //ty
     }
-    
+    normalize(){
+        super.normalize();
+        this.e=0;
+        this.f=0;
+    }
     static copy(m){
         if(m===undefined)return;
         return new Matrix2x2T(m.a,m.b,m.c,m.d,m.e,m.f);

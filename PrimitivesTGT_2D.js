@@ -44,7 +44,7 @@ class PrimitiveTGT_Renderer{
     /** @param {PrimitiveTGT[]} tgtList 等待渲染的对象列表
      */
     constructor(tgtList){
-        this.tgtList=tgtList.concat();
+        this.tgtList=tgtList instanceof  Array ? Array.from(tgtList):[];
         this.rendererIndex=PrimitiveTGT_Renderer.rendererIndex++;
         PrimitiveTGT_Renderer.rendererList.push(this);
     }
