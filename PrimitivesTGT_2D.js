@@ -80,6 +80,12 @@ class PrimitiveTGT_Renderer{
             this.render(this.tgtList[i]);
         }
     }
+    /** 追加入待渲染对象
+     * @param {PrimitiveTGT} tgt 待渲染对象
+     */
+    add(tgt){
+        this.tgtList.push(tgt);
+    }
 }
 
 
