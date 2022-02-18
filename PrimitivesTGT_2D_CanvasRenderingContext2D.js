@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-11 15:24:17
+ * @LastEditTime: 2022-02-18 21:05:13
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -139,6 +139,9 @@ class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
      * @param {PrimitiveTGT} tgt
     */
     render(tgt){
+        if(!tgt.visibility){
+            return;
+        }
         var ctx=this.ctx;
         ctx.save();
         ctx.beginPath();

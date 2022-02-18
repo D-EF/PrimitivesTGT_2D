@@ -93,6 +93,8 @@ class PrimitiveTGT_Renderer{
  */
 class PrimitiveTGT{
     constructor(){
+        /**@type {Object} 对象名字 没啥用的属性*/
+        this.name="PrimitiveTGT";
         /**@type {Object} 数据*/
         this.data;
         /**@type {Boolean} 自动闭合路径 开关*/
@@ -101,6 +103,8 @@ class PrimitiveTGT{
         this._transformMatrix=new Matrix2x2T();
         /**@type {Matrix2x2T} 世界坐标变换到局部坐标的矩阵*/
         this._worldToLocalM;
+        /**@type {Boolean} 是否渲染*/
+        this.visibility=true;
 
         /**@type {Material} 填充 材质*/
         this.fill_Material;
