@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-15 21:24:51
+ * @LastEditTime: 2022-02-19 21:52:01
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1314,7 +1314,7 @@ class Sector_Data extends Arc_Data{
      * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
-     * @returns {BezierCurve} 返回this
+     * @returns {Vector2} 返回this
      */ 
     linearMapping(m,fln=false,f=false,anchorPoint){
         if(anchorPoint){
@@ -3396,6 +3396,70 @@ class Unilateral_Bezier_Box{
     line_i_line(bb){
             return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
     }
+}
+
+/**使用三个点创建二阶贝塞尔曲线
+ * @param {Vector2} p1 起点
+ * @param {Vector2} p2 中间的点
+ * @param {Vector2} p3 终点
+ * @returns {BezierCurve} 返回一个二阶数学曲线对象
+ */
+function create_bezier_2_by_3_point(p1,p2,p3){
+    var d1=Math2D.line_length(p1,p2),
+        d2=Math2D.line_length(p3,p2),
+        t=d1/(d1-d2);
+    var C=Math2D.line_pt(p1,p3,t),
+        B=p2,
+        A=Math2D.line_pt(C,B,2);
+    return new BezierCurve([p1,A,p3]);
+}
+/**使用三点创建拟合圆
+ * @param {Vector2} p1 点1
+ * @param {Vector2} p2 点2
+ * @param {Vector2} p3 点3
+ * @returns {Arc_Data} 返回一个弧形数据, 该弧形的起点和终点弧度为0, 半径为负数表示无法创建圆
+ */
+function create_arc_by_3_point(p1,p2,p3){
+    var x1 = p1.x, x2 = p2.x, x3 = p3.x,
+        y1 = p1.y, y2 = p2.y, y3 = p3.y,
+        a = x1 - x2,
+        b = y1 - y2,
+        c = x1 - x3,
+        d = y1 - y3,
+        e = ((x1 * x1 - x2 * x2) + (y1 * y1 - y2 * y2)) * 0.5,
+        f = ((x1 * x1 - x3 * x3) + (y1 * y1 - y3 * y3)) * 0.5,
+        det = b * c - a * d;
+    if( Math.abs(det) < 1e-5)
+    {
+        return new Arc_Data(0,0,-1);
+    }
+
+    var det=1/det,
+        x0 = -(d * e - b * f) * det,
+        y0 = -(a * f - c * e) * det,
+        radius = hypot(x1 - x0, y1 - y0);
+    return new Arc_Data(x0, y0,radius);
+}
+/**
+ * 
+ * @param {Vector2} p1 起点
+ * @param {Vector2} p2 中间的点
+ * @param {Vector2} p3 终点
+ * @param {Number} t
+ * @param {Number} w1 控制柄占基线多少 默认 0
+ * @returns 
+ */
+function create_bezier_3_by_3_point(p1,p2,p3,w1,w2){
+    var d1=Math2D.line_length(p1,p2),
+        d2=Math2D.line_length(p3,p2),
+        d=Math2D.line_length(p3,p1),
+        t=d1/(d1-d2);
+
+    var C=Math2D.line_pt(p1,p3,t),
+        B=p2,
+        A;
+    // todo: 生成三阶曲线
+    return ;
 }
 
 export{
