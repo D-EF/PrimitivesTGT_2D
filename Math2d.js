@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-19 21:52:01
+ * @LastEditTime: 2022-02-21 21:52:41
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -647,6 +647,138 @@ class Math2D{
     
         return new Vector2(0.5*(max.x-min.x),0.5*(max.y-min.y));
     }
+
+    //  Bezier The projection identity 投影恒等式 数学内容来自 https://pomax.github.io/bezierinfo/zh-CN/index.html#abc 和 https://mathoverflow.net/questions/122257/finding-the-formula-for-bezier-curve-ratios-hull-point-point-baseline
+    /** 贝塞尔曲线的t值对应的基线上的投影点C
+     * @param {Number} n n阶曲线
+     * @param {Number} t 曲线的时间参数t
+     * @returns {Number} 基线的t参数
+     */
+    static bezierUt(n,t){
+        var td=1-t,
+            tk,tdk;
+        if(n===2){
+            tk=t*t;
+            tdk=td*td;
+            console.log(tdk/(tk+tdk));
+            return tdk/(tk+tdk);
+        }
+        if(n===3){
+            tk=t*t*t;
+            tdk=td*td*td;
+            return tdk/(tk+tdk);
+        }
+        // 目前没有更高阶的
+    }
+    /** 曲线投影的 BC:AB constant
+     * @param {Number} n n阶曲线
+     * @param {Number} t 曲线的时间参数t
+     * @returns {Number} 基线的t参数
+     */
+    static bezier_ratio(n,t){
+        var td=1-t,
+            tk,tdk;
+        if(n===2){
+            tk=t*t;
+            tdk=td*td;
+            return Math.abs((tk+tdk-1)/(tk+tdk));
+        }
+        if(n===3){
+            tk=t*t*t;
+            tdk=td*td*td;
+            return Math.abs((tk+tdk-1)/(tk+tdk));
+        }
+        // 目前没有更高阶的
+    }
+    /**使用三个点 创建 拟合二阶贝塞尔曲线
+     * @param {Vector2} p1 起点
+     * @param {Vector2} p2 中间的点
+     * @param {Vector2} p3 终点
+     * @returns {BezierCurve} 返回一个二阶数学曲线对象
+     */
+    static create_bezier_2_by_3_point(p1,p2,p3,t){
+        var d1=Math2D.line_length(p1,p2),
+            d2=Math2D.line_length(p3,p2),
+            _t=t instanceof Number?t:d1/(d1+d2);
+        var C=Math2D.line_pt(p1,p3,Math2D.bezierUt(2,_t)),
+            B=p2,
+            A=Math2D.line_pt(C,B,1+1/Math2D.bezier_ratio(2,_t));
+        return new BezierCurve([p1,A,p3]);
+    }
+    /**使用三点创建拟合圆
+     * @param {Vector2} p1 点1
+     * @param {Vector2} p2 点2
+     * @param {Vector2} p3 点3
+     * @returns {Arc_Data} 返回一个弧形数据, 该弧形的起点和终点弧度为0, 半径为负数表示无法创建圆
+     */
+    static create_arc_by_3_point(p1,p2,p3){
+        var x1 = p1.x, x2 = p2.x, x3 = p3.x,
+            y1 = p1.y, y2 = p2.y, y3 = p3.y,
+            a  = x1 - x2,
+            b  = y1 - y2,
+            c  = x1 - x3,
+            d  = y1 - y3,
+            e  = ((x1 * x1 - x2 * x2) + (y1 * y1 - y2 * y2)) * 0.5,
+            f  = ((x1 * x1 - x3 * x3) + (y1 * y1 - y3 * y3)) * 0.5,
+            det = b * c - a * d;
+        if(approximately(Math.abs(det),0))
+        {
+            return new Arc_Data(0,0,-1);
+        }
+    
+        var det=1/det,
+            x0 = -(d * e - b * f) * det,
+            y0 = -(a * f - c * e) * det,
+            radius = Math.hypot(x1 - x0, y1 - y0);
+        return new Arc_Data(x0, y0,radius);
+    }
+    /**使用三个的点 创建 拟合三阶曲线
+     * @param {Vector2} p1 起点
+     * @param {Vector2} p2 中间的点
+     * @param {Vector2} p3 终点
+     * @param {Number}  _t
+     * @returns 
+     */
+    static create_bezier_3_by_3_point(p1,p2,p3,_t){
+        var d1=Math2D.line_length(p1,p2),
+            d2=Math2D.line_length(p3,p2),
+            d=Math2D.line_length(p3,p1),
+            t=_t instanceof Number?_t:d1/(d1+d2),
+            td=1-t,
+            t_d=1/t,
+            td_d=1/td,
+            C=Math2D.line_pt(p1,p3,Math2D.bezierUt(3,t)),
+            B=p2,
+            ratio_d=1/Math2D.bezier_ratio(3,t),
+            A=Math2D.line_pt(C,B,1+ratio_d),
+            e1,e2,v1,v2,c1,c2,
+            f,l,n,
+            p2_1=Vector2.dif(p2,p1),
+            p3_1=Vector2.dif(p3,p1),
+            arc=Math2D.create_arc_by_3_point(p1,p2,p3);
+            
+        // B点切线方向
+        n=Vector2.dif(arc.c,p2).linearMapping(Matrix2x2T.rotate90,false,false);
+        // B点切线长度
+        l=d/3;
+        // B点在基线哪侧
+        f=Vector2.op(p3_1,p2_1)>0?1:-1;
+
+        e1=Vector2.add(p2,n.ip(f*l));
+        e2=Vector2.add(p2,n.ip(f*l*-1));
+        
+        v1=e1.dif(A.ip(t)).np(td_d);
+        v2=e2.dif(A.ip(td)).np(t_d);
+
+        c1=v1.dif(Vector2.np(p1,td)).np(t_d);
+        c2=v2.dif(Vector2.np(p3,t)).np(td_d);
+
+        console.log(t);
+        console.log(window.e1=e1);
+        console.log(window.e2=e2);
+        
+        return new BezierCurve([p1,c1,c2,p3]);
+    }
 }
 
 
@@ -1249,7 +1381,7 @@ class Sector_Data extends Arc_Data{
         return rtn
     }
     static copy(tgt){
-        return new Vector2(tgt.x,tgt.y);
+        return tgt===undefined?new Vector2():new Vector2(tgt.x,tgt.y);
     }
     /**拷贝向量
      * @returns {Vector2} 
@@ -1459,6 +1591,10 @@ class Sector_Data extends Arc_Data{
     static isEqual(v1,v2){
         return (v1.x==v2.x&&v1.y==v2.y);
     }
+    /** 求模长 */
+    static mag(v){
+        return Math.sqrt(v.x*v.x+v.y*v.y);
+    }
     
     /** 向量夹角运算
      * @param {Vector2} v1 向量
@@ -1466,7 +1602,7 @@ class Sector_Data extends Arc_Data{
      * @returns {Number} 返回夹角的cos值
      */
     static cos_VV(v1,v2){
-        return Vector2.ip(v1,v2)/(v1.mag()*v2.mag());
+        return Vector2.ip(v1,v2)/(Vector2.mag(v1)*Vector2.mag(v2));
     }
 }
 
@@ -2271,6 +2407,9 @@ Polygon.EX_linearMapping_nt.addOverload([Matrix2x2,Polygon,Boolean],function(m,p
     return p;
 });
 
+// 贝塞尔曲线部分 大部分数学支持来自于 https://pomax.github.io/bezierinfo/zh-CN/index.html
+// 真是强而有力的资料
+
 /** 三阶贝塞尔曲线组(多边形)的节点 */
 class Bezier_Node{
     /** @param {Vector2} node
@@ -2301,7 +2440,8 @@ class Bezier_Node{
 }
 
 class Bezier_Polygon{
-    /** @param {Vector2[]} nodes  
+    /** 贝塞尔曲线组(多边形)
+     * @param {Vector2[]} nodes  
      * @param {Vector2[]} hand_befores 
      * @param {Vector2[]} hand_afters 
      */
@@ -2421,7 +2561,7 @@ class Bezier_Polygon{
      * @param {Bezier_Node[]} bezierNodes  装着顶点的数组
      */
     pushNodes(bezierNodes){
-        for(var i=0;i<nodes.length;++i){
+        for(var i=0;i<bezierNodes.length;++i){
             this.pushNode(bezierNodes[i]);
         }
         this.clear_all_proxy();
@@ -3398,69 +3538,6 @@ class Unilateral_Bezier_Box{
     }
 }
 
-/**使用三个点创建二阶贝塞尔曲线
- * @param {Vector2} p1 起点
- * @param {Vector2} p2 中间的点
- * @param {Vector2} p3 终点
- * @returns {BezierCurve} 返回一个二阶数学曲线对象
- */
-function create_bezier_2_by_3_point(p1,p2,p3){
-    var d1=Math2D.line_length(p1,p2),
-        d2=Math2D.line_length(p3,p2),
-        t=d1/(d1-d2);
-    var C=Math2D.line_pt(p1,p3,t),
-        B=p2,
-        A=Math2D.line_pt(C,B,2);
-    return new BezierCurve([p1,A,p3]);
-}
-/**使用三点创建拟合圆
- * @param {Vector2} p1 点1
- * @param {Vector2} p2 点2
- * @param {Vector2} p3 点3
- * @returns {Arc_Data} 返回一个弧形数据, 该弧形的起点和终点弧度为0, 半径为负数表示无法创建圆
- */
-function create_arc_by_3_point(p1,p2,p3){
-    var x1 = p1.x, x2 = p2.x, x3 = p3.x,
-        y1 = p1.y, y2 = p2.y, y3 = p3.y,
-        a = x1 - x2,
-        b = y1 - y2,
-        c = x1 - x3,
-        d = y1 - y3,
-        e = ((x1 * x1 - x2 * x2) + (y1 * y1 - y2 * y2)) * 0.5,
-        f = ((x1 * x1 - x3 * x3) + (y1 * y1 - y3 * y3)) * 0.5,
-        det = b * c - a * d;
-    if( Math.abs(det) < 1e-5)
-    {
-        return new Arc_Data(0,0,-1);
-    }
-
-    var det=1/det,
-        x0 = -(d * e - b * f) * det,
-        y0 = -(a * f - c * e) * det,
-        radius = hypot(x1 - x0, y1 - y0);
-    return new Arc_Data(x0, y0,radius);
-}
-/**
- * 
- * @param {Vector2} p1 起点
- * @param {Vector2} p2 中间的点
- * @param {Vector2} p3 终点
- * @param {Number} t
- * @param {Number} w1 控制柄占基线多少 默认 0
- * @returns 
- */
-function create_bezier_3_by_3_point(p1,p2,p3,w1,w2){
-    var d1=Math2D.line_length(p1,p2),
-        d2=Math2D.line_length(p3,p2),
-        d=Math2D.line_length(p3,p1),
-        t=d1/(d1-d2);
-
-    var C=Math2D.line_pt(p1,p3,t),
-        B=p2,
-        A;
-    // todo: 生成三阶曲线
-    return ;
-}
 
 export{
     Math2D,

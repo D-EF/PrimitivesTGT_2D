@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-18 21:05:13
+ * @LastEditTime: 2022-02-21 21:12:50
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -174,9 +174,14 @@ class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
 
 
 Canvas2D_TGT_Renderer.createCanvasPath={
-    "group"         : function(that,tgt){
-        for(var i=0;i<tgt.children.length;++i){
-            that.render(tgt.children[i]);
+    /**
+     * 
+     * @param {Canvas2D_TGT_Renderer} that 
+     * @param {PrimitiveTGT_Group} tgt 
+     */
+    "Group"         : function(that,tgt){
+        for(var i=0;i<tgt.data.length;++i){
+            that.render(tgt.data[i]);
         }
     },
     "Rect_Data"     : function(that,tgt){
