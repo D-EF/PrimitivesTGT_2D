@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-21 21:52:41
+ * @LastEditTime: 2022-02-22 10:30:52
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -700,7 +700,7 @@ class Math2D{
         var d1=Math2D.line_length(p1,p2),
             d2=Math2D.line_length(p3,p2),
             _t=t instanceof Number?t:d1/(d1+d2);
-        var C=Math2D.line_pt(p1,p3,Math2D.bezierUt(2,_t)),
+        var C=Math2D.line_pt(p3,p1,Math2D.bezierUt(2,_t)),
             B=p2,
             A=Math2D.line_pt(C,B,1+1/Math2D.bezier_ratio(2,_t));
         return new BezierCurve([p1,A,p3]);
@@ -747,9 +747,9 @@ class Math2D{
             td=1-t,
             t_d=1/t,
             td_d=1/td,
-            C=Math2D.line_pt(p1,p3,Math2D.bezierUt(3,t)),
-            B=p2,
             ratio_d=1/Math2D.bezier_ratio(3,t),
+            C=Math2D.line_pt(p3,p1,Math2D.bezierUt(3,t)),
+            B=p2,
             A=Math2D.line_pt(C,B,1+ratio_d),
             e1,e2,v1,v2,c1,c2,
             f,l,n,
@@ -758,24 +758,20 @@ class Math2D{
             arc=Math2D.create_arc_by_3_point(p1,p2,p3);
             
         // B点切线方向
-        n=Vector2.dif(arc.c,p2).linearMapping(Matrix2x2T.rotate90,false,false);
+        n=Vector2.dif(arc.c,p2).linearMapping(Matrix2x2T.rotate90,false,false).normalize();
         // B点切线长度
         l=d/3;
         // B点在基线哪侧
         f=Vector2.op(p3_1,p2_1)>0?1:-1;
 
-        e1=Vector2.add(p2,n.ip(f*l));
-        e2=Vector2.add(p2,n.ip(f*l*-1));
+        e1=Vector2.add(p2,n.np(t*f*l));
+        e2=Vector2.add(p2,n.np(td*f*l*-1));
         
-        v1=e1.dif(A.ip(t)).np(td_d);
-        v2=e2.dif(A.ip(td)).np(t_d);
+        v1=e1.dif(A.np(t)).np(td_d);
+        v2=e2.dif(A.np(td)).np(t_d);
 
         c1=v1.dif(Vector2.np(p1,td)).np(t_d);
         c2=v2.dif(Vector2.np(p3,t)).np(td_d);
-
-        console.log(t);
-        console.log(window.e1=e1);
-        console.log(window.e2=e2);
         
         return new BezierCurve([p1,c1,c2,p3]);
     }
