@@ -132,6 +132,7 @@ class PrimitiveTGT{
          * @type {String}
          */
         this.dataType="Object";
+
     }
     /** 拷贝函数 注:json互相转化时,无法正常转换成json的类型 fillStyle strokeStyle 会丢失
      * @param {PrimitiveTGT} tgt
@@ -378,8 +379,6 @@ class PrimitivePolygonTGT extends PrimitiveTGT{
     }
 }
 
-
-// todo BezierTGT
 /** 贝塞尔曲线多边形
  */
 class PrimitiveBezierTGT extends PrimitiveTGT{
@@ -499,7 +498,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
      */
     constructor(tgts){
         super()
-        /**@type {PrimitiveTGT[],PrimitiveTGT_Group[]} */
+        /**@type {PrimitiveTGT[]} */
         this.data;
         if(tgts!==undefined){
             this.data=[].concat(tgts);

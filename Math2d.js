@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-22 10:30:52
+ * @LastEditTime: 2022-02-22 16:45:19
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -801,7 +801,7 @@ class Rect_Data{
             v2.y-v1.y
         );
     }
-    static sopy(d){
+    static copy(d){
         return new Rect_Data(
             d.x,
             d.y,
@@ -1869,9 +1869,9 @@ class Polygon{
         /**@type {Number} 所有边线总长度 为负数时说明是未计算状态*/
         this._all_lines_length=-1;
         /**@type {Delegate} 顶点插入或删除后的委托  */
-        this.after_nodes_move_Delegate=Delegate.ctrate();
+        this.after_nodes_move_Delegate=Delegate.create();
         /**@type {Delegate} 顶点修改后的委托  */
-        this.after_node_change_Delegate=Delegate.ctrate();
+        this.after_node_change_Delegate=Delegate.create();
     }
     static copy(polygon){
         var ret=new Polygon();
@@ -2453,9 +2453,9 @@ class Bezier_Polygon{
         /**@type {Number} 计算时使用的路径闭合情况: -1是使用直线闭合, 0是不闭合, 1是使用贝塞尔曲线闭合 */
         this.closedFlag=0;
         /**@type {Delegate} 在修改节点数据后执行的委托 */
-        this.unins_bezierCurve_Delegate = Delegate.ctrate();
+        this.unins_bezierCurve_Delegate = Delegate.create();
         /**@type {Delegate} 在插入/删除节点后执行的委托 */
-        this.emptied_bezierCurve_Delegate = Delegate.ctrate();
+        this.emptied_bezierCurve_Delegate = Delegate.create();
         
     }
     /** 线性变换 切换前两个参数的顺序以控制前乘矩阵还是后乘矩阵 arg1*arg2
