@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-22 16:45:19
+ * @LastEditTime: 2022-02-23 21:04:03
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -16,6 +16,8 @@ import {
     root_of_1_3,
     coefficientToPoints,
     Stepper,
+    calc_Pascals_Triangle,
+    get_Pascals_Triangle,
 } from "../basics/math_ex.js";
 
 import {
@@ -647,7 +649,24 @@ class Math2D{
     
         return new Vector2(0.5*(max.x-min.x),0.5*(max.y-min.y));
     }
-
+    /** 曲线的阶数升高后的控制点
+     * @param {Vector2p[]} 旧曲线的控制点数组
+     * @returns {Vector2p[]} 返回一个新曲线的控制点数组
+     */
+    static elevating_bezier(points){
+        var i=points.length,
+            new_point=[],
+            new_p=get_Pascals_Triangle(i),
+            old_p=get_Pascals_Triangle(i-1);
+            
+        new_point[0]=points[0];
+        new_point[i]=points[i-1];
+        --i;
+        do{
+            new_point[i]=Math2D.line_pt(points[i-1],points[i],old_p[i]/new_p[i])
+        }while(i);
+        return new_point;
+    }
     //  Bezier The projection identity 投影恒等式 数学内容来自 https://pomax.github.io/bezierinfo/zh-CN/index.html#abc 和 https://mathoverflow.net/questions/122257/finding-the-formula-for-bezier-curve-ratios-hull-point-point-baseline
     /** 贝塞尔曲线的t值对应的基线上的投影点C
      * @param {Number} n n阶曲线
@@ -3011,7 +3030,7 @@ class BezierCurve{
             d=Vector2.add(pt,this.derivatives.sampleCurve(t));
         return [pt,d];
     }
-    /** 当前点的法线
+    /** 当前点的法线 绝对坐标
      * @param {Number} 时间参数 t
      * @param {Vector2} 返回曲线上的点和法向的绝对坐标
      */
@@ -3022,7 +3041,7 @@ class BezierCurve{
     }
     /** 当前点的法线
      * @param {Number} 时间参数 t
-     * @param {Vector2} 返回一个相对 pt 的坐标 请自行修改模长或进行标准化
+     * @param {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
      */
     normal(t){
         var d=this.derivatives.sampleCurve(t);
