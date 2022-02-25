@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-23 21:04:03
+ * @LastEditTime: 2022-02-25 21:44:33
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -21,6 +21,7 @@ import {
 } from "../basics/math_ex.js";
 
 import {
+    canBeNumberChar,
     Delegate,
     OlFunction,
 } from "../basics/Basics.js";
@@ -129,7 +130,6 @@ class Math2D{
             new Vector2(x2,y2)
         ];
     }
-
     /** 弧形是否相交
      * @param {Arc_Data} arc1 弧形1
      * @param {Arc_Data} arc2 弧形2
@@ -149,7 +149,6 @@ class Math2D{
         }
         return rtn;
     }
-
     /** 获得圆形和线段 的 交点 坐标
      * @param {Vector2} lop 线段起点
      * @param {Vector2} led 线段终点
@@ -920,6 +919,37 @@ class Rect_Data{
         // 访问器
         this.setAngle_AB(angle_A,angle_B);
     }
+    /** 切线(方向)
+     * @param {Number} t t参数0~1
+     * @return {Vector2} 返回一个标准化的相对坐标
+     */
+    tangent(t){
+        return this.normal(t).linearMapping(Matrix2x2T.rotate90);
+    }
+    /** 法线
+     * @param {Number} t t参数0~1
+     * @return {Vector2} 返回一个标准化的相对坐标
+     */
+    normal(t){
+        var angle=this._startAngle*(1-t)+this._endAngle*t;
+        return new Vector2(Math.cos(angle),Math.sin(angle));
+    }
+    /** 采样点
+     * @param {Number} t  0~1 时间参数t 
+     * @returns 
+     */
+    sampleCurve(t){
+        var angle=this._startAngle*(1-t)+this._endAngle*t;
+        var r= this.r;
+        return (new Vector2(Math.cos(angle)*r,Math.sin(angle)*r));
+    }
+    /** 采样点 使用弧度采样
+     * @param {Number} angle  采样弧度
+     * @returns 
+     */
+    sampleCurveByAngle(angle){
+        return (new Vector2(Math.cos(angle)*r,Math.sin(angle)*r));
+    }
     /** 重设两个端点的弧度
      * @param {Number} angle_A     弧形端点弧度
      * @param {Number} angle_B     弧形端点弧度
@@ -1050,6 +1080,11 @@ class Rect_Data{
      */
     get r(){
         return this._r;
+    }
+    /** 求弧长
+     * @returns {Number} 弧长 */
+    get_arc_length(){
+        return this.angle*this.r;
     }
     /**刷新只读属性 */
     re_onlyread(){
@@ -2453,7 +2488,6 @@ class Bezier_Node{
         return Bezier_Node.copy(this);
     }
 }
-
 class Bezier_Polygon{
     /** 贝塞尔曲线组(多边形)
      * @param {Vector2[]} nodes  
@@ -3549,10 +3583,297 @@ class Unilateral_Bezier_Box{
      * @returns {Vector2}
      */
     line_i_line(bb){
-            return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
+        return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
     }
 }
 
+// todo
+
+class Ellipse_Arc_Data extends Arc_Data {
+    constructor(cx,cy,rx,ry,angle_A,angle_B){
+        super(0,0,rx,angle_A,angle_B);
+        this.transform_m=new Matrix2x2T().scale(1,ry/rx).translate(cx,cy);
+        
+        this._arc_length_table=null;
+        /** @type {Polygon} 拟合圆弧多边形 */
+        this._polygon_proxy=null;
+        this.polygon_proxy_want_sp=20;
+        this._polygon_proxy_sp=20;
+    }
+    /** 清空所有代理对象和导函数, 应该在控制点或计算系数改动时使用
+     */
+    clearProxy(){
+        this._polygon_proxy=null;
+        this._polygon_proxy_sp=0;
+        this._arc_length_table=null;
+        this._max
+    }
+    get_min_A_max(){
+        var mm=super.get_min_A_max()
+        return {
+            max:mm.max.linearMapping(this.transform_m,false),
+            min:mm.min.linearMapping(this.transform_m,false),
+        }
+    }
+    normal(t){
+        var locV=super.normal(t);
+        return locV.linearMapping(this.transform_m,false)
+    }
+    sampleCurve(t){
+        this.tangent()
+    }
+    /**@type {Polygon} 拟合曲线的多边形 */
+    get polygon_proxy(){
+        if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
+            this._polygon_proxy=this.createPolygonProxy(this.polygon_proxy_want_sp);
+        }
+        return this._polygon_proxy;
+    }
+    /** 创建多边形拟合曲线
+     * @param {Number} step_size t 时间参数的步长, 设置越接近0精度越高; 默认为 0.1
+     * @returns {Polygon} 多边形拟合曲线
+     */
+    createPolygonProxy(step_size){
+        var sp=Math.abs(step_size)||0.1,
+            temp=[];
+        this._arc_length_table=[];
+        for(var i = 0; i<1; i+=sp){
+            temp.push(this.sampleCurve(i));
+            this._arc_length_table.push({t:i,l:null});
+        }
+        temp.push(this.sampleCurve(1));
+        this._arc_length_table.push({t:1,l:null});
+        this._polygon_proxy_sp=step_size;
+        return new Polygon(temp);
+    }
+    /** 求弧长
+     * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
+     * @returns {Number} 使用多边形拟合曲线求得的长度
+     */
+    get_arc_length(step_size){
+        if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
+        var tb=this.arc_length_table;
+        return tb[tb.length-1].l;
+    }
+    /** 使用弧长求t值
+     * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时取0
+     * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
+     * @returns {Number} 对应的时间参数t
+     */
+    get_t_by_arc_length(length,step_size){
+        if(step_size) this.polygon_proxy_want_sp=step_size;
+        var tb=this.arc_length_table,
+            i=tb.length-1,
+            l=length>=0?length:tb[i]+length;
+        for(--i;i>=0;--i){
+            if(tb[i].l<l){
+                // return this._polygon_proxy_sp*(i+(l-tb[i])/(tb[i+1]-tb[i]))
+                if(tb[i+1]){
+                    return tb[i].t+(l-tb[i].l)/(tb[i+1].l-tb[i].l)*(tb[i+1].t-tb[i].t);
+                }
+                return 0
+            }
+        }
+        return 0;
+    }
+    /** 弧长记录表 */
+    get arc_length_table(){
+        var polygon=this.polygon_proxy;
+        if(this._arc_length_table[0].l===null){
+            var temp;
+            this._arc_length_table[0].l=0;
+            for(var i=1;i<polygon.nodes.length;++i){
+                temp=polygon.nodes[i].dif(polygon.nodes[i-1]).mag();
+                this._arc_length_table[i].l=this._arc_length_table[i-1].l+temp;
+            }
+        }
+        return this._arc_length_table;
+    }
+
+}
+
+class PathCommand{
+    constructor(){
+        /** @type {String} 操作命令 */
+        this.command="";
+        /** @type {Number[]} 控制参数 */
+        this.ctrl=[];
+        /**@type {Delegate} 修改数据后的委托 */
+        this.change_delegate=Delegate.create();
+
+    }
+    /** 修改当前命令数据
+     * @param {String||pathCommand} data 
+     */
+    set(data){
+        var d;
+        if(data.constructor===String){
+            d=PathCommand.loadSvgCommand().c;
+        }else{
+            d=data;
+        }
+        var i=0;
+        this.command=d.command;
+            i=this.ctrl.length=d.ctrl.length;
+            for(--i;i>=0;--i){
+                this.ctrl[i]=d.ctrl[i];
+            }
+        this.change_delegate&&this.change_delegate(this);
+    }
+    /** 拷贝函数
+     * @param {PathCommand} tgt 
+     * @returns {PathCommand} 
+     */
+    static copy(tgt){
+        var rtn= new PathCommand();
+        rtn.command=tgt.command;
+        rtn.ctrl=tgt.ctrl.concat();
+        return rtn;
+    }
+    static commandList="MmLlHhVvZzCcSsQqTtAa"
+    /** 读取 svg 的 path 字符串的其中一个命令
+     * @param {String} svgStr  SVG 的 Path 格式的字符串
+     * @param {Number} op  开始读取的下标
+     * @returns {{c:PathCommand,i:Number}} 返回读取的一份指令和下一个指令的起始下标
+     */
+    static loadSvgCommand(svgStr,op){
+        var rtn=new PathCommand();
+        var i=op||0,f=false,
+            d=i+1,df=false;
+        while(svgStr[i]){
+            if(f){
+                if(PathCommand.commandList.indexOf(svgStr[i])!==-1){
+                    if(df){
+                        rtn.ctrl.push(parseFloat(svgStr.slice(d,i)));
+                    }
+                    // 到达下一个控制字符
+                    return {c:rtn,i:i};
+                }else{
+                    // 数字截取
+                    if(df){
+                        if(!canBeNumberChar(svgStr[i])){
+                            rtn.ctrl.push(parseFloat(svgStr.slice(d,i)));
+                            df=false;
+                        }
+                    }
+                    else{
+                        if(canBeNumberChar(svgStr[i])){
+                            d=i;
+                            df=true;
+                        }
+                    }
+                }
+            }else{
+                if(PathCommand.commandList.indexOf(svgStr[i])!==-1){
+                    // 得到控制字符
+                    rtn.command=svgStr[i];
+                    f=true;
+                }
+            }
+            ++i;
+        }
+        if(df){
+            rtn.ctrl.push(parseFloat(svgStr.slice(d,i)));
+        }
+        return {c:rtn,i:i};
+    }
+    /** 读取 svg 内的 path 的格式
+     * @param {String} svgStr svg 的 路径 格式 字符串
+     * @param {PathCommand[]} list 变更的数组的引用
+     * @returns {PathCommand[]} 返回命令组
+     */
+    static loadSvgString(svgStr,list){
+        var i=0,cmdList=list||[],temp=null,j=0;
+        while(svgStr[i]){
+            temp=PathCommand.loadSvgCommand(svgStr,i);
+            cmdList[j]=temp.c;
+            i=temp.i;
+            ++j;
+        }
+        return cmdList;
+    }
+    /** 计算落点(终点)
+     * @param {PathCommand} pathCommand 
+     * @param {Vector2} opPoint 起点(用作相对坐标)
+     * @param {Vector2} mPoint  
+     */
+    static endPoint(pathCommand,opPoint,mPoint){
+        if(pathCommand.command==='z'||pathCommand.command==='Z'){
+            return Vector2.copy(mPoint);
+        }
+        var l=pathCommand.ctrl.length-1;
+        if(pathCommand.command>='a'&&pathCommand.command<='z'){
+            // 相对坐标
+            return Vector2.add({x:pathCommand.ctrl[l-1],y:pathCommand.ctrl[l]},opPoint);
+        }else{
+            // 绝对坐标
+            return Vector2(pathCommand.ctrl[l-1],pathCommand.ctrl[l]);
+        }
+    }
+}
+
+class Path{
+    /** 使用 svg 的 path 字符串初始化
+     * @param {PathCommand[]} pathStr 和 svg 的 path 的 语法相同
+     */
+    constructor(command_set){
+        this._command_set=[];
+        this.command_set=command_set;
+
+        // onlyRoid
+        /** @type {Array} 数学对象 可能的值有 弧形, 向量, 贝塞尔曲线数学对象 */
+        this.mathData=[];
+        /** @type {Matrix2x2T} 一般是给弧线使用的   */
+        this.mathData_Matrix2x2T=[];
+    }
+    /** 写指令 */
+    set command_set(val){
+        if(val.constructor===String||val instanceof String){
+            this._command_set.length=0;
+            PathCommand.loadSvgString(val,this._command_set);
+        }else if(val instanceof Array){
+            var i=val.length;
+            this.command_set.length=i;
+            for(--i;i>=0;--i){
+                this.command_set[i]=PathCommand.copy(val[i]);
+            }
+        }
+        re
+    }
+    /** 指令的长度(个数) */
+    get command_length(){
+        return this._command_set.length;
+    }
+    /** 插入一段指令
+     * @param {Number} index 插入的下标
+     * @param {pathCommand} command 
+     */
+    insert_command(index,command){
+        
+    }
+    /** 修改一条指令
+     * @param {Number} index 要修改的下标
+     * @param {pathCommand} command 指令
+     */
+    set_command(index,command){}
+    
+    /** 追加一条指令
+     * @param {pathCommand} command 
+     */
+    add_command(command){}
+    /**
+     * 
+     * @param {Number} index  下标
+     */
+    remove_command(index){}
+    /**
+     * 读取一段指令
+     * @param {Number} index 下标
+     */
+    get_command(index){
+        
+    }
+}
 
 export{
     Math2D,
@@ -3566,4 +3887,6 @@ export{
     Bezier_Node,
     Bezier_Polygon,
     BezierCurve,
+    PathCommand,
+    Path,
 }
