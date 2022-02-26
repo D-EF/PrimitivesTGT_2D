@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-25 21:44:33
+ * @LastEditTime: 2022-02-26 15:54:10
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -916,6 +916,7 @@ class Rect_Data{
         this._angle;
         this._min;
         this._max;
+        this._polygonProxy=null;
         // 访问器
         this.setAngle_AB(angle_A,angle_B);
     }
@@ -1097,6 +1098,7 @@ class Rect_Data{
         var mm=this.get_min_A_max();
         this._max=mm.max;
         this._min=mm.min;
+        this._polygonProxy=null;
     }
     /** 重新计算起点和重点的坐标 (相对于圆心)
      */
@@ -1309,8 +1311,17 @@ class Rect_Data{
         // 不在半径内直接判定为外
         return false;
     }
-
     /** 获取代理用的多边形
+     * @param {Number}  _accuracy   弧形转换成多边形时代精度
+     * @param {Boolean} _closeFlag  当不足为整个圆时 是否要封闭
+     */
+    get_polygonProxy(){
+        if(!this._polygonProxy){
+            this._polygonProxy=this.createPolygonProxy();
+        }
+        return this._polygonProxy;
+    }
+    /** 生成代理用的多边形
      * @param {Number}  _accuracy   弧形转换成多边形时代精度
      * @param {Boolean} _closeFlag  当不足为整个圆时 是否要封闭
      */
@@ -1864,7 +1875,12 @@ class Matrix2x2T extends Matrix2x2{
             return;
         }
     }
-
+    multiplication(m2){
+        var rtn=super.multiplication(m2);
+        rtn.e+=this.e;
+        rtn.f+=this.f;
+        return rtn;
+    }
     /** 设置 translate 值
      * @param {Number} x 
      * @param {Number} y 
@@ -3587,11 +3603,10 @@ class Unilateral_Bezier_Box{
     }
 }
 
-// todo
-
 class Ellipse_Arc_Data extends Arc_Data {
     constructor(cx,cy,rx,ry,angle_A,angle_B){
         super(0,0,rx,angle_A,angle_B);
+        /** @type {Matrix2x2T} 局部坐标 to 世界坐标 的矩阵 (向量后乘矩阵)*/
         this.transform_m=new Matrix2x2T().scale(1,ry/rx).translate(cx,cy);
         
         this._arc_length_table=null;
@@ -3600,27 +3615,50 @@ class Ellipse_Arc_Data extends Arc_Data {
         this.polygon_proxy_want_sp=20;
         this._polygon_proxy_sp=20;
     }
+
+    /** 局部 to 世界
+     * @param {Vector2} v 局部坐标
+     */
+    locToWorld(v){
+        return Vector2.afterTranslate_linearMapping(v,this.transformMatrix)
+    }
+    /** 世界 to 局部
+     * @param {Vector2} v 
+     */
+    worldToLoc(v){
+        var tm=this.worldToLocalM;
+        return Vector2.beforeTranslate_linearMapping(v,tm);
+    }
     /** 清空所有代理对象和导函数, 应该在控制点或计算系数改动时使用
      */
     clearProxy(){
-        this._polygon_proxy=null;
-        this._polygon_proxy_sp=0;
-        this._arc_length_table=null;
-        this._max
+        super.re_onlyread();
+
     }
     get_min_A_max(){
         var mm=super.get_min_A_max()
         return {
-            max:mm.max.linearMapping(this.transform_m,false),
-            min:mm.min.linearMapping(this.transform_m,false),
+            max:this.locToWorld(mm.max),
+            min:this.locToWorld(mm.min),
         }
     }
+    tangent(t){
+        return this.locToWorld(super.tangent(t));
+    }
     normal(t){
-        var locV=super.normal(t);
-        return locV.linearMapping(this.transform_m,false)
+        return this.locToWorld(super.normal(t));
     }
     sampleCurve(t){
-        this.tangent()
+        return this.locToWorld(super.sampleCurve(t));
+    }
+    sampleCurveByAngle(angle){
+        return this.locToWorld(super.sampleCurveByAngle(angle));
+    }
+    get_opv(){
+        return this.locToWorld(super.get_opv());
+    }
+    get_edv(){
+        return this.locToWorld(super.get_edv());
     }
     /**@type {Polygon} 拟合曲线的多边形 */
     get polygon_proxy(){
