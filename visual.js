@@ -4,9 +4,9 @@
 
 import {
     Math2D,
-    Rect_Data,
-    Arc_Data,
-    Sector_Data,
+    Data_Rect,
+    Data_Arc,
+    Data_Sector,
     Vector2,
     Matrix2x2,
     Matrix2x2T,
@@ -85,7 +85,7 @@ class AnimationCtrl{
         /**@type {Number}开始的时间*/
         this._startTime=0;
         /**@type {Number} 用于表示时间长度, 值为 1/时间长度 */
-        this.timeD;
+        this.time_reciprocal;
         /**@type {Function} 每次进行动作的回调 frameCallback(t,this)*/
         this.frameCallback=frameCallback;
         /**@type {Function} 结束时的回调 stopCallback(this)*/
@@ -100,7 +100,7 @@ class AnimationCtrl{
     start(time){
         window.cancelAnimationFrame(this.animationID);
         this._keepGo=false;
-        this.timeD=1/time;
+        this.time_reciprocal=1/time;
         this._keepGo=true;
         this._startTime=performance.now();
         this.r_frame();
@@ -121,7 +121,7 @@ class AnimationCtrl{
         if(this._keepGo&&!that.discontinueFunction())
         this.animationID=requestAnimationFrame(
             function(){
-                var t=(performance.now()-that._startTime)*that.timeD;
+                var t=(performance.now()-that._startTime)*that.time_reciprocal;
                 if(t>=1){
                     t=1;
                     if(that.frameCallback instanceof Function) that.frameCallback(t,this);

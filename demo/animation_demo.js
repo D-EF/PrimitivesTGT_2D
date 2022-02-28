@@ -10,18 +10,18 @@ import {
 } from "../visual.js";
 import {
     PrimitiveTGT as CanvasTGT,
-    PrimitiveRectTGT as CanvasRectTGT,
-    PrimitiveArcTGT as CanvasArcTGT,
-    PrimitiveSectorTGT as CanvasSectorTGT,
-    PrimitivePolygonTGT as CanvasPolygonTGT,
-    PrimitiveTGT_Group as CanvasTGT_Group,
-    PrimitiveBezierTGT as CanvasBezierTGT
+    PrimitiveTGT__Rect as CanvasRectTGT,
+    PrimitiveTGT__Arc as CanvasArcTGT,
+    PrimitiveTGT__Sector as CanvasSectorTGT,
+    PrimitiveTGT__Polygon as CanvasPolygonTGT,
+    PrimitiveTGT__Group as CanvasTGT_Group,
+    PrimitiveTGT__Bezier as CanvasBezierTGT
 } from "../PrimitivesTGT_2D.js";
 import {
     Math2D,
-    Rect_Data,
-    Arc_Data,
-    Sector_Data,
+    Data_Rect,
+    Data_Arc,
+    Data_Sector,
     Vector2,
     Matrix2x2,
     Matrix2x2T,
@@ -114,7 +114,7 @@ var animation_curve=new BezierCurve([
 /** 把看上去是矩形的东西变成一块logo
  */
 function rect_to_logoItem(t){
-    var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
+    var t=animation_curve.sampleY(animation_curve.get_t_by_x(t));
     var d1=v2Animation(d1start,d1end,t);
     var d2=v2Animation(d2start,d2end,t);
     itemPolygonNodes[1].x=d1.x;
@@ -131,14 +131,14 @@ function rect_to_logoItem(t){
 /** 把logo缩小
  */
 function logoScale(t){
-    var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
+    var t=animation_curve.sampleY(animation_curve.get_t_by_x(t));
     tgt_group._transformMatrix=m2tAnimation(gm,gm_end,t);
     ctxRender();
 }
 /** 把logo从item变成完整的一块
  */
 function logoItemShow(t){
-    var t=animation_curve.sampleCurveY(animation_curve.get_t_by_x(t));
+    var t=animation_curve.sampleY(animation_curve.get_t_by_x(t));
     tgt_group0._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0, 45,t)*Math.DEG);
     tgt_group1._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,165,t)*Math.DEG);
     tgt_group2._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,285,t)*Math.DEG);

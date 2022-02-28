@@ -5,15 +5,15 @@
  * @FilePath: \def-web\js\visual\test\path\path.js
  */
 import {
-    PrimitiveRectTGT,
-    PrimitiveArcTGT,
-    PrimitiveSectorTGT,
-    PrimitivePolygonTGT,
-    PrimitiveBezierTGT,
-    PrimitiveTGT_Group,
+    PrimitiveTGT__Rect,
+    PrimitiveTGT__Arc,
+    PrimitiveTGT__Sector,
+    PrimitiveTGT__Polygon,
+    PrimitiveTGT__Bezier,
+    PrimitiveTGT__Group,
     CtrlCanvas2d,
-    Canvas2d_Material,
-    Canvas2D_TGT_Renderer,
+    Canvas2d__Material,
+    Renderer_PrimitiveTGT__Canvas2D,
     Sprites,
     Sprites_Animation
 } from "../../PrimitivesTGT_2D_CanvasRenderingContext2D.js";
@@ -54,15 +54,15 @@ var pathData=new Polygon([
     {x:100,y:100}
 ]);
 
-var path=new PrimitivePolygonTGT(pathData);
-path.fill_Material=new Canvas2d_Material("#0000");
-var renderer=new Canvas2D_TGT_Renderer([path],ctx);
+var path=new PrimitiveTGT__Polygon(pathData);
+path.fill_Material=new Canvas2d__Material("#0000");
+var renderer=new Renderer_PrimitiveTGT__Canvas2D([path],ctx);
 renderer.render_all();
-CtrlCanvas2d.dot(ctx,pathData.sampleCurve(0.9999).v,4);
+CtrlCanvas2d.dot(ctx,pathData.sample(0.9999).v,4);
 
 
-var d=new PrimitiveBezierTGT();
-d.fill_Material=new Canvas2d_Material("#0000");
+var d=new PrimitiveTGT__Bezier();
+d.fill_Material=new Canvas2d__Material("#0000");
 d.data=new Bezier_Polygon();
 d.data.pushNode({
     node:{
@@ -127,10 +127,10 @@ var i=1;
 var a=new AnimationCtrl(function(t){
     ctx.clearRect(0,0,500,500)
     renderer.render_all();
-    var temp=pathData.sampleCurve(t);
+    var temp=pathData.sample(t);
     CtrlCanvas2d.dot(ctx,temp.v,4);
     CtrlCanvas2d.dot(ctx,temp.v.add(temp.n.np(-20)),4);
-    temp=d.data.sampleCurve(t);
+    temp=d.data.sample(t);
     var temp1={
         v:d.localToWorld(temp.v),
         n:d.localToWorld(temp.v.add(temp.n.np(10))),

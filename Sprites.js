@@ -13,19 +13,19 @@ var m2t=new Matrix2x2T()
 class Sprites{
     /**
      * 精灵图像
-     * @param {Number} spritesX X轴有几格精灵图像
-     * @param {Number} spritesY Y轴有几格精灵图像
+     * @param {Number} sprites_x X轴有几格精灵图像
+     * @param {Number} sprites_y Y轴有几格精灵图像
      * @param {String} imgUrl 图像的url
      * @param {Number} deviationX_before 图像 X 轴 负方向侧 偏移 (取值0到1的浮点数) 默认0
      * @param {Number} deviationX_after  图像 X 轴 正方向侧 偏移 (取值0到1的浮点数) 默认0
      * @param {Number} deviationY_before 图像 Y 轴 负方向侧 偏移 (取值0到1的浮点数) 默认0
      * @param {Number} deviationY_after  图像 Y 轴 正方向侧 偏移 (取值0到1的浮点数) 默认0
      */
-    constructor(spritesX, spritesY, imgUrl,deviationX_before,deviationX_after,deviationY_before,deviationY_after ){
+    constructor(sprites_x, sprites_y, imgUrl,deviationX_before,deviationX_after,deviationY_before,deviationY_after ){
         /** @type {Number} X轴有几格精灵图像 */
-        this.spritesX = Number(spritesX);
+        this.sprites_x = Number(sprites_x);
         /** @type {Number} Y轴有几格精灵图像 */
-        this.spritesY = Number(spritesY);
+        this.sprites_y = Number(sprites_y);
         /** @type {Image} 贴图url */
         this.imgUrl=imgUrl;
         /** @type {Image} 贴图 */
@@ -45,7 +45,7 @@ class Sprites{
      * @returns {Sprites} 返回拷贝
      */
     static copy(tgt){
-        return new Sprites(tgt.spritesX,tgt.spritesY,tgt.imgUrl,tgt.deviationX_before,tgt.deviationX_after,tgt.deviationY_before,tgt.deviationY_after);
+        return new Sprites(tgt.sprites_x,tgt.sprites_y,tgt.imgUrl,tgt.deviationX_before,tgt.deviationX_after,tgt.deviationY_before,tgt.deviationY_after);
     }
     copy(){
         return Sprites.copy(this);
@@ -83,8 +83,8 @@ class Sprites{
      */
     renderCssbgSprites(_element, sx, sy) {
         var _spritesize = this.SpritesClipSize(_element),
-            sizeX = this.spritesX * _spritesize.width  /(1-this.deviationX_before-this.deviationX_after),
-            sizeY = this.spritesY * _spritesize.height /(1-this.deviationY_before-this.deviationY_after),
+            sizeX = this.sprites_x * _spritesize.width  /(1-this.deviationX_before-this.deviationX_after),
+            sizeY = this.sprites_y * _spritesize.height /(1-this.deviationY_before-this.deviationY_after),
             dX = this.deviationX_before*sizeX,
             dY = this.deviationY_before*sizeY,
             sx = -1 * sx * _spritesize.width -dX + "px",
@@ -112,8 +112,8 @@ class Sprites{
      */
     createPattern(ctx, sx, sy, dx, dy, dw, dh){
         var tempPattern =ctx.createPattern(this.img,"repeat"),
-        scaleX = (dw * this.spritesX)/(this.img.width   *(1-this.deviationX_before-this.deviationX_after)),
-        scaleY = (dh * this.spritesY)/(this.img.height  *(1-this.deviationY_before-this.deviationY_after)),
+        scaleX = (dw * this.sprites_x)/(this.img.width   *(1-this.deviationX_before-this.deviationX_after)),
+        scaleY = (dh * this.sprites_y)/(this.img.height  *(1-this.deviationY_before-this.deviationY_after)),
         translateX=dx-dw*sx-this.deviationX_before*scaleX*this.img.width,
         translateY=dy-dh*sy-this.deviationY_before*scaleY*this.img.height;
         tempPattern.setTransform(m2t.scale(scaleX, scaleY).translate(translateX,translateY));

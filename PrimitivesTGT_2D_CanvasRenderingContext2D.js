@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-21 21:12:50
+ * @LastEditTime: 2022-02-28 14:01:09
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -12,9 +12,9 @@ import {
 } from "../basics/basics.js";
 import {
     Math2D,
-    Rect_Data,
-    Arc_Data,
-    Sector_Data,
+    Data_Rect,
+    Data_Arc,
+    Data_Sector,
     Vector2,
     Matrix2x2,
     Matrix2x2T,
@@ -26,14 +26,14 @@ import {
 
 import {
     Material,
-    PrimitiveTGT_Renderer,
+    Renderer_PrimitiveTGT,
     PrimitiveTGT,
-    PrimitiveRectTGT,
-    PrimitiveArcTGT,
-    PrimitiveSectorTGT,
-    PrimitivePolygonTGT,
-    PrimitiveBezierTGT,
-    PrimitiveTGT_Group
+    PrimitiveTGT__Rect,
+    PrimitiveTGT__Arc,
+    PrimitiveTGT__Sector,
+    PrimitiveTGT__Polygon,
+    PrimitiveTGT__Bezier,
+    PrimitiveTGT__Group
 }from "./PrimitivesTGT_2D.js"
 
 import {
@@ -82,7 +82,7 @@ import {
    }
    /** 
     * @param {CanvasRenderingContext2D} ctx 
-    * @param {Rect_Data} cd 
+    * @param {Data_Rect} cd 
     */
    static rect(ctx,cd){
        ctx.beginPath();
@@ -100,7 +100,7 @@ import {
    }
 }
 
-class Canvas2d_Material extends Material{
+class Canvas2d__Material extends Material{
     constructor(texture){
         super();
         /**@type {Sprites} */
@@ -118,14 +118,14 @@ class Canvas2d_Material extends Material{
         }else{
             var uv=tgt[((type.toString()+'_')||'')+"uv"],
                 uvwh=tgt[((type.toString()+'_')||'')+"uvwh"],
-                vMin=tgt.getMin(),
-                vMax=tgt.getMax();
+                vMin=tgt.get_min(),
+                vMax=tgt.get_max();
             return this.texture.createPattern(ctx,uv.x,uv.y,vMin.x,vMin.y,(vMax.x-vMin.x)*uvwh.x,(vMax.y-vMin.y)*uvwh.y);
         }
     }
 }
 
-class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
+class Renderer_PrimitiveTGT__Canvas2D extends Renderer_PrimitiveTGT{
     /** Canvas2D渲染器
      * @param {PrimitiveTGT[]} renderList 等待渲染的对象列表
      * @param {CanvasRenderingContext2D} ctx 
@@ -168,27 +168,27 @@ class Canvas2D_TGT_Renderer extends PrimitiveTGT_Renderer{
      * @param {PrimitiveTGT} tgt
      */
     createCanvasPath(tgt){
-        Canvas2D_TGT_Renderer.createCanvasPath[tgt.dataType](this,tgt);
+        Renderer_PrimitiveTGT__Canvas2D.createCanvasPath[tgt.dataType](this,tgt);
     }
 }
 
 
-Canvas2D_TGT_Renderer.createCanvasPath={
+Renderer_PrimitiveTGT__Canvas2D.createCanvasPath={
     /**
      * 
-     * @param {Canvas2D_TGT_Renderer} that 
-     * @param {PrimitiveTGT_Group} tgt 
+     * @param {Renderer_PrimitiveTGT__Canvas2D} that 
+     * @param {PrimitiveTGT__Group} tgt 
      */
     "Group"         : function(that,tgt){
         for(var i=0;i<tgt.data.length;++i){
             that.render(tgt.data[i]);
         }
     },
-    "Rect_Data"     : function(that,tgt){
+    "Data_Rect"     : function(that,tgt){
         var ctx=that.ctx;
         ctx.rect(tgt.data.x,tgt.data.y,tgt.data.w,tgt.data.h);
     },
-    "Arc_Data"      : function(that,tgt){
+    "Data_Arc"      : function(that,tgt){
         var ctx=that.ctx;
         ctx.arc(tgt.data.c.x,tgt.data.c.y,tgt.data.r,tgt.data.startAngle,tgt.data.endAngle,false);
         if(tgt.want_to_closePath){
@@ -198,7 +198,7 @@ Canvas2D_TGT_Renderer.createCanvasPath={
             }
         }
     },
-    "Sector_Data"   : function(that,tgt){
+    "Data_Sector"   : function(that,tgt){
         var ctx=that.ctx;
         ctx.arc(tgt.data.c.x,tgt.data.c.y,tgt.data.r,tgt.data.startAngle,tgt.data.endAngle,false);
         if(tgt.want_to_closePath){
@@ -240,15 +240,15 @@ Canvas2D_TGT_Renderer.createCanvasPath={
 }
 
 export{
-    PrimitiveRectTGT,
-    PrimitiveArcTGT,
-    PrimitiveSectorTGT,
-    PrimitivePolygonTGT,
-    PrimitiveBezierTGT,
-    PrimitiveTGT_Group,
+    PrimitiveTGT__Rect,
+    PrimitiveTGT__Arc,
+    PrimitiveTGT__Sector,
+    PrimitiveTGT__Polygon,
+    PrimitiveTGT__Bezier,
+    PrimitiveTGT__Group,
     CtrlCanvas2d,
-    Canvas2d_Material,
-    Canvas2D_TGT_Renderer,
+    Canvas2d__Material,
+    Renderer_PrimitiveTGT__Canvas2D,
     Sprites,
     Sprites_Animation
 }

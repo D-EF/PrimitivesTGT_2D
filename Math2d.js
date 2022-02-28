@@ -1,23 +1,23 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-26 15:54:10
+ * @LastEditTime: 2022-02-28 21:54:49
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
  */
 
 import {
-    get_Bezier_Matrix,
-    createBezierCutMatrix_Q,
-    bezierCut_By_Matrix,
+    getBezierMatrix,
+    createCutBezierMatrixQ,
+    cutBezierByMatrix,
     binaryLinearEquation,
     approximately,
     derivative,
-    root_of_1_3,
+    rootsOfCubic,
     coefficientToPoints,
     Stepper,
-    calc_Pascals_Triangle,
-    get_Pascals_Triangle,
+    calcPascalsTriangle,
+    getPascalsTriangle,
 } from "../basics/math_ex.js";
 
 import {
@@ -33,7 +33,7 @@ class Math2D{
      * @param {Vector2} v2 线段端点
      * @returns {Number} 返回线段长度
      */
-    static line_length(v1,v2){
+    static get_lineLength(v1,v2){
         var a=v2.x-v1.x,
             b=v2.y-v1.y;
         return Math.sqrt(a*a+b*b);
@@ -44,7 +44,7 @@ class Math2D{
      * @param {Vector2} lp2     线段终点
      * @returns {Number} 投影系数
      */
-    static point_in_line(point,lp1,lp2){
+    static get_pointInLine(point,lp1,lp2){
         var tp1=Vector2.dif(point,lp1),
             tp2=Vector2.dif(lp2,lp1);
         return Vector2.ip(tp1,tp2)/tp2.mag();
@@ -55,7 +55,7 @@ class Math2D{
      * @param {Number} t  时间参数t
      * @returns {Vector2} 返回线段上的点
      */
-    static line_pt(lop,led,t){
+    static sample_line(lop,led,t){
         var td=1-t,
             x=lop.x*td+led.x*t,
             y=lop.y*td+led.y*t;
@@ -67,22 +67,22 @@ class Math2D{
      * @param {Vector2} line_p2 线段端点
      * @return {Number} 返回点到线段的距离
      */
-    static point_line_length(point,line_p1,line_p2){
+    static get_distanceOfPointToLine(point,line_p1,line_p2){
         var d1=Vector2.dif(line_p2,line_p1),
             d2=Vector2.dif(point,line_p1),
             k=Vector2.ip(d1,d2)/(d1.x*d1.x+d1.y*d1.y),
             d=k>0?k<1?Vector2.add(line_p1,Vector2.np(d1,k)):line_p2:line_p1;
-        return Math2D.line_length(point,d);
+        return Math2D.get_lineLength(point,d);
     }
-    /** 与 point_line_length 相似, 多返回个 k 值(点在线上的投影的系数)
+    /** 与 get_distanceOfPointToLine 相似, 多返回个 k 值(点在线上的投影的系数)
      * @return {length:Number,k:Number}
      */
-    static point_line_length_k(point,line_p1,line_p2){
+    static get_distanceOfPointToLine_k(point,line_p1,line_p2){
         var d1=Vector2.dif(line_p2,line_p1),
             d2=Vector2.dif(point,line_p1),
             k=Vector2.ip(d1,d2)/(d1.x*d1.x+d1.y*d1.y),
             d=k>0?k<1?Vector2.add(line_p1,Vector2.np(d1,k)):line_p2:line_p1;
-        return {length:Math2D.line_length(point,d),k:k};
+        return {length:Math2D.get_lineLength(point,d),k:k};
     }
     /** 判断两个圆形是否相交
      * @param {Vector2} c1  圆1 圆心坐标
@@ -91,7 +91,7 @@ class Math2D{
      * @param {Number} r2   圆2 半径
      * @returns {Boolean} 返回相交情况
      */
-    static circular_i_circular(c1,r1,c2,r2){
+    static get_intersectionOfCircleCircle(c1,r1,c2,r2){
         var l=Vector2.dif(c2,c1).mag(),
             l1=r1+r2,
             l2=Math.abs(r1-r2);
@@ -107,7 +107,7 @@ class Math2D{
      * @param {Number} r2   圆2 半径
      * @returns {Vector2[]} 返回交点
      */
-    static circular_i_circular_V(c1,r1,c2,r2){
+    static get_intersectionOfCircleCircle_V(c1,r1,c2,r2){
         var d=Vector2.dif(c2,c1).mag(),
             a=(r1*r1-r2*r2+d*d)/(2*d),
             fv=r1*r1-a*a;
@@ -131,19 +131,19 @@ class Math2D{
         ];
     }
     /** 弧形是否相交
-     * @param {Arc_Data} arc1 弧形1
-     * @param {Arc_Data} arc2 弧形2
+     * @param {Data_Arc} arc1 弧形1
+     * @param {Data_Arc} arc2 弧形2
      * @returns {Boolean} 返回相交情况
      */
-    static arc_i_arc(arc1,arc2){
-        var cis=Math2D.circular_i_circular_V(arc1.c,arc1.r,arc2.c,arc2.r);
+    static get_intersectionOfArcArc(arc1,arc2){
+        var cis=Math2D.get_intersectionOfCircleCircle_V(arc1.c,arc1.r,arc2.c,arc2.r);
         var rtn=[];
         var f=arc.angle>Math.PI;
         var a1c=cis[i].dif(arc1.c),
             a2c=cis[i].dif(arc2.c);
         for(var i =cis.length-1;i>=0;--i){
-            if(Math2D.in_angle_V(arc1.opv,arc1.edv,a1c,f)&&
-               Math2D.in_angle_V(arc2.opv,arc2.edv,a2c,f)){
+            if(Math2D.get_vetorInAngle(arc1.opv,arc1.edv,a1c,f)&&
+               Math2D.get_vetorInAngle(arc2.opv,arc2.edv,a2c,f)){
                 rtn.push(cis[i]);
             }
         }
@@ -156,7 +156,7 @@ class Math2D{
      * @param {Number}  r   圆形的半径
      * @returns {Vector2[]} 长度最多为2的数组, 交点的坐标
      */
-    static circle_i_line_V(lop,led,c,r) {
+    static get_intersectionOfCircleLine_V(lop,led,c,r) {
         var d=Vector2.dif(led,lop);
         var f=Vector2.dif(lop,c);
         var a = d.ip(d);
@@ -187,7 +187,7 @@ class Math2D{
      * @param {Boolean} f 表示角度的大小是否大于半圆
      * @param {Boolean} f1 半圆时使用，表示是顺时针还是逆时针
      */
-    static in_angle_V(angle_op_V,angle_ed_V,tgtv,f){
+    static get_vetorInAngle(angle_op_V,angle_ed_V,tgtv,f){
         var v1=angle_op_V.copy(),v2=angle_ed_V.copy();
         // v1.y*=-1;
         // v2.y*=-1;
@@ -204,36 +204,36 @@ class Math2D{
         return false;
     }
     /** 获得弧形与线段的交点
-     * @param {Arc_Data} arc    弧形数据
+     * @param {Data_Arc} arc    弧形数据
      * @param {Vector2} lop     线段端点
      * @param {Vector2} led     线段端点
      * @returns {Vector2[]} 弧形与线段的交点
      */
-    static arc_i_line_V(arc,lop,led){
-        var cis=Math2D.circle_i_line_V(lop,led,arc.c,arc.r);
+    static get_intersectionOfArcLine_V(arc,lop,led){
+        var cis=Math2D.get_intersectionOfCircleLine_V(lop,led,arc.c,arc.r);
         var rtn=[];
         var f=arc.angle>Math.PI;
         for(var i =cis.length-1;i>=0;--i){
-            if(Math2D.in_angle_V(arc.opv,arc.edv,cis[i].dif(arc.c),f)){
+            if(Math2D.get_vetorInAngle(arc.opv,arc.edv,cis[i].dif(arc.c),f)){
                 rtn.push(cis[i]);
             }
         }
         return rtn;
     }
     /** 判断弧形与线段是否相交
-     * @param {Arc_Data} arc    弧形数据
+     * @param {Data_Arc} arc    弧形数据
      * @param {Vector2} lop     线段端点
      * @param {Vector2} led     线段端点
      * @returns {Boolean} 相交情况
      */
-    static arc_i_line(arc,lop,led){
-        var cis=Math2D.circle_i_line_V(lop,led,arc.c,arc.r);
+    static get_intersectionOfArcLine(arc,lop,led){
+        var cis=Math2D.get_intersectionOfCircleLine_V(lop,led,arc.c,arc.r);
         var opv=arc.opv,edv=arc.edv;
         
         if(arc.angle>=2*Math.PI)return true;
         var f=arc.angle>Math.PI;
         for(var i =cis.length-1;i>=0;--i){
-            if(Math2D.in_angle_V(opv,edv,cis[i].dif(arc.c),f)){
+            if(Math2D.get_vetorInAngle(opv,edv,cis[i].dif(arc.c),f)){
                 return true;
             }
         }
@@ -241,17 +241,17 @@ class Math2D{
     }
 
     /** 扇形与线段是否相交
-     * @param {Sector_Data} sector     弧形数据
+     * @param {Data_Sector} sector     弧形数据
      * @param {Vector2} lop     线段端点
      * @param {Vector2} led     线段端点
      * @returns {Boolean} 相交情况
      */
-    static sector_i_line(sector,lop,led){
-        if(Math2D.arc_i_line(sector,lop,led)){
+    static get_intersectionOfSectorLine(sector,lop,led){
+        if(Math2D.get_intersectionOfArcLine(sector,lop,led)){
             return true
         }
-        return( Math2D.line_i_line(lop,led,sector.c.add(sector.opv),sector.c)||
-                Math2D.line_i_line(lop,led,sector.c.add(sector.edv),sector.c)
+        return( Math2D.get_intersectionOfLineLine(lop,led,sector.c.add(sector.opv),sector.c)||
+                Math2D.get_intersectionOfLineLine(lop,led,sector.c.add(sector.edv),sector.c)
         );
     }
 
@@ -262,7 +262,7 @@ class Math2D{
      * @param {Vector2} l2ed    线段2的终点
      * @returns{Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上; 
      */
-    static line_i_line(l1op,l1ed,l2op,l2ed){
+    static get_intersectionOfLineLine(l1op,l1ed,l2op,l2ed){
         var temp1=Vector2.dif(l1ed,l1op),
             t1o=Vector2.dif(l1ed,l2op),
             t1e=Vector2.dif(l1ed,l2ed);
@@ -310,7 +310,7 @@ class Math2D{
      * @param {Number} y4 线段a端点2 y坐标
      * @returns {x:Number,y:Number} 如果返回 Infinity 或 -Infinity 则为未相交
      */
-    static line_i_line_v(x1,y1,x2,y2,x3,y3,x4,y4){
+    static get_intersectionOfLineLine_v(x1,y1,x2,y2,x3,y3,x4,y4){
         var bx=x2-x1,
             by=y2-y1,
             dx=x4-x3,
@@ -334,7 +334,7 @@ class Math2D{
      * @param {{x:Number,y:Number}[]} points 原曲线的控制点集合 
      * @returns {{x:Number,y:Number}[]} 导函数的控制点
      */
-    static bezierDerivatives_points(points){
+    static get_bezierDerivativesPoints(points){
         var n=points.length-1,
             i=n-1,
             rtn=new Array(i);
@@ -353,9 +353,9 @@ class Math2D{
      * @param {Number} t t时间参数
      * @returns {Vector2[][]} 返回新的两组贝塞尔曲线的点
      */
-    static BezierCut(points,t){
+    static get_cutOffBezierCurve(points,t){
         var l=points.length,
-            q=createBezierCutMatrix_Q(l-1,t),
+            q=createCutBezierMatrixQ(l-1,t),
             points_x=new Array(l),
             points_y=new Array(l);
         for(var i = l-1;i>=0;--i){
@@ -364,12 +364,12 @@ class Math2D{
         }
         return [
             Vector2.createByArray(
-                bezierCut_By_Matrix(points_x,q),
-                bezierCut_By_Matrix(points_y,q)
+                cutBezierByMatrix(points_x,q),
+                cutBezierByMatrix(points_y,q)
             ),
             Vector2.createByArray(
-                bezierCut_By_Matrix(points_x,q,true),
-                bezierCut_By_Matrix(points_y,q,true)
+                cutBezierByMatrix(points_x,q,true),
+                cutBezierByMatrix(points_y,q,true)
             )
         ];
     }
@@ -378,7 +378,7 @@ class Math2D{
      * @param {Vector2[]} points 贝塞尔曲线的控制点
      * @returns {{x:Boolean,y:Boolean}} t取值范围内曲线是否单调 true为单调
      */
-    static bezier_lower3_unilateral(points){
+    static get_bezierCurveIsMonotonicity(points){
         if(points.length>4) return {};
         var l=points.length-1,
             i,
@@ -396,10 +396,10 @@ class Math2D{
      * @param {BezierCurve} bezierCurve   贝塞尔曲线实例
      * @returns {Vector2[]} 返回交点的集合(数组)
      */
-    static line_i_bezier_v(v1,v2,bezierCurve){
+    static get_intersectionOfLineBezier_v(v1,v2,bezierCurve){
         var temp=BezierCurve.copy(bezierCurve),
             nd=Vector2.dif(v2,v1).normalize(),
-            m=Matrix2x2T.createByVector2(nd).setTranslate(-v1.x,-v1.y);
+            m=Matrix2x2T.create_byVector2(nd).setTranslate(-v1.x,-v1.y);
         var tv2=Vector2.linearMapping(m,v2,true)
         temp.linearMapping(m,false,true);
         
@@ -407,7 +407,7 @@ class Math2D{
         tv,
         rtn=[];
         for(var i=ts.length-1;i>=0;--i){
-            tv=temp.sampleCurve(ts[[i]]);
+            tv=temp.sample(ts[[i]]);
             if((tv.x>0&&tv.x<tv2.x)||(tv.x>tv2.x&&tv.x<0)){
                 rtn.push(tv);
             }
@@ -421,7 +421,7 @@ class Math2D{
      * @param {Vector2} vb2 矩形b的向量2
      * @returns {Boolean} 返回是否相交
      */
-    static boxL_i_boxL(va1,va2,vb1,vb2){
+    static get_intersectionOfBoxBox(va1,va2,vb1,vb2){
         return  (((va1.x>vb1.x)!==(va1.x>vb2.x))||((va2.x>vb1.x)!==(va2.x>vb2.x))||((vb1.x>va1.x)!==(vb1.x>va2.x))||((vb2.x>va1.x)!==(vb2.x>va2.x)))&&
                 (((va1.y>vb1.y)!==(va1.y>vb2.y))||((va2.y>vb1.y)!==(va2.y>vb2.y))||((vb1.y>va1.y)!==(vb1.y>va2.y))||((vb2.y>va1.y)!==(vb2.y>va2.y)));
     }
@@ -430,8 +430,8 @@ class Math2D{
      * @param {BezierCurve} bezier1 
      * @returns {BezierCurve[]} 返回多条曲线
      */
-    static cut_bezier_to_unilateral_by_root(bezier1){
-        var f=this.bezier_lower3_unilateral(bezier1.points);
+    static get_cutOffBezierToUnilateral_byRoot(bezier1){
+        var f=this.get_bezierCurveIsMonotonicity(bezier1.points);
         if(f.x&&f.y){
             return [bezier1];
         }
@@ -450,7 +450,7 @@ class Math2D{
         var rtn=[];
         i=0;
         while(approximately(ts[i],0))++i;
-        var temp1=this.BezierCut(bezier1.points,ts[i]);
+        var temp1=Math2D.get_cutOffBezierCurve(bezier1.points,ts[i]);
         l=i;
         rtn.push(new BezierCurve(temp1[0]));
 
@@ -458,7 +458,7 @@ class Math2D{
             if(approximately(ts[i],0)||approximately(ts[i],1)){
                 continue;
             }
-            temp1=Math2D.BezierCut(temp1[1],(ts[i]-ts[l])/(1-ts[l]));
+            temp1=Math2D.get_cutOffBezierCurve(temp1[1],(ts[i]-ts[l])/(1-ts[l]));
             rtn.push(new BezierCurve(temp1[0]));
             l=i;
         }
@@ -473,7 +473,7 @@ class Math2D{
      * @param {Vector2} v2 线段端点
      * @returns {Number} 射线穿过情况
      */
-    static x_radial_i_line(x,y,v1,v2){
+    static get_intersectionOfXRadialLine(x,y,v1,v2){
         if(v1.x==x&&v1.y==y) return 1;//如果正好在顶点上直接算在内部
         if(v2.x==x&&v2.y==y) return -1;//如果正好在顶点上直接算在内部
         var tempK,temp;
@@ -500,10 +500,10 @@ class Math2D{
      * @param {BezierCurve} bezier 曲线实例
      * @returns {number} 射线穿过曲线次数 返回-1代表点正好在曲线坐标上
      */
-    static x_radial_i_bezier(x,y,bezier){
+    static get_intersectionOfXRadialBezier(x,y,bezier){
         var nbs=bezier.get_t_by_y(y),tx,rtn=0;
         for(var i=nbs.length-1;i>=0;--i){
-            if(x>(tx=bezier.sampleCurveX(nbs[i]))){
+            if(x>(tx=bezier.sampleX(nbs[i]))){
                 ++rtn;
             }else if(x===tx){
                 return -1;
@@ -518,9 +518,9 @@ class Math2D{
      * @param {Boolean} f_lil 是否使用最后得到的向量配对进行交点计算, 默认为true, 注意 如果采样精度太低进行求交可能会导致交点丢失
      * @returns {Vectore2[]}  返回交点的集合
      */
-    static bezier_i_bezier_v(bezier1,bezier2,_accuracy,f_lil){
+    static get_intersectionOfBezierBezier(bezier1,bezier2,_accuracy,f_lil){
         /**@type {BezierCurve[][]} 两条曲线的单调子曲线*/
-        var group_bezier=[Math2D.cut_bezier_to_unilateral_by_root(bezier1),Math2D.cut_bezier_to_unilateral_by_root(bezier2)],
+        var group_bezier=[Math2D.get_cutOffBezierToUnilateral_byRoot(bezier1),Math2D.get_cutOffBezierToUnilateral_byRoot(bezier2)],
             l=group_bezier[0].length-1,
             k=group_bezier[1].length-1,
             i,j;
@@ -569,10 +569,10 @@ class Math2D{
                     if(f&&group[i].sb[j].has_accuracy(accuracy)){
                         // 精度都足够 剔除配对并增加返回
                         if(f_lil){
-                            rtn.push(Math2D.center_v2([group[i].v1,group[i].v2,group[i].sb[j].v1,group[i].sb[j].v2]));
+                            rtn.push(Math2D.get_centerByVector2List([group[i].v1,group[i].v2,group[i].sb[j].v1,group[i].sb[j].v2]));
                         }
                         else{
-                            tempVector2=group[i].line_i_line(group[i].sb[j]);
+                            tempVector2=group[i].get_intersectionOfLineLine(group[i].sb[j]);
                             if(!(isNaN(tempVector2.x)||(tempVector2.x===Infinity)||(tempVector2.x===-Infinity)||
                             isNaN(tempVector2.y)||(tempVector2.y===Infinity)||(tempVector2.y===-Infinity)))
                             rtn.push(tempVector2);
@@ -592,36 +592,15 @@ class Math2D{
         }
         return rtn;
     }
-    /** 线段刺入圆形
-     * @param {Vector2} c 圆心的坐标
-     * @param {Number} r   半径
-     * @param {Vector2} v1  点1
-     * @param {Vector2} v2  点2
-     * @returns {Number} 返回 0:无相交, -1:刺入, 1:正好点1在线上, 2:正好点2在圆上
-     */
-    static line_stabbed_circular(c,r,v1,v2){
-        var l1=Math2D.line_length(c,v1),
-            l2=Math2D.line_length(c,v2);
-        if(l1===r){
-            return 1;
-        }
-        if(l2===r){
-            return 2;
-        }
-        if((l1>r)===(l2>r)){
-            return -1;
-        }
-        return 0;
-    }
     /** 弧形和曲线相交
-     * @param {Arc_Data} arc 
+     * @param {Data_Arc} arc 
      * @param {BezierCurve} bezier 
      */
-    static arc_i_bezier_v(arc,bezier){
+    static get_intersectionOfArcBezier_v(arc,bezier){
         var points=bezier.intersect_circular(arc.c,arc.r);
         if(arc.angle<2*Math.PI){
             for(var i = points.length-1;i>=0;--i){
-                if(!Math2D.in_angle_V(arc.opv,arc.edv,points[i],arc.angle>Math.PI)){
+                if(!Math2D.get_vetorInAngle(arc.opv,arc.edv,points[i],arc.angle>Math.PI)){
                     points.splice(i,1);
                 }
             }
@@ -632,18 +611,18 @@ class Math2D{
      * @param {Vector2[]} ordinates 坐标集合
      * @returns {Vector2} 返回中心的坐标
      */
-    static center_v2(ordinates){
+    static get_centerByVector2List(vector2s){
         var min=new Vector2(),max=new Vector2();
-        max.x=ordinates[0].x;
-        max.y=ordinates[0].y;
-        min.x=ordinates[0].x;
-        min.y=ordinates[0].y;
+        max.x=vector2s[0].x;
+        max.y=vector2s[0].y;
+        min.x=vector2s[0].x;
+        min.y=vector2s[0].y;
     
-        for(var i=ordinates.length-1;i>0;--i){
-            if(ordinates[i].x>max.x)max.x=ordinates[i].x;
-       else if(ordinates[i].x<min.x)min.x=ordinates[i].x;
-            if(ordinates[i].y>max.y)max.y=ordinates[i].y;
-       else if(ordinates[i].y<min.y)min.y=ordinates[i].y;
+        for(var i=vector2s.length-1;i>0;--i){
+            if(vector2s[i].x>max.x)max.x=vector2s[i].x;
+       else if(vector2s[i].x<min.x)min.x=vector2s[i].x;
+            if(vector2s[i].y>max.y)max.y=vector2s[i].y;
+       else if(vector2s[i].y<min.y)min.y=vector2s[i].y;
         }
     
         return new Vector2(0.5*(max.x-min.x),0.5*(max.y-min.y));
@@ -652,17 +631,17 @@ class Math2D{
      * @param {Vector2p[]} 旧曲线的控制点数组
      * @returns {Vector2p[]} 返回一个新曲线的控制点数组
      */
-    static elevating_bezier(points){
+    static get_curveOrderElevate(points){
         var i=points.length,
             new_point=[],
-            new_p=get_Pascals_Triangle(i),
-            old_p=get_Pascals_Triangle(i-1);
+            new_p=getPascalsTriangle(i),
+            old_p=getPascalsTriangle(i-1);
             
         new_point[0]=points[0];
         new_point[i]=points[i-1];
         --i;
         do{
-            new_point[i]=Math2D.line_pt(points[i-1],points[i],old_p[i]/new_p[i])
+            new_point[i]=Math2D.sample_line(points[i-1],points[i],old_p[i]/new_p[i])
         }while(i);
         return new_point;
     }
@@ -672,7 +651,7 @@ class Math2D{
      * @param {Number} t 曲线的时间参数t
      * @returns {Number} 基线的t参数
      */
-    static bezierUt(n,t){
+    static get_bezierIdentityFormulaUt_value(n,t){
         var td=1-t,
             tk,tdk;
         if(n===2){
@@ -693,7 +672,7 @@ class Math2D{
      * @param {Number} t 曲线的时间参数t
      * @returns {Number} 基线的t参数
      */
-    static bezier_ratio(n,t){
+    static get_bezierIdentityFormulaRatio_value(n,t){
         var td=1-t,
             tk,tdk;
         if(n===2){
@@ -714,22 +693,22 @@ class Math2D{
      * @param {Vector2} p3 终点
      * @returns {BezierCurve} 返回一个二阶数学曲线对象
      */
-    static create_bezier_2_by_3_point(p1,p2,p3,t){
-        var d1=Math2D.line_length(p1,p2),
-            d2=Math2D.line_length(p3,p2),
+    static create_quadraticBezierBy3Point(p1,p2,p3,t){
+        var d1=Math2D.get_lineLength(p1,p2),
+            d2=Math2D.get_lineLength(p3,p2),
             _t=t instanceof Number?t:d1/(d1+d2);
-        var C=Math2D.line_pt(p3,p1,Math2D.bezierUt(2,_t)),
+        var C=Math2D.sample_line(p3,p1,Math2D.get_bezierIdentityFormulaUt_value(2,_t)),
             B=p2,
-            A=Math2D.line_pt(C,B,1+1/Math2D.bezier_ratio(2,_t));
+            A=Math2D.sample_line(C,B,1+1/Math2D.get_bezierIdentityFormulaRatio_value(2,_t));
         return new BezierCurve([p1,A,p3]);
     }
     /**使用三点创建拟合圆
      * @param {Vector2} p1 点1
      * @param {Vector2} p2 点2
      * @param {Vector2} p3 点3
-     * @returns {Arc_Data} 返回一个弧形数据, 该弧形的起点和终点弧度为0, 半径为负数表示无法创建圆
+     * @returns {Data_Arc} 返回一个弧形数据, 该弧形的起点和终点弧度为0, 半径为负数表示无法创建圆
      */
-    static create_arc_by_3_point(p1,p2,p3){
+    static create_circleBy3Point(p1,p2,p3){
         var x1 = p1.x, x2 = p2.x, x3 = p3.x,
             y1 = p1.y, y2 = p2.y, y3 = p3.y,
             a  = x1 - x2,
@@ -741,14 +720,14 @@ class Math2D{
             det = b * c - a * d;
         if(approximately(Math.abs(det),0))
         {
-            return new Arc_Data(0,0,-1);
+            return new Data_Arc(0,0,-1);
         }
     
         var det=1/det,
             x0 = -(d * e - b * f) * det,
             y0 = -(a * f - c * e) * det,
             radius = Math.hypot(x1 - x0, y1 - y0);
-        return new Arc_Data(x0, y0,radius);
+        return new Data_Arc(x0, y0,radius);
     }
     /**使用三个的点 创建 拟合三阶曲线
      * @param {Vector2} p1 起点
@@ -757,23 +736,23 @@ class Math2D{
      * @param {Number}  _t
      * @returns 
      */
-    static create_bezier_3_by_3_point(p1,p2,p3,_t){
-        var d1=Math2D.line_length(p1,p2),
-            d2=Math2D.line_length(p3,p2),
-            d=Math2D.line_length(p3,p1),
+    static create_cubicBezierBy3Point(p1,p2,p3,_t){
+        var d1=Math2D.get_lineLength(p1,p2),
+            d2=Math2D.get_lineLength(p3,p2),
+            d=Math2D.get_lineLength(p3,p1),
             t=_t instanceof Number?_t:d1/(d1+d2),
             td=1-t,
             t_d=1/t,
             td_d=1/td,
-            ratio_d=1/Math2D.bezier_ratio(3,t),
-            C=Math2D.line_pt(p3,p1,Math2D.bezierUt(3,t)),
+            ratio_d=1/Math2D.get_bezierIdentityFormulaRatio_value(3,t),
+            C=Math2D.sample_line(p3,p1,Math2D.get_bezierIdentityFormulaUt_value(3,t)),
             B=p2,
-            A=Math2D.line_pt(C,B,1+ratio_d),
+            A=Math2D.sample_line(C,B,1+ratio_d),
             e1,e2,v1,v2,c1,c2,
             f,l,n,
             p2_1=Vector2.dif(p2,p1),
             p3_1=Vector2.dif(p3,p1),
-            arc=Math2D.create_arc_by_3_point(p1,p2,p3);
+            arc=Math2D.create_circleBy3Point(p1,p2,p3);
             
         // B点切线方向
         n=Vector2.dif(arc.c,p2).linearMapping(Matrix2x2T.rotate90,false,false).normalize();
@@ -800,7 +779,7 @@ class Math2D{
 
 /** 矩形的数据
  */
-class Rect_Data{
+class Data_Rect{
     /** @param {Number} x 坐标
      * @param {Number} y 坐标
      * @param {Number} w 宽度
@@ -812,15 +791,15 @@ class Rect_Data{
         this.w=w;
         this.h=h;
     }
-    static createByVector2(v1,v2){
-        return new Rect_Data(
+    static create_byVector2(v1,v2){
+        return new Data_Rect(
             v1.x,v1.y,
             v2.x-v1.x,
             v2.y-v1.y
         );
     }
     static copy(d){
-        return new Rect_Data(
+        return new Data_Rect(
             d.x,
             d.y,
             d.w,
@@ -828,10 +807,10 @@ class Rect_Data{
         );
     }
     /** 拷贝函数
-     * @returns {Rect_Data} 返回一个当前对象的拷贝
+     * @returns {Data_Rect} 返回一个当前对象的拷贝
      */
     copy(){
-        return new Rect_Data(
+        return new Data_Rect(
             this.x,
             this.y,
             this.w,
@@ -840,7 +819,7 @@ class Rect_Data{
     }
     /** @returns {Vector2} 返回图形最靠近 {0,0} 的顶点
      */
-    getMin(){
+    get_min(){
         var rtnx,rtny;
         if(this.w>=0){
             rtnx=this.x;
@@ -858,7 +837,7 @@ class Rect_Data{
     
     /** @returns {Vector2} 返回图形最远离 {0,0} 的顶点
      */
-    getMax(){
+    get_max(){
         var rtnx,rtny;
         if(this.w<=0){
             rtnx=this.x;
@@ -878,9 +857,9 @@ class Rect_Data{
      * @param {Number} y 点的y坐标
      * @returns {Boolean} 返回 点是否在内部
      */
-    isInside(x,y){
-        var max=this.getMax(),
-            min=this.getMin();
+    is_inside(x,y){
+        var max=this.get_max(),
+            min=this.get_min();
         return (x>min.x&&x<max.x&&y>min.y&&y<max.y);
     }
     /** 获取代理用的多边形
@@ -893,7 +872,7 @@ class Rect_Data{
 
 /** 弧形的图形数据
  */
- class Arc_Data{
+ class Data_Arc{
      /** 旋转方向默认是顺时针, 并且 起点弧度 始终 会 小于 终点弧度
       * @param {Number} cx 圆心坐标
       * @param {Number} cy 圆心坐标
@@ -916,7 +895,7 @@ class Rect_Data{
         this._angle;
         this._min;
         this._max;
-        this._polygonProxy=null;
+        this._polygon_proxy=null;
         // 访问器
         this.setAngle_AB(angle_A,angle_B);
     }
@@ -939,7 +918,7 @@ class Rect_Data{
      * @param {Number} t  0~1 时间参数t 
      * @returns 
      */
-    sampleCurve(t){
+    sample(t){
         var angle=this._startAngle*(1-t)+this._endAngle*t;
         var r= this.r;
         return (new Vector2(Math.cos(angle)*r,Math.sin(angle)*r));
@@ -948,7 +927,7 @@ class Rect_Data{
      * @param {Number} angle  采样弧度
      * @returns 
      */
-    sampleCurveByAngle(angle){
+    sample_byAngle(angle){
         return (new Vector2(Math.cos(angle)*r,Math.sin(angle)*r));
     }
     /** 重设两个端点的弧度
@@ -971,7 +950,7 @@ class Rect_Data{
     }
     
     static copy(d){
-        return new Arc_Data(
+        return new Data_Arc(
             d.c.x,
             d.c.y,
             d._r,
@@ -980,10 +959,10 @@ class Rect_Data{
             );
     }
     /** 拷贝函数
-     * @returns {Arc_Data}
+     * @returns {Data_Arc}
      */
     copy(){
-        return new Arc_Data(
+        return new Data_Arc(
             this.c.x,
             this.c.y,
             this._r,
@@ -1082,9 +1061,17 @@ class Rect_Data{
     get r(){
         return this._r;
     }
+    /**@type {Polygon} 拟合曲线的多边形 */
+    get polygon_proxy(){
+        if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
+            this._polygon_proxy=this.createPolygonProxy(this.polygon_proxy_want_sp);
+        }
+        return this._polygon_proxy;
+    }
+    
     /** 求弧长
      * @returns {Number} 弧长 */
-    get_arc_length(){
+    get_arcLength(){
         return this.angle*this.r;
     }
     /**刷新只读属性 */
@@ -1095,10 +1082,10 @@ class Rect_Data{
         this._opv=this.get_opv();
         /**弧形终点 */
         this._edv=this.get_edv();
-        var mm=this.get_min_A_max();
+        var mm=this.get_minAmax();
         this._max=mm.max;
         this._min=mm.min;
-        this._polygonProxy=null;
+        this._polygon_proxy=null;
     }
     /** 重新计算起点和重点的坐标 (相对于圆心)
      */
@@ -1129,7 +1116,7 @@ class Rect_Data{
     /** 获取一个 刚好包裹 弧形 的 矩形 的 x和y最小的顶点的 和 x和y最大的顶点 的 坐标
      * @returns {{min:Vector2,max:Vector2}}
      */
-    get_min_A_max(){
+    get_minAmax(){
         if(this.angle>=2*Math.PI){
             return {
                 min:new Vector2(this.c.x-this.r,this.c.y-this.r),
@@ -1253,13 +1240,13 @@ class Rect_Data{
     /** 一个 刚好包裹 弧形 的 矩形 的 x和y最大的顶点
      * @returns {Vector2}
      */
-    getMax(){
+    get_max(){
         return this.max;
     }
     /** 一个 刚好包裹 弧形 的 矩形 的 x和y最小的顶点
      * @returns {Vector2}
      */
-    getMin(){
+    get_min(){
         return this.min;
     }
     /** 点是否在内部
@@ -1268,7 +1255,7 @@ class Rect_Data{
      * @param {Boolean} f want_to_closePath 当没有成为完整的圆时, 是否需要将其当作一个割圆
      * @returns {Boolean} 返回 点是否在内部
      */
-    isInside(_x,_y,f){
+    is_inside(_x,_y,f){
         if((_x>this.max.x)||(_x<this.min.x)||(_y>this.max.y)||(_y<this.min.y)){
             return false;
         }
@@ -1292,7 +1279,7 @@ class Rect_Data{
                 // 圆心和实参的坐标
                 var l2op=new Vector2(0,0);
                 var l2ed=new Vector2(x,y);
-                var ISF=Math2D.line_i_line(l1op,l1ed,l2op,l2ed);  //相交情况
+                var ISF=Math2D.get_intersectionOfLineLine(l1op,l1ed,l2op,l2ed);  //相交情况
                 if(arcA>Math.PI){
                     // 大于半圆
                     return ISF===0;
@@ -1300,7 +1287,7 @@ class Rect_Data{
                 else{
                     if(arcA===Math.PI){
                         // 等于半圆
-                        return Math2D.in_angle_V(this.opv,this.edv,new Vector2(x,y),arcA>Math.PI);
+                        return Math2D.get_vetorInAngle(this.opv,this.edv,new Vector2(x,y),arcA>Math.PI);
                     }
                     // 小于半圆
                     return ISF!==0;
@@ -1336,7 +1323,7 @@ class Rect_Data{
 
 /** 扇形的数据
  */
-class Sector_Data extends Arc_Data{
+class Data_Sector extends Data_Arc{
      /** 旋转方向默认是顺时针, 并且 起点弧度 始终 会 小于 终点弧度
       * @param {Number} cx 圆心坐标
       * @param {Number} cy 圆心坐标
@@ -1352,7 +1339,7 @@ class Sector_Data extends Arc_Data{
         rtn.translate(this.c);
         return rtn;
     }
-    isInside(_x,_y){
+    is_inside(_x,_y){
         if((_x>this.max.x)||(_x<this.min.x)||(_y>this.max.y)||(_y<this.min.y)){
             return false;
         }
@@ -1367,14 +1354,14 @@ class Sector_Data extends Arc_Data{
                 return true;//圆形
             }
             else{
-                return Math2D.in_angle_V(this.opv,this.edv,new Vector2(x,y),arcA>Math.PI);
+                return Math2D.get_vetorInAngle(this.opv,this.edv,new Vector2(x,y),arcA>Math.PI);
             }
         }
         // 不在半径内直接判定为外
         return false;
     }
-    get_min_A_max(){
-        var d=super.get_min_A_max();
+    get_minAmax(){
+        var d=super.get_minAmax();
         var c=this.c;
         if(d.min.x>c.x){
             d.min.x=c.x;
@@ -1782,7 +1769,7 @@ class Sector_Data extends Arc_Data{
     /** 根据向量生成 等比缩放&旋转 矩阵
      * @param {Vector2} v 
      */
-    static createByVector2(v){
+    static create_byVector2(v){
         return new this(v.x,v.y,-1*v.y,v.x);
     }
 }
@@ -2093,11 +2080,11 @@ class Polygon{
         return this.nodes[0].x==this.nodes[l].x&&this.nodes[0].y==this.nodes[l].y;
     }
     /**获取一个能正好包住多边形的矩形的x和y最小的顶点 */
-    getMin(){
+    get_min(){
         return this.min;
     }
     /**获取一个能正好包住多边形的矩形的x和y最大的顶点 */
-    getMax(){
+    get_max(){
         return this.max;
     }
     /** 使用局部坐标系判断某点是否在内部, 
@@ -2105,7 +2092,7 @@ class Polygon{
      * @param {Number} y 局部坐标系中的坐标
      * @param {Boolean} f 是否认作是一个密封的多边形 为true时会多计算一个起点和终点的线
      */
-    isInside(x,y,f){
+    is_inside(x,y,f){
         if(this.min.x>x||this.max.x<x||this.min.y>y||this.max.y<y) return false;
         var _cf=this.isClosed()||f;
         if(!_cf){
@@ -2160,11 +2147,11 @@ class Polygon{
     }
     /** 线性变换
      * @param {Matrix2x2T} m    矩阵
-     * @param {Boolean} fln     矩阵后乘向量 还是 矩阵前乘向量 默认true
-     * @param {Boolean} translate_befroeOrAfter 先变换还是先平移 默认false
+     * @param {Boolean} fln     矩阵后乘向量 还是 矩阵前乘向量 默认矩阵前乘向量(false)
+     * @param {Boolean} translate_befroeOrAfter 先平移还是先变换 默认先变换(false)
      * @param {Boolean} anchorPoint 变换锚点的坐标
      */
-    linearMapping(m,fln=true,translate_befroeOrAfter=true,anchorPoint){
+    linearMapping(m,fln=false,translate_befroeOrAfter=false,anchorPoint){
         for(var i=this.nodes.length-1;i>=0;--i){
             this.nodes[i].linearMapping(m,fln,translate_befroeOrAfter,anchorPoint);
         }
@@ -2199,18 +2186,18 @@ class Polygon{
      * @param {Boolean} want_to_close 将没闭合的路径视作闭合路径
      * @returns {{i:Number,l:Number,k:Number}}  i:线段前驱顶点的下标, l:点到线段的距离, k:点投影到线段的系数
      */
-    point_in_line(point,want_to_close){
+    get_pointInLine(point,want_to_close){
         var nodes=this.nodes;
         var min_l=Infinity,temp=0,ti=0,i=nodes.length-1,k=0;
         if(want_to_close){
-            temp=Math2D.point_line_length(point,nodes[i],nodes[0]);
+            temp=Math2D.get_distanceOfPointToLine(point,nodes[i],nodes[0]);
             min_l=temp;
             ti=i;
             k=temp.k;
         }
         --i;
         for(;i>=0;--i){
-            if(min_l>(temp=Math2D.point_line_length(point,nodes[i],nodes[i+1])).length){
+            if(min_l>(temp=Math2D.get_distanceOfPointToLine(point,nodes[i],nodes[i+1])).length){
                 min_l=temp.length;
                 ti=i;
                 k=temp.k;
@@ -2234,7 +2221,7 @@ class Polygon{
         var i=nodes.length-1,min=Infinity,temp=0,ti=i;
         if(r>0){
             for(;i>=0;--i){
-                if(min<(temp=Math2D.line_length(point,nodes[i]))){
+                if(min<(temp=Math2D.get_lineLength(point,nodes[i]))){
                     min=temp;
                     ti=i;
                 }
@@ -2249,7 +2236,7 @@ class Polygon{
             }
         }
         if(line_width>0){
-            var rtn=this.point_in_line(point,want_to_close);
+            var rtn=this.get_pointInLine(point,want_to_close);
             if(rtn.length<line_width){
                 rtn.type=1;
                 return rtn;
@@ -2266,10 +2253,10 @@ class Polygon{
      * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
      * @returns {Number} 返回线段的长度
      */
-    get_line_length(index){
+    get_get_lineLength(index){
         var j=index===this.nodes.length-1?0:index+1;
         if(this._lines_length[index]===undefined||this._lines_length[index]<0){
-            this._lines_length[index]=Math2D.line_length(this.nodes[index],this.nodes[j]);
+            this._lines_length[index]=Math2D.get_lineLength(this.nodes[index],this.nodes[j]);
         }
         return this._lines_length[index];
     }
@@ -2277,7 +2264,7 @@ class Polygon{
      * @param {Boolean} closeFlag 是否闭合多边形
      * @returns {Number}
      */
-    get_all_line_length(closeFlag){
+    get_all_get_lineLength(closeFlag){
         if(this._all_lines_length<0||this._all_lines_length===undefined){
             var rtn=0;
             var i=this.nodes.length-1;
@@ -2285,7 +2272,7 @@ class Polygon{
                 --i;
             }
             for(;i>=0;--i){
-                rtn+=this.get_line_length(i);
+                rtn+=this.get_get_lineLength(i);
             }
             this._all_lines_length=rtn;
         }
@@ -2296,18 +2283,18 @@ class Polygon{
      * @param {Boolean} closeFlag 是否闭合多边形
      * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
-    sampleCurve(t,closeFlag){
-        var l=t%1*this.get_all_line_length(closeFlag),temp,
+    sample(t,closeFlag){
+        var l=t%1*this.get_all_get_lineLength(closeFlag),temp,
             i=0,j=0,
             lt,
             v,n;
-        while(l>(temp=this.get_line_length(i))){
+        while(l>(temp=this.get_get_lineLength(i))){
             l-=temp;
             ++i;
         }
-        lt=l/this.get_line_length(i);
+        lt=l/this.get_get_lineLength(i);
         j=i===this.nodes.length-1?0:i+1;
-        v=Math2D.line_pt(this.nodes[i],this.nodes[j],lt);
+        v=Math2D.sample_line(this.nodes[i],this.nodes[j],lt);
         n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.rotate90);
         return {v:v,n:n};
     }
@@ -2382,7 +2369,7 @@ class Polygon{
         var f=0;
         for(--i;i>=0;--i){
             for(j=vl2.length-2;j>=0;--j){
-                f+=Math2D.line_i_line(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
+                f+=Math2D.get_intersectionOfLineLine(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
             }
         }
         return f;
@@ -2398,7 +2385,7 @@ class Polygon{
         var i=vl1.length-1,j;
         for(--i;i>=0;--i){
             for(j=vl2.length-2;j>=0;--j){
-                if(Math2D.line_i_line(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))
+                if(Math2D.get_intersectionOfLineLine(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))
                 return true;
             }
         }
@@ -2520,7 +2507,7 @@ class Bezier_Polygon{
         this._bezierCurves=[];
         this._aabb=null;
         /**@type {Number} 计算时使用的路径闭合情况: -1是使用直线闭合, 0是不闭合, 1是使用贝塞尔曲线闭合 */
-        this.closedFlag=0;
+        this.closed_Flag=0;
         /**@type {Delegate} 在修改节点数据后执行的委托 */
         this.unins_bezierCurve_Delegate = Delegate.create();
         /**@type {Delegate} 在插入/删除节点后执行的委托 */
@@ -2662,7 +2649,7 @@ class Bezier_Polygon{
             this.nodes[i_next].hand_before,
             this.nodes[i_next].node
         ];
-        var newPoints=Math2D.BezierCut(points,z);
+        var newPoints=Math2D.get_cutOffBezierCurve(points,z);
 
         var newNode=Bezier_Node.copy(
             {
@@ -2691,8 +2678,8 @@ class Bezier_Polygon{
      * @param {Number} y 局部坐标系中的坐标
      * @return {Boolean} 返回是否在内部
      */
-    isInside(x,y){
-        var f=this.closedFlag;
+    is_inside(x,y){
+        var f=this.closed_Flag;
         var i,rtn=0;
         if(!f){
             // 没闭合的图形, 直接返回否
@@ -2701,11 +2688,11 @@ class Bezier_Polygon{
         i=this.nodes.length-1;
         if(f===-1){
             // 线段
-            rtn+=Math2D.x_radial_i_line(x,y,this.nodes[i].node,this.nodes[0].node)
+            rtn+=Math2D.get_intersectionOfXRadialLine(x,y,this.nodes[i].node,this.nodes[0].node)
         }
         // 射线穿过曲线
         for(f==1?1:--i;i>=0;--i){
-            rtn+=Math2D.x_radial_i_bezier(x,y,this.get_bezierCurve(i));
+            rtn+=Math2D.get_intersectionOfXRadialBezier(x,y,this.get_bezierCurve(i));
         }
         return !!(rtn%2);
     }
@@ -2724,7 +2711,7 @@ class Bezier_Polygon{
         }
         return this._bezierCurves[index];
     }
-    /**@type {Rect_Data}  */
+    /**@type {Data_Rect}  */
     get aabb(){
         if(this._aabb===null){
             var i=this.nodes.length;
@@ -2736,22 +2723,22 @@ class Bezier_Polygon{
             var temp,tempMin,tempMax;
             for(;i>=0;--i){
                 temp=this.get_bezierCurve(i).get_aabb();
-                tempMin=temp.getMin();
-                tempMax=temp.getMax();
+                tempMin=temp.get_min();
+                tempMax=temp.get_max();
                 if(min.x>tempMin.x)min.x=tempMin.x;
                 if(min.y>tempMin.y)min.y=tempMin.y;
                 if(max.x<tempMax.x)max.x=tempMax.x;
                 if(max.y<tempMax.y)max.y=tempMax.y;
             }
-            this._aabb=Rect_Data.createByVector2(min,max);
+            this._aabb=Data_Rect.create_byVector2(min,max);
         }
         return  this._aabb;
     }
-    getMin(){
-        return this.aabb.getMin();
+    get_min(){
+        return this.aabb.get_min();
     }
-    getMax(){
-        return this.aabb.getMax();
+    get_max(){
+        return this.aabb.get_max();
     }
     /** 获取子线的长度
      * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
@@ -2760,7 +2747,7 @@ class Bezier_Polygon{
      */
     get_curve_length(index,closeFlag){
         if(index===this.nodes.length&&closeFlag===-1){
-            return Math2D.line_length(this.nodes[index].node,this.nodes[0].node);
+            return Math2D.get_lineLength(this.nodes[index].node,this.nodes[0].node);
         }
         var d=this.get_bezierCurve(index).arc_length_table;
         return d[d.length-1].l
@@ -2773,7 +2760,7 @@ class Bezier_Polygon{
      */
     get_all_curve_length(closeFlag){
         if(this._all_lines_length<0||this._all_lines_length===undefined){
-            var cf=closeFlag===undefined?this.closedFlag:closeFlag;
+            var cf=closeFlag===undefined?this.closed_Flag:closeFlag;
             var rtn=0;
             var i=this.nodes.length-1;
             if(cf!==1){
@@ -2791,7 +2778,7 @@ class Bezier_Polygon{
      * @param {Boolean} closeFlag 如何否闭合图形
      * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
-    sampleCurve(t,closeFlag){
+    sample(t,closeFlag){
         var l=t%1*this.get_all_curve_length(closeFlag),temp,temp_bezier,
             i=0,
             lt,
@@ -2802,7 +2789,7 @@ class Bezier_Polygon{
         }
         lt=l/this.get_curve_length(i);
         temp_bezier=this.get_bezierCurve(i)
-        v=temp_bezier.sampleCurve(lt);
+        v=temp_bezier.sample(lt);
         n=temp_bezier.normal(lt).normalize();
         return {v:v,n:n};
     }
@@ -2822,7 +2809,7 @@ class BezierCurve{
         this._coefficient_Y=null;
         /**@type {BezierCurve} 导函数*/
         this._derivatives=null;
-        /**@type {Rect_Data} 轴对齐边界框*/
+        /**@type {Data_Rect} 轴对齐边界框*/
         this._aabb=null;
         /**@type {BezierCurve} 对齐后的曲线的代理 用于求紧包围框*/
         this._align_proxy=null;
@@ -2974,7 +2961,7 @@ class BezierCurve{
         var d=this.points[this.points.length-1].dif(this.points[0]),
             nd=d.copy().normalize();
             // var m=new Matrix2x2T().setTranslate(di.x,di.y),
-        var m=Matrix2x2T.createByVector2(nd).setTranslate(-this.points[0].x,-this.points[0].y);
+        var m=Matrix2x2T.create_byVector2(nd).setTranslate(-this.points[0].x,-this.points[0].y);
         this._align_matrix=m;
         this._align_matrix_i=m.inverse();
         this._align_proxy=BezierCurve.copy(this);
@@ -2985,7 +2972,7 @@ class BezierCurve{
     reload_coefficient(){
         var points=this.points,
             n=points.length-1,
-            m=get_Bezier_Matrix(n);
+            m=getBezierMatrix(n);
         this._coefficient_X=new Array(points.length);
         this._coefficient_Y=new Array(points.length);
         var i,j,tempx,tempy;
@@ -3027,7 +3014,7 @@ class BezierCurve{
      * @param {Number} t t 参数
      * @returns {Number}
      */
-    sampleCurveX(t){
+    sampleX(t){
         var rtn=0;
         for(var i = this._coefficient_X.length-1;i>=0;--i){
             rtn*=t;
@@ -3039,7 +3026,7 @@ class BezierCurve{
      * @param {Number} t t 参数
      * @returns {Number}
      */
-    sampleCurveY(t){
+    sampleY(t){
         var rtn=0;
         for(var i = this._coefficient_Y.length-1;i>=0;--i){
             rtn*=t;
@@ -3051,8 +3038,8 @@ class BezierCurve{
      * @param {Number} t t 参数
      * @returns {Vector2} 返回坐标
      */
-    sampleCurve(t){
-        return this._point_t[t]||(this._point_t[t]=new Vector2(this.sampleCurveX(t),this.sampleCurveY(t)));
+    sample(t){
+        return this._point_t[t]||(this._point_t[t]=new Vector2(this.sampleX(t),this.sampleY(t)));
     }
     /** 导函数
      * @returns {BezierCurve}低一阶的贝塞尔曲线
@@ -3062,7 +3049,7 @@ class BezierCurve{
             return null;
         }
         if(this._derivatives===null){
-            // this._derivatives=new BezierCurve(Math2D.bezierDerivatives_points(this.points));
+            // this._derivatives=new BezierCurve(Math2D.get_bezierDerivativesPoints(this.points));
             this._derivatives=new BezierCurve();
             this._derivatives.reset_coefficient(
                 derivative(this._coefficient_X),
@@ -3076,8 +3063,8 @@ class BezierCurve{
      * @returns {Vector2[]} 返回曲线上的点和导数的绝对坐标
      */
     tangent(t){
-        var pt=this.sampleCurve(t),
-            d=Vector2.add(pt,this.derivatives.sampleCurve(t));
+        var pt=this.sample(t),
+            d=Vector2.add(pt,this.derivatives.sample(t));
         return [pt,d];
     }
     /** 当前点的法线 绝对坐标
@@ -3085,7 +3072,7 @@ class BezierCurve{
      * @param {Vector2} 返回曲线上的点和法向的绝对坐标
      */
     abs_normal(t){
-        var pt=this.sampleCurve(t),
+        var pt=this.sample(t),
             d=Vector2.add(pt,this.normal(t));
         return [pt,d];
     }
@@ -3094,7 +3081,7 @@ class BezierCurve{
      * @param {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
      */
     normal(t){
-        var d=this.derivatives.sampleCurve(t);
+        var d=this.derivatives.sample(t);
         return new Vector2(
             d.y,
             -d.x
@@ -3105,7 +3092,7 @@ class BezierCurve{
      * @returns {Vector2} 返回一个相对坐标
      */
     derivative(t){
-        return this.derivatives.sampleCurve(t);
+        return this.derivatives.sample(t);
     }
     /** 获取曲线的 根 的 t 参数
      * 目前只能得到四阶以下曲线的根
@@ -3118,7 +3105,7 @@ class BezierCurve{
         if(depth<=0){
             return [];
         }
-        var rtn=this.derivatives?root_of_1_3(this.derivatives.coefficient_X).concat(root_of_1_3(this.derivatives.coefficient_Y)).concat(this.derivatives.get_root_t(depth-1)):[];
+        var rtn=this.derivatives?rootsOfCubic(this.derivatives.coefficient_X).concat(rootsOfCubic(this.derivatives.coefficient_Y)).concat(this.derivatives.get_root_t(depth-1)):[];
         if(!range_flag){
             rtn=rtn.filter(BezierCurve.t_range);
         }
@@ -3134,16 +3121,16 @@ class BezierCurve{
             i=pts.length,
             rtn=new Array(i)
         for(--i;i>=0;--i){
-            rtn[i]=this.sampleCurve(pts[i]);
+            rtn[i]=this.sample(pts[i]);
         }
         return rtn;
     }
     /** 轴对齐包围框 (边界框) axis aligned bounding box
-     * @returns {Rect_Data} 轴对齐包围框 (边界框) axis aligned bounding box
+     * @returns {Data_Rect} 轴对齐包围框 (边界框) axis aligned bounding box
      */
     get_aabb(){
         if(this._aabb===null){
-            var pts=this.get_root_v().concat([this.sampleCurve(0),this.sampleCurve(1)]),
+            var pts=this.get_root_v().concat([this.sample(0),this.sample(1)]),
                 max=new Vector2(),
                 min=new Vector2();
             max.x=pts[0].x;
@@ -3156,7 +3143,7 @@ class BezierCurve{
                     if(pts[i].y>max.y)max.y=pts[i].y;
                 else if(pts[i].y<min.y)min.y=pts[i].y;
             }
-            this._aabb = Rect_Data.createByVector2(min,max);
+            this._aabb = Data_Rect.create_byVector2(min,max);
         }
         return this._aabb;
     }
@@ -3164,7 +3151,7 @@ class BezierCurve{
      * @returns {Polygon}
      */
     get_tightBoundsBox(){
-        var pts=this.align_proxy.get_root_v().concat([this.align_proxy.sampleCurve(0),this.align_proxy.sampleCurve(1)]),
+        var pts=this.align_proxy.get_root_v().concat([this.align_proxy.sample(0),this.align_proxy.sample(1)]),
             max=new Vector2(),
             min=new Vector2();
         max.x=pts[0].x;
@@ -3219,7 +3206,7 @@ class BezierCurve{
     get_t_by_x(x){
         var temp=this.coefficient_X.concat();
         temp[0]-=x;
-        return root_of_1_3(temp).filter(BezierCurve.t_range);
+        return rootsOfCubic(temp).filter(BezierCurve.t_range);
     }
     /** 使用坐标求t值
      * @param {Number} y Y坐标
@@ -3228,13 +3215,13 @@ class BezierCurve{
     get_t_by_y(y){
         var temp=this.coefficient_Y.concat();
         temp[0]-=y;
-        return root_of_1_3(temp).filter(BezierCurve.t_range);
+        return rootsOfCubic(temp).filter(BezierCurve.t_range);
     }
     /** 求弧长
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
      * @returns {Number} 使用多边形拟合曲线求得的长度
      */
-    get_arc_length(step_size){
+    get_arcLength(step_size){
         if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
         var tb=this.arc_length_table;
         return tb[tb.length-1].l;
@@ -3289,10 +3276,10 @@ class BezierCurve{
             temp=[];
         this._arc_length_table=[];
         for(var i = 0; i<1; i+=sp){
-            temp.push(this.sampleCurve(i));
+            temp.push(this.sample(i));
             this._arc_length_table.push({t:i,l:null});
         }
-        temp.push(this.sampleCurve(1));
+        temp.push(this.sample(1));
         this._arc_length_table.push({t:1,l:null});
         this._polygon_proxy_sp=step_size;
         return new Polygon(temp);
@@ -3311,12 +3298,12 @@ class BezierCurve{
     }
     /** 当前点的曲率拟合圆
      * @param {Number} t 时间参数 t
-     * @param {Arc_Data} tgtData 目标 data, 该参数传入后值将会被修改并返回，而不是返回新实例化的数据
-     * @returns {Arc_Data} 当前点曲率拟合圆
+     * @param {Data_Arc} tgtData 目标 data, 该参数传入后值将会被修改并返回，而不是返回新实例化的数据
+     * @returns {Data_Arc} 当前点曲率拟合圆
      */
     kappa_circle(t,tgtData){
         var kr=-1/this.kappa(t),
-            pt=this.sampleCurve(t),
+            pt=this.sample(t),
             n=this.normal(t).normalize(),
             c=pt.add(n.np(kr));
         kr=Math.abs(kr);
@@ -3324,7 +3311,7 @@ class BezierCurve{
             tgtData.c=c;
             tgtData.r=kr;
         }
-        return new Arc_Data(c.x,c.y,kr,0,2*Math.PI);
+        return new Data_Arc(c.x,c.y,kr,0,2*Math.PI);
     }
     /** 点投影到曲线上 搜索基础点
      * @param {Vector2} v    点的坐标
@@ -3339,7 +3326,7 @@ class BezierCurve{
         var type=type||'t',
             step_size=step_size===undefined?this.polygon_proxy_want_sp:(this.polygon_proxy_want_sp=step_size);
 
-        var al=this.get_arc_length(),
+        var al=this.get_arcLength(),
             temp_t,
             tv,
             temp={v1:null,v2:null,v3:null},
@@ -3355,10 +3342,10 @@ class BezierCurve{
             }else{
                 temp.v3={
                     t:(temp_t=this.get_t_by_arc_length(al*i)),
-                    v:(tv=this.sampleCurve(temp_t)),
+                    v:(tv=this.sample(temp_t)),
                 };
             }
-            temp.v3.l=Math2D.line_length(tv,v);
+            temp.v3.l=Math2D.get_lineLength(tv,v);
             
             if(temp.v3.l<rtn.v2.l){
                 rtn.v1=temp.v2;
@@ -3397,8 +3384,8 @@ class BezierCurve{
                 nv2t,nv2v;
             var nv2={
                 t:(nv2t=0.5*(basics_points.v2.t+temp.t)),
-                v:(nv2v=this.sampleCurve(nv2t)),
-                l:Math2D.line_length(nv2v,v)
+                v:(nv2v=this.sample(nv2t)),
+                l:Math2D.get_lineLength(nv2v,v)
             }
             return this.projection_point_refining(v,{
                 v1:basics_points.v2,
@@ -3439,7 +3426,7 @@ class BezierCurve{
         var type=type||'t',
             step_size=step_size===undefined?this.polygon_proxy_want_sp:(this.polygon_proxy_want_sp=step_size);
 
-        var al=this.get_arc_length(),
+        var al=this.get_arcLength(),
             temp_t,
             tv,
             temp= {v1:null,v2:null,v3:null},
@@ -3454,10 +3441,10 @@ class BezierCurve{
             }else{
                 temp.v2={
                     t:(temp_t=this.get_t_by_arc_length(al*i)),
-                    v:(tv=this.sampleCurve(temp_t)),
+                    v:(tv=this.sample(temp_t)),
                 };
             }
-            if(temp.v1&&(Math2D.circle_i_line_V(temp.v1.v,temp.v2.v,c,r).length)){
+            if(temp.v1&&(Math2D.get_intersectionOfCircleLine_V(temp.v1.v,temp.v2.v,c,r).length)){
                 // 相交
                 rtn.push([
                     temp.v1,
@@ -3482,19 +3469,19 @@ class BezierCurve{
         while(basics_points[0]){
             temp=basics_points[0];
             basics_points.shift();
-            if(approximately(Math2D.line_length(tp=temp[0].v,c),r,accuracy)||approximately(Math2D.line_length(tp=temp[1],c),r)){
+            if(approximately(Math2D.get_lineLength(tp=temp[0].v,c),r,accuracy)||approximately(Math2D.get_lineLength(tp=temp[1],c),r)){
                 // 点到圆心距离相近半径 精度足够
                 rtn.unshift(tp);
                 continue;
             }
             // 精度不足
-            if(Math2D.circle_i_line_V(temp[0].v,temp[1].v,c,r).length){
+            if(Math2D.get_intersectionOfCircleLine_V(temp[0].v,temp[1].v,c,r).length){
                 // 有相交
                 tp1=[
                     temp[0],
                     {
                         t:(nv2t=0.5*(temp[0].t+temp[1].t)),
-                        v:(nv2v=this.sampleCurve(nv2t)),
+                        v:(nv2v=this.sample(nv2t)),
                     }
                 ];
                 tp2=[
@@ -3533,14 +3520,14 @@ class Unilateral_Bezier_Box{
             b1=new Unilateral_Bezier_Box(b),
             b2=new Unilateral_Bezier_Box(b),
             p=0.5*(this.t1+this.t2),
-            pt=this.b.sampleCurve(p);
+            pt=this.b.sample(p);
         b1.t1=this.t1||0;
         b1.t2=b2.t1=p;
         b2.t2=this.t2;
-        b1.v1=this.v1||this.b.sampleCurve(this.t1);
+        b1.v1=this.v1||this.b.sample(this.t1);
         b1.v2=pt;
         b2.v1=pt;
-        b2.v2=this.v2||this.b.sampleCurve(this.t2);
+        b2.v2=this.v2||this.b.sample(this.t2);
 
         // 刷新配对 迭代次数计数器+1
         b1.sb=this.sb.concat();
@@ -3557,8 +3544,8 @@ class Unilateral_Bezier_Box{
     /**@returns {Boolean} 是否足够精度 */
     has_accuracy(_accuracy){
         if(!(this.v2&&this.v1)){
-            this.v1=this.b.sampleCurve(0);
-            this.v2=this.b.sampleCurve(1);
+            this.v1=this.b.sample(0);
+            this.v2=this.b.sample(1);
         }
         return (Math.abs(this.v2.x-this.v1.x)<_accuracy)&&(Math.abs(this.v2.y-this.v1.y)<_accuracy);
     }
@@ -3577,20 +3564,20 @@ class Unilateral_Bezier_Box{
      * @returns {Boolean}
      */
     has_overlap(bb){
-        var v11=this.v1 ||this.b.sampleCurve(this.t1),
-            v12=this.v2 ||this.b.sampleCurve(this.t2),
-            v21=bb.v1   ||  bb.b.sampleCurve(  bb.t1),
-            v22=bb.v2   ||  bb.b.sampleCurve(  bb.t2);
-        return Math2D.boxL_i_boxL(v11,v12,v21,v22);
+        var v11=this.v1 ||this.b.sample(this.t1),
+            v12=this.v2 ||this.b.sample(this.t2),
+            v21=bb.v1   ||  bb.b.sample(  bb.t1),
+            v22=bb.v2   ||  bb.b.sample(  bb.t2);
+        return Math2D.get_intersectionOfBoxBox(v11,v12,v21,v22);
     }
     /** 立刻使用向量求交, 如果曲线的导数差异较大可能会导致求交失败
      * @returns {Vector2[]}
      */
-    all_line_i_line(){
+    all_get_intersectionOfLineLine(){
         var tb,rtn=[];
         for(var i=this.sb.length-1;i>=0;--i){
             tb=this.sb[i];
-            rtn.push(Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,tb.v1.x,tb.v1.y,tb.v2.x,tb.v2.y));
+            rtn.push(Math2D.get_intersectionOfLineLine_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,tb.v1.x,tb.v1.y,tb.v2.x,tb.v2.y));
         }
         return rtn;
     }
@@ -3598,12 +3585,12 @@ class Unilateral_Bezier_Box{
      * @param {Unilateral_Bezier_Box} 
      * @returns {Vector2}
      */
-    line_i_line(bb){
-        return Math2D.line_i_line_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
+    get_intersectionOfLineLine(bb){
+        return Math2D.get_intersectionOfLineLine_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
     }
 }
 
-class Ellipse_Arc_Data extends Arc_Data {
+class Data_Arc__Ellipse extends Data_Arc {
     constructor(cx,cy,rx,ry,angle_A,angle_B){
         super(0,0,rx,angle_A,angle_B);
         /** @type {Matrix2x2T} 局部坐标 to 世界坐标 的矩阵 (向量后乘矩阵)*/
@@ -3633,10 +3620,9 @@ class Ellipse_Arc_Data extends Arc_Data {
      */
     clearProxy(){
         super.re_onlyread();
-
     }
-    get_min_A_max(){
-        var mm=super.get_min_A_max()
+    get_minAmax(){
+        var mm=super.get_minAmax()
         return {
             max:this.locToWorld(mm.max),
             min:this.locToWorld(mm.min),
@@ -3646,13 +3632,13 @@ class Ellipse_Arc_Data extends Arc_Data {
         return this.locToWorld(super.tangent(t));
     }
     normal(t){
-        return this.locToWorld(super.normal(t));
+        return this.locToWorld(super.normal(t)).normalize();
     }
-    sampleCurve(t){
-        return this.locToWorld(super.sampleCurve(t));
+    sample(t){
+        return this.locToWorld(super.sample(t));
     }
-    sampleCurveByAngle(angle){
-        return this.locToWorld(super.sampleCurveByAngle(angle));
+    sample_byAngle(angle){
+        return this.locToWorld(super.sample_byAngle(angle));
     }
     get_opv(){
         return this.locToWorld(super.get_opv());
@@ -3660,35 +3646,20 @@ class Ellipse_Arc_Data extends Arc_Data {
     get_edv(){
         return this.locToWorld(super.get_edv());
     }
-    /**@type {Polygon} 拟合曲线的多边形 */
-    get polygon_proxy(){
-        if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
-            this._polygon_proxy=this.createPolygonProxy(this.polygon_proxy_want_sp);
-        }
-        return this._polygon_proxy;
-    }
     /** 创建多边形拟合曲线
      * @param {Number} step_size t 时间参数的步长, 设置越接近0精度越高; 默认为 0.1
      * @returns {Polygon} 多边形拟合曲线
      */
     createPolygonProxy(step_size){
-        var sp=Math.abs(step_size)||0.1,
-            temp=[];
-        this._arc_length_table=[];
-        for(var i = 0; i<1; i+=sp){
-            temp.push(this.sampleCurve(i));
-            this._arc_length_table.push({t:i,l:null});
-        }
-        temp.push(this.sampleCurve(1));
-        this._arc_length_table.push({t:1,l:null});
-        this._polygon_proxy_sp=step_size;
-        return new Polygon(temp);
+        var temp=super.createPolygonProxy();
+        temp.linearMapping(this.transform_m,false,)
+
     }
     /** 求弧长
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
      * @returns {Number} 使用多边形拟合曲线求得的长度
      */
-    get_arc_length(step_size){
+    get_arcLength(step_size){
         if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
         var tb=this.arc_length_table;
         return tb[tb.length-1].l;
@@ -3860,7 +3831,7 @@ class Path{
 
         // onlyRoid
         /** @type {Array} 数学对象 可能的值有 弧形, 向量, 贝塞尔曲线数学对象 */
-        this.mathData=[];
+        this.math_data=[];
         /** @type {Matrix2x2T} 一般是给弧线使用的   */
         this.mathData_Matrix2x2T=[];
     }
@@ -3915,9 +3886,9 @@ class Path{
 
 export{
     Math2D,
-    Rect_Data,
-    Arc_Data,
-    Sector_Data,
+    Data_Rect,
+    Data_Arc,
+    Data_Sector,
     Vector2,
     Matrix2x2,
     Matrix2x2T,

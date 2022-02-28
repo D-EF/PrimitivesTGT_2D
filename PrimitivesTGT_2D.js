@@ -9,9 +9,9 @@ import {
 } from "../basics/basics.js";
 import {
     Math2D,
-    Rect_Data,
-    Arc_Data,
-    Sector_Data,
+    Data_Rect,
+    Data_Arc,
+    Data_Sector,
     Vector2,
     Matrix2x2,
     Matrix2x2T,
@@ -40,32 +40,32 @@ class Material{
     }
 }
 /**渲染器抽象类 */
-class PrimitiveTGT_Renderer{
+class Renderer_PrimitiveTGT{
     /** @param {PrimitiveTGT[]} tgtList 等待渲染的对象列表
      */
     constructor(tgtList){
         this.tgtList=tgtList instanceof  Array ? Array.from(tgtList):[];
-        this.rendererIndex=PrimitiveTGT_Renderer.rendererIndex++;
-        PrimitiveTGT_Renderer.rendererList.push(this);
+        this.rendererIndex=Renderer_PrimitiveTGT.rendererIndex++;
+        Renderer_PrimitiveTGT.rendererList.push(this);
     }
     /**@type {Number} 渲染器在列表中的下标 */
     static rendererIndex=0;
-    /**@type {PrimitiveTGT_Renderer[]} 已有的渲染器列表 */
+    /**@type {Renderer_PrimitiveTGT[]} 已有的渲染器列表 */
     static rendererList=[];
     /** 将渲染器从静态渲染器列表中移除
-     * @param {PrimitiveTGT_Renderer} renderer 渲染器实例
+     * @param {Renderer_PrimitiveTGT} renderer 渲染器实例
      */
     static remove_in_rendererList(renderer){
-        PrimitiveTGT_Renderer.rendererList.splice(
-            PrimitiveTGT_Renderer.rendererList.indexOf(renderer),1
+        Renderer_PrimitiveTGT.rendererList.splice(
+            Renderer_PrimitiveTGT.rendererList.indexOf(renderer),1
         )
     }
     /** 拷贝函数
-     * @param {PrimitiveTGT_Renderer} tgt 
+     * @param {Renderer_PrimitiveTGT} tgt 
      * @returns 
      */
     static copy(tgt){
-        var rtn = new PrimitiveTGT_Renderer(tgt.tgtList);
+        var rtn = new Renderer_PrimitiveTGT(tgt.tgtList);
         return rtn;
     }
     /** 拷贝函数 */
@@ -161,14 +161,14 @@ class PrimitiveTGT{
     /** 获取最小的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-    getMin(){
-        return this.data.getMin();
+    get_min(){
+        return this.data.get_min();
     }
     /** 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-    getMax(){
-        return this.data.getMax();
+    get_max(){
+        return this.data.get_max();
     }
     /** 变换矩阵 不要直接修改矩阵的参数 
      * @param {Matrix2x2T} m 
@@ -221,15 +221,15 @@ class PrimitiveTGT{
      * @param {Vector2} _v   重载2的参数 世界坐标向量
      * @returns {Boolean} 
     */
-    isInside(_x,_y){
+    is_inside(_x,_y){
         // 2个重载
     }
     /** 转换成多边形
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {PrimitivePolygonTGT}
+     * @returns {PrimitiveTGT__Polygon}
      */
     toPolygon(_accuracy=def_accuracy){
-        var rtn = new PrimitivePolygonTGT(this.data.createPolygonProxy(...arguments));
+        var rtn = new PrimitiveTGT__Polygon(this.data.createPolygonProxy(...arguments));
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
@@ -240,12 +240,12 @@ class PrimitiveTGT{
     /** 生成世界坐标的多边形集合
      * @param {Boolean} f 是否作拷贝 默认 true, 为 false 时会影响 this
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {PrimitivePolygonTGT[]} 因为只有一个tgt所以是 length 为 1 的数组
+     * @returns {PrimitiveTGT__Polygon[]} 因为只有一个tgt所以是 length 为 1 的数组
      */
     create_worldPolygons(f,_accuracy=def_accuracy){
-        /** @type {PrimitivePolygonTGT} */
+        /** @type {PrimitiveTGT__Polygon} */
         var rtn;
-        if((!f)&&(rtn instanceof PrimitivePolygonTGT)){
+        if((!f)&&(rtn instanceof PrimitiveTGT__Polygon)){
             rtn=this;
         }
         else{
@@ -256,38 +256,38 @@ class PrimitiveTGT{
         return [rtn];
     }
     /** 碰撞检测 有多个重载, 在class外面实现
-     * @param {PrimitiveTGT} primitiveTGT1 需要检测碰撞的对象
-     * @param {PrimitiveTGT} primitiveTGT2 需要检测碰撞的对象
+     * @param {PrimitiveTGT} primitive1 需要检测碰撞的对象
+     * @param {PrimitiveTGT} primitive2 需要检测碰撞的对象
      */
     static isTouch(primitiveTGT1,primitiveTGT2){}
     /** 根据数据类型创建
      */
     static create_ByDataType={
-        /** @param {Arc_Data} data 
-         * @returns {PrimitiveArcTGT}
+        /** @param {Data_Arc} data 
+         * @returns {PrimitiveTGT__Arc}
          */
-        "Arc_Data":function(data){
-            return new PrimitiveArcTGT(data.c.x,data.c.y,data._r,data._startAngle,data._endAngle);
+        "Data_Arc":function(data){
+            return new PrimitiveTGT__Arc(data.c.x,data.c.y,data._r,data._startAngle,data._endAngle);
         },
-        /** @param {Rect_Data} data 
-         * @returns {PrimitiveRectTGT}
+        /** @param {Data_Rect} data 
+         * @returns {PrimitiveTGT__Rect}
          */
-        "Rect_Data":function(data){
-            return new PrimitiveRectTGT(data.x,data.y,data.w,data.h);
+        "Data_Rect":function(data){
+            return new PrimitiveTGT__Rect(data.x,data.y,data.w,data.h);
         },
         /** @param {Polygon} data 
-         * @returns {PrimitivePolygonTGT}
+         * @returns {PrimitiveTGT__Polygon}
          */
         "Polygon":function(data){
-            return new PrimitivePolygonTGT(data);
+            return new PrimitiveTGT__Polygon(data);
         },
         "Bezier_Polygon":function(data){
-            return new PrimitiveBezierTGT(data);
+            return new PrimitiveTGT__Bezier(data);
         },
         "Group":function (data){
-            var rtn=new PrimitiveTGT_Group();
+            var rtn=new PrimitiveTGT__Group();
             for(var i=tgt.data.length-1;i>=0;--i){
-                rtn.data.push(PrimitiveTGT_Group.copy(tgt.data[i]));
+                rtn.data.push(PrimitiveTGT__Group.copy(tgt.data[i]));
             }
             return rtn;
         }
@@ -300,12 +300,12 @@ class PrimitiveTGT{
  * @param {Number} width 
  * @param {Number} height 
  */
-class PrimitiveRectTGT extends PrimitiveTGT{
+class PrimitiveTGT__Rect extends PrimitiveTGT{
     constructor(x,y,w,h){
         super();
-        /**@type {Rect_Data} */
-        this.data=new Rect_Data(x,y,w,h);
-        this.dataType="Rect_Data";
+        /**@type {Data_Rect} */
+        this.data=new Data_Rect(x,y,w,h);
+        this.dataType="Data_Rect";
         /** 矩形一直是封闭图形 */
         this.want_to_closePath=true;
     }
@@ -314,7 +314,7 @@ class PrimitiveRectTGT extends PrimitiveTGT{
 /** 弧形
  * 需要注意旋转方向因为坐标系不同而有所变动
  */
-class PrimitiveArcTGT extends PrimitiveTGT{
+class PrimitiveTGT__Arc extends PrimitiveTGT{
     /** @param {Number} cx 圆心的坐标
      * @param {Number} cy 圆心的坐标
      * @param {Number} r  半径
@@ -323,14 +323,14 @@ class PrimitiveArcTGT extends PrimitiveTGT{
      */
     constructor(cx,cy,r,startAngle,endAngle){
         super();
-        /**@type {Arc_Data} */
-        this.data=new Arc_Data(cx,cy,r,startAngle,endAngle);
-        this.dataType="Arc_Data";
+        /**@type {Data_Arc} */
+        this.data=new Data_Arc(cx,cy,r,startAngle,endAngle);
+        this.dataType="Data_Arc";
     }
 }
 /** 扇形
  */
-class PrimitiveSectorTGT extends PrimitiveTGT{
+class PrimitiveTGT__Sector extends PrimitiveTGT{
     /** @param {Number} cx 圆心的坐标
      * @param {Number} cy 圆心的坐标
      * @param {Number} r  半径
@@ -339,9 +339,9 @@ class PrimitiveSectorTGT extends PrimitiveTGT{
      */
      constructor(cx,cy,r,startAngle,endAngle){
         super();
-        /**@type {Sector_Data} */
-        this.data=new Sector_Data(cx,cy,r,startAngle,endAngle);
-        this.dataType="Sector_Data";
+        /**@type {Data_Sector} */
+        this.data=new Data_Sector(cx,cy,r,startAngle,endAngle);
+        this.dataType="Data_Sector";
         /** 扇形一直是封闭图形 */
         this.want_to_closePath=true;
     }
@@ -349,7 +349,7 @@ class PrimitiveSectorTGT extends PrimitiveTGT{
 
 /** 多边形
  */
-class PrimitivePolygonTGT extends PrimitiveTGT{
+class PrimitiveTGT__Polygon extends PrimitiveTGT{
     /** @param {Polygon} _polygon 多边形
      */
     constructor(_polygon){
@@ -381,7 +381,7 @@ class PrimitivePolygonTGT extends PrimitiveTGT{
 
 /** 贝塞尔曲线多边形
  */
-class PrimitiveBezierTGT extends PrimitiveTGT{
+class PrimitiveTGT__Bezier extends PrimitiveTGT{
     /** @param {Bezier_Polygon} bezier_polygon 
      */
     constructor(bezier_polygon){
@@ -406,11 +406,11 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
     }
     set want_to_closePath(val){
         this._want_to_closePath=val;
-        if(this.data)this.data.closedFlag=val;
+        if(this.data)this.data.closed_Flag=val;
     }
     set data(val){
         this._data=val;
-        this.data.closedFlag=this._want_to_closePath;
+        this.data.closed_Flag=this._want_to_closePath;
         this.data.unins_bezierCurve_Delegate.addAct(this,   this.in_data_nodeChange);
         this.data.emptied_bezierCurve_Delegate.addAct(this, this.in_data_nodesChange);
         this._world_bezier=null;
@@ -492,9 +492,9 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
 
 /** PrimitiveTGT 组
  */
- class PrimitiveTGT_Group extends PrimitiveTGT{
+ class PrimitiveTGT__Group extends PrimitiveTGT{
     /** 
-     * @param {PrimitiveTGT[],PrimitiveTGT_Group[]} tgts 
+     * @param {PrimitiveTGT[],PrimitiveTGT__Group[]} tgts 
      */
     constructor(tgts){
         super()
@@ -515,23 +515,23 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
     /** 获取最小的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-     getMin(){
+     get_min(){
         return this.min;
     }
     /** 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-    getMax(){
+    get_max(){
         return this.max;
     }
     /** 添加子项
-     * @param {PrimitiveTGT} tgt PrimitiveTGT对象
+     * @param {PrimitiveTGT} tgt Primitive对象
      */
     addChildren(tgt){
         this.data.push(tgt);
     }
     /** 添加子项
-     * @param {PrimitiveTGT[]} tgt PrimitiveTGT对象
+     * @param {PrimitiveTGT[]} tgt Primitive对象
      */
     addChildrens(tgts){
         this.data=this.data.concat(tgts);
@@ -565,7 +565,7 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
         }
         var v=this.worldToLocal(x,y);
         for(var i=this.data.length-1;i>=0;--i){
-            if(this.data[i].isInside(v)){
+            if(this.data[i].is_inside(v)){
                 console.log(i)
                 return i;
             }
@@ -579,16 +579,16 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
      * @param {Vector2} _v   重载2的参数 世界坐标向量
      * @returns {Boolean} 返回是否在子项内
      */
-    isInside(_x,_y){
+    is_inside(_x,_y){
         return this.inside_i(_x,_y)!==-1;
     }
     /** 生成世界坐标的多边形集合
      * @param {Boolean} f 组的该方法中的是无用的属性
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
-     * @returns {PrimitivePolygonTGT[]}
+     * @returns {PrimitiveTGT__Polygon[]}
      */
     create_worldPolygons(f,_accuracy=def_accuracy){
-        /**@type {PrimitivePolygonTGT[]}  */
+        /**@type {PrimitiveTGT__Polygon[]}  */
         var rtn=[];
         var i = this.data.length-1;
         for(;i>=0;--i){
@@ -605,36 +605,36 @@ class PrimitiveBezierTGT extends PrimitiveTGT{
 
 // PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
 
-function _PrimitiveTGT_isInside(_x,_y){
+function _PrimitiveTGT__is_inside(_x,_y){
     var v=this.worldToLocal(_x,_y);
-    return this.data.isInside(v.x,v.y,this.want_to_closePath);
+    return this.data.is_inside(v.x,v.y,this.want_to_closePath);
 }
-PrimitiveTGT.prototype.isInside=OlFunction.create();
-PrimitiveTGT.prototype.isInside.addOverload([Number,Number],_PrimitiveTGT_isInside);
-PrimitiveTGT.prototype.isInside.addOverload([Vector2],function(_v){
-    return _PrimitiveTGT_isInside.call(this,_v.x,_v.y)
+PrimitiveTGT.prototype.is_inside=OlFunction.create();
+PrimitiveTGT.prototype.is_inside.addOverload([Number,Number],_PrimitiveTGT__is_inside);
+PrimitiveTGT.prototype.is_inside.addOverload([Vector2],function(_v){
+    return _PrimitiveTGT__is_inside.call(this,_v.x,_v.y)
 });
 
 // 局部坐标 to 世界坐标
-function _PrimitiveTGT_localToWorld(v){
+function _PrimitiveTGT__localToWorld(v){
     return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
 }
 PrimitiveTGT.prototype.localToWorld=OlFunction.create();
 PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
-    return _PrimitiveTGT_localToWorld.call(this,new Vector2(x,y));
+    return _PrimitiveTGT__localToWorld.call(this,new Vector2(x,y));
 });
-PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_PrimitiveTGT_localToWorld);
+PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_PrimitiveTGT__localToWorld);
 
 // 世界坐标 to 局部坐标
-function _PrimitiveTGT_worldToLocal(v){
+function _PrimitiveTGT__worldToLocal(v){
     var tm=this.worldToLocalM;
     return Vector2.beforeTranslate_linearMapping(v,tm);
 }
 PrimitiveTGT.prototype.worldToLocal=OlFunction.create();
 PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
-    return _PrimitiveTGT_worldToLocal.call(this,new Vector2(x,y));
+    return _PrimitiveTGT__worldToLocal.call(this,new Vector2(x,y));
 });
-PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT_worldToLocal
+PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT__worldToLocal
 );
 //碰撞检测函数 ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -643,12 +643,12 @@ PrimitiveTGT.accuracy=20;
 PrimitiveTGT.isTouch=OlFunction.create(isTouch_base);
 
 /** 可以通用的碰撞检测函数 将对象转换成多边形 开销较大
- * @param {PrimitiveTGT} primitiveTGT1
- * @param {PrimitiveTGT} primitiveTGT2
+ * @param {PrimitiveTGT} primitive1
+ * @param {PrimitiveTGT} primitive2
  */
 function isTouch_base(primitiveTGT1,primitiveTGT2){
-    var tgt1 = primitiveTGT1.toPolygon(PrimitiveTGT.accuracy,primitiveTGT1.want_to_closePath);
-    var tgt2 = primitiveTGT2.toPolygon(PrimitiveTGT.accuracy,primitiveTGT2.want_to_closePath);
+    var tgt1 = primitiveTGT1.toPolygon(PrimitiveTGT.accuracy,primitive1.want_to_closePath);
+    var tgt2 = primitiveTGT2.toPolygon(PrimitiveTGT.accuracy,primitive2.want_to_closePath);
     var i;
     for(i=tgt1.data.nodes.length-1;i>=0;--i){
         tgt1.data.nodes[i]=tgt1.localToWorld(tgt1.data.nodes[i]);
@@ -662,25 +662,25 @@ function isTouch_base(primitiveTGT1,primitiveTGT2){
     if(Polygon.getImpactFlag(tgt1.data,tgt2.data)){
         return true;                                         
     }
-    return primitiveTGT1.isInside(primitiveTGT2.localToWorld(primitiveTGT2.data.nodes[0]))||primitiveTGT2.isInside(primitiveTGT1.localToWorld(primitiveTGT1.data.nodes[0]));
+    return primitiveTGT1.is_inside(primitiveTGT2.localToWorld(primitiveTGT2.data.nodes[0]))||primitiveTGT2.is_inside(primitiveTGT1.localToWorld(primitiveTGT1.data.nodes[0]));
 }
 
 /** 碰撞检测函数 矩形 弧形(圆形)
- * @param {PrimitiveRectTGT} tgt1 进行碰撞检测的对象
- * @param {PrimitiveArcTGT}  tgt2 进行碰撞检测的对象
+ * @param {PrimitiveTGT__Rect} tgt1 进行碰撞检测的对象
+ * @param {PrimitiveTGT__Arc}  tgt2 进行碰撞检测的对象
  */
 function isTouch_Rect_Arc(tgt1,tgt2){
     var t1=tgt1.toPolygon();
     return isTouch_Arc_Polygon(tgt2,t1);
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveArcTGT],isTouch_Rect_Arc);
-PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveRectTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Rect,PrimitiveTGT__Arc],isTouch_Rect_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Arc,PrimitiveTGT__Rect],function(tgt1,tgt2){
     return isTouch_Rect_Arc(tgt2,tgt1)
 });
 
 /** 碰撞检测函数 矩形 多边形
- * @param {PrimitiveRectTGT} tgt1
- * @param {PrimitivePolygonTGT} tgt2
+ * @param {PrimitiveTGT__Rect} tgt1
+ * @param {PrimitiveTGT__Polygon} tgt2
  */
 function isTouch_Rect_Polygon(tgt1,tgt2){
     
@@ -689,30 +689,30 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
 
     var i =nodes.length-1;
     for(;i>=0;--i){
-        if(tgt1.isInside(nodes[i].x,nodes[i].y)){
+        if(tgt1.is_inside(nodes[i].x,nodes[i].y)){
             return true;
         }
     }
     if(tgt2.want_to_closePath||t2d.isClosed()){
-        var min=tgt1.localToWorld(tgt1.getMin());
-            max=tgt1.localToWorld(tgt1.getMax());
-        return tgt2.isInside(min.x,min.y)||
-            tgt2.isInside(max.x,max.y)||
-            tgt2.isInside(max.x,min.y)||
-            tgt2.isInside(min.x,max.y);
+        var min=tgt1.localToWorld(tgt1.get_min());
+            max=tgt1.localToWorld(tgt1.get_max());
+        return tgt2.is_inside(min.x,min.y)||
+            tgt2.is_inside(max.x,max.y)||
+            tgt2.is_inside(max.x,min.y)||
+            tgt2.is_inside(min.x,max.y);
     }
     else{
         return false;
     }
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitivePolygonTGT],isTouch_Rect_Polygon);
-PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveRectTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Rect,PrimitiveTGT__Polygon],isTouch_Rect_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Rect],function(tgt1,tgt2){
     return isTouch_Rect_Polygon(tgt2,tgt1);
 });
 
 /** 碰撞检测函数 弧形(圆形) 多边形
- * @param {PrimitiveArcTGT} tgt1
- * @param {PrimitivePolygonTGT} tgt2
+ * @param {PrimitiveTGT__Arc} tgt1
+ * @param {PrimitiveTGT__Polygon} tgt2
  */
  function isTouch_Arc_Polygon(tgt1,tgt2){
     var i =tgt2.data.nodes.length-1,
@@ -724,7 +724,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveRectTGT],function
         nodes=t2d.nodes;
 
     for(;i>0;--i){
-        if(Math2D.arc_i_line(tgt1.data,nodes[i],nodes[i-1])){
+        if(Math2D.get_intersectionOfArcLine(tgt1.data,nodes[i],nodes[i-1])){
             return true;
         }
     }
@@ -734,61 +734,61 @@ PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveRectTGT],function
         opv=Vector2.add(tgt1.data.opv,tgt1.data.c);
         edv=tgt1.data.edv.add(tgt1.data.c);
         for(i=l;i>0;--i){
-            if(Math2D.line_i_line(opv,edv,nodes[i],nodes[i-1])){
+            if(Math2D.get_intersectionOfLineLine(opv,edv,nodes[i],nodes[i-1])){
                 return true;
             }
         }
     }
     if((l>1&&tgt2.want_to_closePath)&&(!tgt2.data.isClosed())){
         // 规定闭合路径的多边形, 多算一次
-        if(Math2D.arc_i_line(tgt1.data,nodes[0],nodes[l])){
+        if(Math2D.get_intersectionOfArcLine(tgt1.data,nodes[0],nodes[l])){
             return true;
         }
         if(tgt1.want_to_closePath){
-            if(Math2D.line_i_line(tgt1.data.opv,tgt1.data.edv,nodes[0],nodes[l])){
+            if(Math2D.get_intersectionOfLineLine(tgt1.data.opv,tgt1.data.edv,nodes[0],nodes[l])){
                 return true;
             }
         }
     }
     if(tgt2.want_to_closePath||tgt2.data.isClosed()){
-        return t2d.isInside(tgt1.data.c.x+tgt1.data.opv.x,tgt1.data.c.y+tgt1.data.opv.y,true);
+        return t2d.is_inside(tgt1.data.c.x+tgt1.data.opv.x,tgt1.data.c.y+tgt1.data.opv.y,true);
     }
     return false;
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitivePolygonTGT],isTouch_Arc_Polygon);
-PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveArcTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Arc,PrimitiveTGT__Polygon],isTouch_Arc_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Arc],function(tgt1,tgt2){
     return isTouch_Arc_Polygon(tgt2,tgt1);
 });
 
 /** 碰撞检测函数 弧形(圆形) 弧形
- * @param {PrimitiveArcTGT} tgt1 
- * @param {PrimitiveArcTGT} tgt2 
+ * @param {PrimitiveTGT__Arc} tgt1 
+ * @param {PrimitiveTGT__Arc} tgt2 
  */
 function isTouch_Arc_Arc(tgt1,tgt2){
     var tgtt=tgt1.toPolygon();
     return isTouch_Arc_Polygon(tgt2,tgtt);
 }
 
-PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveArcTGT],isTouch_Arc_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Arc,PrimitiveTGT__Arc],isTouch_Arc_Arc);
 
 // 扇形碰撞 -------------------------------------------------------------------------------------------------
 
 /** 碰撞检测函数 矩形 扇形(圆形)
- * @param {PrimitiveRectTGT} tgt1 进行碰撞检测的对象
- * @param {PrimitiveSectorTGT}  tgt2 进行碰撞检测的对象
+ * @param {PrimitiveTGT__Rect} tgt1 进行碰撞检测的对象
+ * @param {PrimitiveTGT__Sector}  tgt2 进行碰撞检测的对象
  */
  function isTouch_Rect_Sector(tgt1,tgt2){
     var t1=tgt1.toPolygon();
     return isTouch_Sector_Polygon(tgt2,t1);
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveSectorTGT],isTouch_Rect_Sector);
-PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveRectTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Rect,PrimitiveTGT__Sector],isTouch_Rect_Sector);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Rect],function(tgt1,tgt2){
     return isTouch_Rect_Sector(tgt2,tgt1);
 });
 
 /** 碰撞检测函数 扇形(圆形) 多边形
- * @param {PrimitiveSectorTGT} tgt1 
- * @param {PrimitivePolygonTGT} tgt2 
+ * @param {PrimitiveTGT__Sector} tgt1 
+ * @param {PrimitiveTGT__Polygon} tgt2 
  */
  function isTouch_Sector_Polygon(tgt1,tgt2){
     var i =tgt2.data.nodes.length-1,
@@ -800,60 +800,60 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveRectTGT],function(
         nodes=t2d.nodes;
 
     for(;i>0;--i){
-        if(Math2D.sector_i_line(tgt1.data,nodes[i],nodes[i-1])){
+        if(Math2D.get_intersectionOfSectorLine(tgt1.data,nodes[i],nodes[i-1])){
             return true;
         }
     }
     if((l>1&&tgt2.want_to_closePath)&&(!tgt2.data.isClosed())){
         // 规定闭合路径的多边形, 多算一次
-        if(Math2D.sector_i_line(tgt1.data,nodes[0],nodes[l])){
+        if(Math2D.get_intersectionOfSectorLine(tgt1.data,nodes[0],nodes[l])){
             return true;
         }
     }
     if(tgt2.want_to_closePath||tgt2.data.isClosed()){
-        return t2d.isInside(tgt1.data.c.x,tgt1.data.c.y,true);
+        return t2d.is_inside(tgt1.data.c.x,tgt1.data.c.y,true);
     }
     return false;
 }
 
-PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitivePolygonTGT],isTouch_Sector_Polygon);
-PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveSectorTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Polygon],isTouch_Sector_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Sector],function(tgt1,tgt2){
     return isTouch_Sector_Polygon(tgt2,tgt1)
 });
 
 /** 碰撞检测函数 扇形(圆形) 弧形
- * @param {PrimitiveSectorTGT} tgt1 
- * @param {PrimitiveArcTGT} tgt2 
+ * @param {PrimitiveTGT__Sector} tgt1 
+ * @param {PrimitiveTGT__Arc} tgt2 
  */
  function isTouch_Sector_Arc(tgt1,tgt2){
     var tgtt=tgt1.toPolygon();
     return isTouch_Arc_Polygon(tgt2,tgtt);
 }
 
-PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveArcTGT],isTouch_Sector_Arc);
-PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveSectorTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Arc],isTouch_Sector_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Arc,PrimitiveTGT__Sector],function(tgt1,tgt2){
     return isTouch_Sector_Arc(tgt2,tgt1)
 });
 
 /** 碰撞检测函数 扇形(圆形) 弧形
- * @param {PrimitiveSectorTGT} tgt1 
- * @param {PrimitiveSectorTGT} tgt2 
+ * @param {PrimitiveTGT__Sector} tgt1 
+ * @param {PrimitiveTGT__Sector} tgt2 
  */
  function isTouch_Sector_Sector(tgt1,tgt2){
     var tgtt=tgt1.toPolygon();
     return isTouch_Sector_Polygon(tgt2,tgtt);
 }
 
-PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveSectorTGT],isTouch_Sector_Sector);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Sector],isTouch_Sector_Sector);
 
 /** 碰撞检测函数 贝塞尔曲线 多边形
- * @param {PrimitiveBezierTGT} tgt1 
- * @param {PrimitivePolygonTGT} tgt2 
+ * @param {PrimitiveTGT__Bezier} tgt1 
+ * @param {PrimitiveTGT__Polygon} tgt2 
  */
 function isTouch_Bezier_Polygon(tgt1,tgt2){
     var t1d_w=tgt1.world_bezier;
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
-    if(t2d1.isInside(t1d_w.nodes[0].node)||t1d_w.isInside(t2d1.nodes[0])){
+    if(t2d1.is_inside(t1d_w.nodes[0].node)||t1d_w.is_inside(t2d1.nodes[0])){
         return true;
     }
     var i=0,j=0;
@@ -864,10 +864,10 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
         // 曲线对象正在使用直线闭合起点~终点 
         j=t2d1.nodes.length-1;
         if(tgt2.want_to_closePath){
-            if(Math2D.line_i_line(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
+            if(Math2D.get_intersectionOfLineLine(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
         }
         for(--j;j>=0;--j){
-            if(Math2D.line_i_line(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1.nodes[j],t2d1.nodes[j+1]))return true;
+            if(Math2D.get_intersectionOfLineLine(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1.nodes[j],t2d1.nodes[j+1]))return true;
         }
     }
     if(tgt1._want_to_closePath!==1)--i;
@@ -876,34 +876,34 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
 
         j=t2d1.nodes.length-1;
         if(tgt2.want_to_closePath){
-            if(Math2D.line_i_bezier_v(t2d1.nodes[j],t2d1.nodes[0],tempBezierCurve).length>0)return true;
+            if(Math2D.get_intersectionOfLineBezier_v(t2d1.nodes[j],t2d1.nodes[0],tempBezierCurve).length>0)return true;
         }
         for(--j;j>=0;--j){
-            if(Math2D.line_i_bezier_v(t2d1.nodes[j+1],t2d1.nodes[j],tempBezierCurve).length>0)return true;
+            if(Math2D.get_intersectionOfLineBezier_v(t2d1.nodes[j+1],t2d1.nodes[j],tempBezierCurve).length>0)return true;
         }
     }
     return false;
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitivePolygonTGT],isTouch_Bezier_Polygon);
-PrimitiveTGT.isTouch.addOverload([PrimitivePolygonTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Bezier,PrimitiveTGT__Polygon],isTouch_Bezier_Polygon);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Bezier],function(tgt1,tgt2){
     return isTouch_Bezier_Polygon(tgt2,tgt1);
 });
 
 /** 碰撞检测函数 贝塞尔曲线 矩形
- * @param {PrimitiveBezierTGT} tgt1 
- * @param {PrimitiveRectTGT} tgt2 
+ * @param {PrimitiveTGT__Bezier} tgt1 
+ * @param {PrimitiveTGT__Rect} tgt2 
  */
 function isTouch_Bezier_Rect(tgt1,tgt2){
     var t_tgt2=tgt2.toPolygon();
     return isTouch_Bezier_Polygon(tgt1,t_tgt2);
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveRectTGT],isTouch_Bezier_Rect);
-PrimitiveTGT.isTouch.addOverload([PrimitiveRectTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Bezier,PrimitiveTGT__Rect],isTouch_Bezier_Rect);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Rect,PrimitiveTGT__Bezier],function(tgt1,tgt2){
     return isTouch_Bezier_Rect(tgt2,tgt1);
 });
 /** 碰撞检测函数 贝塞尔曲线 弧形
- * @param {PrimitiveBezierTGT} tgt1 
- * @param {PrimitiveArcTGT} tgt2 
+ * @param {PrimitiveTGT__Bezier} tgt1 
+ * @param {PrimitiveTGT__Arc} tgt2 
  */
 function isTouch_Bezier_Arc(tgt1,tgt2){
     var t1d_l2=Bezier_Polygon.linearMapping(tgt1.world_bezier,tgt2.worldToLocalM,true),
@@ -911,18 +911,18 @@ function isTouch_Bezier_Arc(tgt1,tgt2){
 
     var i=t1d_l2.nodes.length-1;
     var temp;
-    if(t1d_l2.isInside(t2d.opv)||t1d_l2.isInside(t2d.edv)||t2d.isInside(t1d_l2.nodes[0].node)){
+    if(t1d_l2.is_inside(t2d.opv)||t1d_l2.is_inside(t2d.edv)||t2d.is_inside(t1d_l2.nodes[0].node)){
         return true;
     }
     if(tgt1._want_to_closePath===-1){
         // 曲线对象正在使用直线闭合起点~终点 
         if(tgt2.want_to_closePath){
             // 弧形自闭合,多计算一个直线段(弦)
-            if(Math2D.line_i_line(t2d.opv,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+            if(Math2D.get_intersectionOfLineLine(t2d.opv,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
                 return true;
             }
         }
-        if(Math2D.arc_i_line(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+        if(Math2D.get_intersectionOfArcLine(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
             return true;
         }
     }
@@ -931,23 +931,23 @@ function isTouch_Bezier_Arc(tgt1,tgt2){
         temp=t1d_l2.get_bezierCurve(i);
         if(tgt2.want_to_closePath){
             // 弧形自闭合,多计算一个直线段(弦)
-            if(Math2D.line_i_bezier_v(t2d.opv,t2d.edv,temp).length){
+            if(Math2D.get_intersectionOfLineBezier_v(t2d.opv,t2d.edv,temp).length){
                 return true;
             }
         }
-        if(Math2D.arc_i_bezier_v(t2d,temp).length){
+        if(Math2D.get_intersectionOfArcBezier_v(t2d,temp).length){
             return true;
         }
     }
     return false;
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveArcTGT],isTouch_Bezier_Arc);
-PrimitiveTGT.isTouch.addOverload([PrimitiveArcTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Bezier,PrimitiveTGT__Arc],isTouch_Bezier_Arc);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Arc,PrimitiveTGT__Bezier],function(tgt1,tgt2){
     return isTouch_Bezier_Arc(tgt2,tgt1);
 });
 /** 碰撞检测函数 贝塞尔曲线 扇形
- * @param {PrimitiveBezierTGT} tgt1 
- * @param {PrimitiveSectorTGT} tgt2 
+ * @param {PrimitiveTGT__Bezier} tgt1 
+ * @param {PrimitiveTGT__Sector} tgt2 
  */
 function isTouch_Bezier_Sector(tgt1,tgt2){
     var t1d_l2=Bezier_Polygon.linearMapping(tgt1.world_bezier,tgt2.worldToLocalM,true),
@@ -955,19 +955,19 @@ function isTouch_Bezier_Sector(tgt1,tgt2){
 
     var i=t1d_l2.nodes.length-1;
     var temp;
-    if(t1d_l2.isInside(t2d.opv)||t1d_l2.isInside(t2d.edv)||t2d.isInside(t1d_l2.nodes[0].node)){
+    if(t1d_l2.is_inside(t2d.opv)||t1d_l2.is_inside(t2d.edv)||t2d.is_inside(t1d_l2.nodes[0].node)){
         return true;
     }
     if(tgt1._want_to_closePath===-1){
         // 曲线对象正在使用直线闭合起点~终点 
         if(tgt2.want_to_closePath){
             // 弧形自闭合,多计算一个直线段(弦)
-            if( Math2D.line_i_line(t2d.c,t2d.opv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)||
-                Math2D.line_i_line(t2d.c,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+            if( Math2D.get_intersectionOfLineLine(t2d.c,t2d.opv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)||
+                Math2D.get_intersectionOfLineLine(t2d.c,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
                 return true;
             }
         }
-        if(Math2D.arc_i_line(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+        if(Math2D.get_intersectionOfArcLine(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
             return true;
         }
     }
@@ -975,28 +975,28 @@ function isTouch_Bezier_Sector(tgt1,tgt2){
     for(;i>=0;--i){
         temp=t1d_l2.get_bezierCurve(i);
         // 弧形自闭合,多计算一个直线段(弦)
-        if( Math2D.line_i_bezier_v(t2d.c,t2d.edv,temp).length||
-            Math2D.line_i_bezier_v(t2d.c,t2d.opv,temp).length){
+        if( Math2D.get_intersectionOfLineBezier_v(t2d.c,t2d.edv,temp).length||
+            Math2D.get_intersectionOfLineBezier_v(t2d.c,t2d.opv,temp).length){
             return true;
         }
-        if(Math2D.arc_i_bezier_v(t2d,temp).length){
+        if(Math2D.get_intersectionOfArcBezier_v(t2d,temp).length){
             return true;
         }
     }
     return false;
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveSectorTGT],isTouch_Bezier_Sector);
-PrimitiveTGT.isTouch.addOverload([PrimitiveSectorTGT,PrimitiveBezierTGT],function(tgt1,tgt2){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Bezier,PrimitiveTGT__Sector],isTouch_Bezier_Sector);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Bezier],function(tgt1,tgt2){
     return isTouch_Bezier_Arc(tgt2,tgt1);
 });
 /** 碰撞检测函数 贝塞尔曲线 贝塞尔曲线
- * @param {PrimitiveBezierTGT} tgt1 
- * @param {PrimitiveBezierTGT} tgt2 
+ * @param {PrimitiveTGT__Bezier} tgt1 
+ * @param {PrimitiveTGT__Bezier} tgt2 
  */
 function isTouch_Bezier_Bezier(tgt1,tgt2){
     var t1d_w=tgt1.world_bezier;
     var t2d_w=tgt2.world_bezier;
-    if(t2d_w.isInside(t1d_w.nodes[0].node)||t1d_w.isInside(t2d_w.nodes[0].node)){
+    if(t2d_w.is_inside(t1d_w.nodes[0].node)||t1d_w.is_inside(t2d_w.nodes[0].node)){
         return true;
     }
     var i=0,j=0;
@@ -1007,12 +1007,12 @@ function isTouch_Bezier_Bezier(tgt1,tgt2){
         // 曲线对象1正在使用直线闭合起点~终点 
         j=t2d_w.nodes.length-1;
         if(tgt2.want_to_closePath===-1){
-            if(Math2D.line_i_line(t2d_w.nodes[j].node,t2d_w.nodes[0].node,t1d_w.nodes[j].node,t1d_w.nodes[0].node))return true;
+            if(Math2D.get_intersectionOfLineLine(t2d_w.nodes[j].node,t2d_w.nodes[0].node,t1d_w.nodes[j].node,t1d_w.nodes[0].node))return true;
         }
         if(tgt2._want_to_closePath!==1)--j;
         for(;j>=0;--j){
             tempBezierCurve=t2d_w.get_bezierCurve(j);
-            if(Math2D.line_i_bezier_v(t1d_w.nodes[i].node,t1d_w.nodes[0].node,tempBezierCurve).length>0)return true;
+            if(Math2D.get_intersectionOfLineBezier_v(t1d_w.nodes[i].node,t1d_w.nodes[0].node,tempBezierCurve).length>0)return true;
         }
     }
     if(tgt1._want_to_closePath!==1)--i;
@@ -1022,19 +1022,19 @@ function isTouch_Bezier_Bezier(tgt1,tgt2){
         if(tgt2._want_to_closePath!==1)--j;
         for(;j>=0;--j){
             tempBezierCurve2=t2d_w.get_bezierCurve(j);
-            if(Math2D.bezier_i_bezier_v(tempBezierCurve,tempBezierCurve2,0.01,true).length){
+            if(Math2D.get_intersectionOfBezierBezier(tempBezierCurve,tempBezierCurve2,0.01,true).length){
                 return true;
             }
         }
     }
     return false;
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveBezierTGT,PrimitiveBezierTGT],isTouch_Bezier_Bezier);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Bezier,PrimitiveTGT__Bezier],isTouch_Bezier_Bezier);
 
 /** 没有进行矩阵变换的世界坐标系多边形tgt数组 和 tgt组 碰撞检测
- * @param {PrimitivePolygonTGT[]} _tgts 多边形对象数组 不要加矩阵
- * @param {PrimitiveTGT_Group} g 组
- * @param {PrimitiveTGT_Group} pg g的父组
+ * @param {PrimitiveTGT__Polygon[]} _tgts 多边形对象数组 不要加矩阵
+ * @param {PrimitiveTGT__Group} g 组
+ * @param {PrimitiveTGT__Group} pg g的父组
  */
 function isTouch_noTransformPolygons_Group(_tgts,g,pg){
     var tgts=_tgts;
@@ -1052,7 +1052,7 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
     for(i=tgts.length-1;i>=0;--i){
         tgts[i].transformMatrix=g.transformMatrix;
         for(j=g.data.length-1;j>=0;--j){
-            if(g.data[j] instanceof PrimitiveTGT_Group){
+            if(g.data[j] instanceof PrimitiveTGT__Group){
                 if(isTouch_noTransformPolygons_Group(tgts,g.data[j],g)){
                     return true;
                 }
@@ -1066,31 +1066,31 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
     return false;
 }
 /** 碰撞检测函数 组 组
- * @param {PrimitiveTGT_Group} group1
- * @param {PrimitiveTGT_Group} group2
+ * @param {PrimitiveTGT__Group} group1
+ * @param {PrimitiveTGT__Group} group2
  */
 function isTouch_Group_Group(group1,group2){
     var g1_Polygons=group1.create_worldPolygons();
     return isTouch_noTransformPolygons_Group(g1_Polygons,group2);
 }
-PrimitiveTGT.isTouch.addOverload([PrimitiveTGT_Group,PrimitiveTGT_Group],isTouch_Group_Group);
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Group,PrimitiveTGT__Group],isTouch_Group_Group);
 
-PrimitiveTGT.isTouch.addOverload([PrimitiveTGT_Group,PrimitiveTGT],function (group,tgt){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Group,PrimitiveTGT],function (group,tgt){
     return isTouch_noTransformPolygons_Group([tgt],group);
 });
-PrimitiveTGT.isTouch.addOverload([PrimitiveTGT,PrimitiveTGT_Group],function (tgt,group){
+PrimitiveTGT.isTouch.addOverload([PrimitiveTGT,PrimitiveTGT__Group],function (tgt,group){
     return isTouch_noTransformPolygons_Group([tgt],group);
 });
 
 
 export{
     Material,
-    PrimitiveTGT_Renderer,
+    Renderer_PrimitiveTGT,
     PrimitiveTGT,
-    PrimitiveRectTGT,
-    PrimitiveArcTGT,
-    PrimitiveSectorTGT,
-    PrimitivePolygonTGT,
-    PrimitiveBezierTGT,
-    PrimitiveTGT_Group
+    PrimitiveTGT__Rect,
+    PrimitiveTGT__Arc,
+    PrimitiveTGT__Sector,
+    PrimitiveTGT__Polygon,
+    PrimitiveTGT__Bezier,
+    PrimitiveTGT__Group
 };
