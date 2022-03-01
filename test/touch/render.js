@@ -53,7 +53,7 @@ t2.fill_uvwh={x:0.5,y:1};
 t2.lineWidth=2;
 t2.want_to_closePath=true;
 t2.stroke_Material=new Canvas2d__Material("#0f0");
-t2.transformMatrix=new Matrix2x2T().setTranslate(120,200).rotate(45*deg);
+t2.transformMatrix=new Matrix2x2T().set_translate(120,200).rotate(45*deg);
 t2.globalAlpha=0.5;
 
 var t3=new PrimitiveTGT__Polygon(new Polygon([
@@ -68,7 +68,7 @@ t3.fill_Material=spritesMap_Material;
 t3.fill_uv={x:2,y:2};
 t3.lineWidth=2;
 t3.stroke_Material=new Canvas2d__Material("#f00");
-t3.transformMatrix=new Matrix2x2T().setTranslate(150,150).rotate(-45*deg);
+t3.transformMatrix=new Matrix2x2T().set_translate(150,150).rotate(-45*deg);
 
 
 var renderer=new Renderer_PrimitiveTGT__Canvas2D([t1,t2,t3],ctx);
@@ -79,7 +79,7 @@ sp.img.onload=function (){
 
 var t4=new PrimitiveTGT__Bezier();
 t4.data=new Bezier_Polygon();
-t4.data.pushNode({
+t4.data.add_Node({
     node:{
         x:100-100,
         y:100-100
@@ -93,7 +93,7 @@ t4.data.pushNode({
         y:100-100
     },
 });
-t4.data.pushNode({
+t4.data.add_Node({
     node:{
         x:200-100,
         y:200-100
@@ -117,7 +117,7 @@ renderer.tgtList.push(t4);
 
 var d=new PrimitiveTGT__Bezier();
 d.data=new Bezier_Polygon();
-d.data.pushNode({
+d.data.add_Node({
     node:{
         x:100-100,
         y:100-100
@@ -131,7 +131,7 @@ d.data.pushNode({
         y:100-100
     },
 });
-d.data.pushNode({
+d.data.add_Node({
     node:{
         x:200-100,
         y:200-100

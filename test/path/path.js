@@ -64,7 +64,7 @@ CtrlCanvas2d.dot(ctx,pathData.sample(0.9999).v,4);
 var d=new PrimitiveTGT__Bezier();
 d.fill_Material=new Canvas2d__Material("#0000");
 d.data=new Bezier_Polygon();
-d.data.pushNode({
+d.data.add_Node({
     node:{
         x:100-100,
         y:100-100
@@ -78,7 +78,7 @@ d.data.pushNode({
         y:100-100
     },
 });
-d.data.pushNode({
+d.data.add_Node({
     node:{
         x:200-100,
         y:200-100
@@ -92,7 +92,7 @@ d.data.pushNode({
         y:100-100
     },
 });
-d.data.pushNode({
+d.data.add_Node({
     node:{
         x:300-100,
         y:100-100
@@ -106,7 +106,7 @@ d.data.pushNode({
         y:0-100
     },
 });
-d.data.pushNode({
+d.data.add_Node({
     node:{
         x:200-100,
         y:100-100
@@ -129,11 +129,11 @@ var a=new AnimationCtrl(function(t){
     renderer.render_all();
     var temp=pathData.sample(t);
     CtrlCanvas2d.dot(ctx,temp.v,4);
-    CtrlCanvas2d.dot(ctx,temp.v.add(temp.n.np(-20)),4);
+    CtrlCanvas2d.dot(ctx,temp.v.sum(temp.n.np(-20)),4);
     temp=d.data.sample(t);
     var temp1={
         v:d.localToWorld(temp.v),
-        n:d.localToWorld(temp.v.add(temp.n.np(10))),
+        n:d.localToWorld(temp.v.sum(temp.n.np(10))),
     };
     CtrlCanvas2d.dot(ctx,temp1.v,4);
     CtrlCanvas2d.dot(ctx,temp1.n,4);

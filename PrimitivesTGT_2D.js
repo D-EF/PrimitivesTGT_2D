@@ -184,7 +184,7 @@ class PrimitiveTGT{
     }
     /** 世界坐标变成局部坐标的矩阵 */
     get worldToLocalM(){
-        this.re_worldToLocalM();
+        this.refresh_worldToLocalM();
         return this._worldToLocalM;
     }
     // 这是个有多个重载的函数 , 在class定义的外面实现
@@ -210,9 +210,9 @@ class PrimitiveTGT{
     }
     /** 刷新逆变换矩阵
      */
-    re_worldToLocalM(){
+    refresh_worldToLocalM(){
         if(this._worldToLocalM===undefined){
-            this._worldToLocalM=this.transformMatrix.inverse();
+            this._worldToLocalM=this.transformMatrix.create_inverse();
         }
     }
     /** 判断某一点是否在目标内部
@@ -229,7 +229,7 @@ class PrimitiveTGT{
      * @returns {PrimitiveTGT__Polygon}
      */
     toPolygon(_accuracy=def_accuracy){
-        var rtn = new PrimitiveTGT__Polygon(this.data.createPolygonProxy(...arguments));
+        var rtn = new PrimitiveTGT__Polygon(this.data.create_polygonProxy(...arguments));
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
@@ -420,7 +420,7 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
         return this._data;
     }
     get world_bezier(){
-        if(!this._world_bezier)this.reload_worldBezier();
+        if(!this._world_bezier)this.refresh_worldBezier();
         return this._world_bezier;
     }
     /** data顶点修改时的回调委托
@@ -437,16 +437,16 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
     in_data_nodesChange(i,f){
         if(this._world_bezier)
         if(f){
-            this.world_bezier.insert(i,this.calc_worldNode(i));
+            this.world_bezier.insert_node(i,this.calc_worldNode(i));
         }
         else{
-            this.world_bezier.remove(i);
+            this.world_bezier.remove_node(i);
         }
     }
     /** 重新加载世界坐标系的所有节点 在变换矩阵或data被修改后使用
      * @returns {Bezier_Polygon}
      */
-    reload_worldBezier(){
+    refresh_worldBezier(){
         return this._world_bezier=Bezier_Polygon.linearMapping(this.data,this.transformMatrix);
     }
     /** 获取世界坐标的节点
@@ -617,7 +617,7 @@ PrimitiveTGT.prototype.is_inside.addOverload([Vector2],function(_v){
 
 // 局部坐标 to 世界坐标
 function _PrimitiveTGT__localToWorld(v){
-    return Vector2.afterTranslate_linearMapping(v,this.transformMatrix);
+    return Vector2.linearMapping_afterTranslate(v,this.transformMatrix);
 }
 PrimitiveTGT.prototype.localToWorld=OlFunction.create();
 PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
@@ -628,7 +628,7 @@ PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_PrimitiveTGT__localTo
 // 世界坐标 to 局部坐标
 function _PrimitiveTGT__worldToLocal(v){
     var tm=this.worldToLocalM;
-    return Vector2.beforeTranslate_linearMapping(v,tm);
+    return Vector2.linearMapping_beforeTranslate(v,tm);
 }
 PrimitiveTGT.prototype.worldToLocal=OlFunction.create();
 PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
@@ -731,8 +731,8 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Rect],func
     var opv,edv;
     if(tgt1.want_to_closePath){
         // 割圆 的线段也要判断
-        opv=Vector2.add(tgt1.data.opv,tgt1.data.c);
-        edv=tgt1.data.edv.add(tgt1.data.c);
+        opv=Vector2.sum(tgt1.data.opv,tgt1.data.c);
+        edv=tgt1.data.edv.sum(tgt1.data.c);
         for(i=l;i>0;--i){
             if(Math2D.get_intersectionOfLineLine(opv,edv,nodes[i],nodes[i-1])){
                 return true;
