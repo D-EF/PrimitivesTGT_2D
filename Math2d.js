@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-01 21:56:40
+ * @LastEditTime: 2022-03-02 15:29:29
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -92,7 +92,7 @@ class Math2D{
      * @param {Number} r2   圆2 半径
      * @returns {Boolean} 返回相交情况
      */
-    static get_intersectionOfCircleCircle(c1,r1,c2,r2){
+    static get_intersectionOfCircleCircle_f(c1,r1,c2,r2){
         var l=Vector2.dif(c2,c1).get_mag(),
             l1=r1+r2,
             l2=Math.abs(r1-r2);
@@ -136,7 +136,7 @@ class Math2D{
      * @param {Data_Arc} arc2 弧形2
      * @returns {Boolean} 返回相交情况
      */
-    static get_intersectionOfArcArc(arc1,arc2){
+    static get_intersectionOfArcArc_f(arc1,arc2){
         var cis=Math2D.get_intersectionOfCircleCircle_V(arc1.c,arc1.r,arc2.c,arc2.r);
         var rtn=[];
         var f=arc.angle>Math.PI;
@@ -227,7 +227,7 @@ class Math2D{
      * @param {Vector2} led     线段端点
      * @returns {Boolean} 相交情况
      */
-    static get_intersectionOfArcLine(arc,lop,led){
+    static get_intersectionOfArcLine_f(arc,lop,led){
         var cis=Math2D.get_intersectionOfCircleLine_V(lop,led,arc.c,arc.r);
         var opv=arc.opv,edv=arc.edv;
         
@@ -247,12 +247,12 @@ class Math2D{
      * @param {Vector2} led     线段端点
      * @returns {Boolean} 相交情况
      */
-    static get_intersectionOfSectorLine(sector,lop,led){
-        if(Math2D.get_intersectionOfArcLine(sector,lop,led)){
+    static get_intersectionOfSectorLine_f(sector,lop,led){
+        if(Math2D.get_intersectionOfArcLine_f(sector,lop,led)){
             return true
         }
-        return( Math2D.get_intersectionOfLineLine(lop,led,sector.c.sum(sector.opv),sector.c)||
-                Math2D.get_intersectionOfLineLine(lop,led,sector.c.sum(sector.edv),sector.c)
+        return( Math2D.get_intersectionOfLineLine_f(lop,led,sector.c.sum(sector.opv),sector.c)||
+                Math2D.get_intersectionOfLineLine_f(lop,led,sector.c.sum(sector.edv),sector.c)
         );
     }
 
@@ -263,7 +263,7 @@ class Math2D{
      * @param {Vector2} l2ed    线段2的终点
      * @returns{Number} 返回 1 表示相交; 0 表示没有相交; -1 表示 l1 终点在 l2 上, 或者 l2 起点在 l1 上; 2 表示 l2 终点在 l1 上, 或者 l1 起点在 l2 上; 
      */
-    static get_intersectionOfLineLine(l1op,l1ed,l2op,l2ed){
+    static get_intersectionOfLineLine_f(l1op,l1ed,l2op,l2ed){
         var temp1=Vector2.dif(l1ed,l1op),
             t1o=Vector2.dif(l1ed,l2op),
             t1e=Vector2.dif(l1ed,l2ed);
@@ -404,7 +404,7 @@ class Math2D{
         var tv2=Vector2.linearMapping(m,v2,true)
         temp.linearMapping(m,false,true);
         
-        var ts=temp.get_t_by_y(0),
+        var ts=temp.get_t_byY(0),
         tv,
         rtn=[];
         for(var i=ts.length-1;i>=0;--i){
@@ -422,7 +422,7 @@ class Math2D{
      * @param {Vector2} vb2 矩形b的向量2
      * @returns {Boolean} 返回是否相交
      */
-    static get_intersectionOfBoxBox(va1,va2,vb1,vb2){
+    static get_intersectionOfBoxBox_f(va1,va2,vb1,vb2){
         return  (((va1.x>vb1.x)!==(va1.x>vb2.x))||((va2.x>vb1.x)!==(va2.x>vb2.x))||((vb1.x>va1.x)!==(vb1.x>va2.x))||((vb2.x>va1.x)!==(vb2.x>va2.x)))&&
                 (((va1.y>vb1.y)!==(va1.y>vb2.y))||((va2.y>vb1.y)!==(va2.y>vb2.y))||((vb1.y>va1.y)!==(vb1.y>va2.y))||((vb2.y>va1.y)!==(vb2.y>va2.y)));
     }
@@ -474,7 +474,7 @@ class Math2D{
      * @param {Vector2} v2 线段端点
      * @returns {Number} 射线穿过情况
      */
-    static get_intersectionOfXRadialLine(x,y,v1,v2){
+    static get_intersectionOfXRadialLine_f(x,y,v1,v2){
         if(v1.x==x&&v1.y==y) return 1;//如果正好在顶点上直接算在内部
         if(v2.x==x&&v2.y==y) return -1;//如果正好在顶点上直接算在内部
         var tempK,temp;
@@ -501,8 +501,8 @@ class Math2D{
      * @param {BezierCurve} bezier 曲线实例
      * @returns {number} 射线穿过曲线次数 返回-1代表点正好在曲线坐标上
      */
-    static get_intersectionOfXRadialBezier(x,y,bezier){
-        var nbs=bezier.get_t_by_y(y),tx,rtn=0;
+    static get_intersectionOfXRadialBezier_f(x,y,bezier){
+        var nbs=bezier.get_t_byY(y),tx,rtn=0;
         for(var i=nbs.length-1;i>=0;--i){
             if(x>(tx=bezier.sample_x(nbs[i]))){
                 ++rtn;
@@ -519,7 +519,7 @@ class Math2D{
      * @param {Boolean} f_lil 是否使用最后得到的向量配对进行交点计算, 默认为true, 注意 如果采样精度太低进行求交可能会导致交点丢失
      * @returns {Vectore2[]}  返回交点的集合
      */
-    static get_intersectionOfBezierBezier(bezier1,bezier2,_accuracy,f_lil){
+    static get_intersectionOfBezierBezier_f(bezier1,bezier2,_accuracy,f_lil){
         /**@type {BezierCurve[][]} 两条曲线的单调子曲线*/
         var group_bezier=[Math2D.get_cutOffBezierToUnilateral_byRoot(bezier1),Math2D.get_cutOffBezierToUnilateral_byRoot(bezier2)],
             l=group_bezier[0].length-1,
@@ -573,7 +573,7 @@ class Math2D{
                             rtn.push(Math2D.get_centerByVector2List([group[i].v1,group[i].v2,group[i].sb[j].v1,group[i].sb[j].v2]));
                         }
                         else{
-                            tempVector2=group[i].get_intersectionOfLineLine(group[i].sb[j]);
+                            tempVector2=group[i].get_intersectionOfLineLine_f(group[i].sb[j]);
                             if(!(isNaN(tempVector2.x)||(tempVector2.x===Infinity)||(tempVector2.x===-Infinity)||
                             isNaN(tempVector2.y)||(tempVector2.y===Infinity)||(tempVector2.y===-Infinity)))
                             rtn.push(tempVector2);
@@ -1279,7 +1279,7 @@ class Data_Rect{
                 // 圆心和实参的坐标
                 var l2op=new Vector2(0,0);
                 var l2ed=new Vector2(x,y);
-                var ISF=Math2D.get_intersectionOfLineLine(l1op,l1ed,l2op,l2ed);  //相交情况
+                var ISF=Math2D.get_intersectionOfLineLine_f(l1op,l1ed,l2op,l2ed);  //相交情况
                 if(arcA>Math.PI){
                     // 大于半圆
                     return ISF===0;
@@ -1960,12 +1960,6 @@ class Matrix2x2T extends Matrix2x2{
     }
 }
 
-console.log(
-Matrix2x2.create.rotate(45*deg).join(",")
-);
-
-console.log(new Matrix2x2T(1,0,0,2,300,0).multiplication(Matrix2x2.create.rotate(45*deg)).join(","));
-
 /** 多边形  */
 class Polygon{
     /** 多边形
@@ -2430,7 +2424,7 @@ class Polygon{
         var f=0;
         for(--i;i>=0;--i){
             for(j=vl2.length-2;j>=0;--j){
-                f+=Math2D.get_intersectionOfLineLine(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
+                f+=Math2D.get_intersectionOfLineLine_f(vl1[i],vl1[i+1],vl2[j],vl2[j+1]);
             }
         }
         return f;
@@ -2446,7 +2440,7 @@ class Polygon{
         var i=vl1.length-1,j;
         for(--i;i>=0;--i){
             for(j=vl2.length-2;j>=0;--j){
-                if(Math2D.get_intersectionOfLineLine(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))
+                if(Math2D.get_intersectionOfLineLine_f(vl1[i],vl1[i+1],vl2[j],vl2[j+1]))
                 return true;
             }
         }
@@ -2469,7 +2463,7 @@ class Polygon{
 
 /** 贝塞尔曲线的数据
  */
- class BezierCurve{
+class BezierCurve{
     /** @param {Vector2[]} points 控制点们 Vector2
      */
     constructor(points){
@@ -2523,7 +2517,7 @@ class Polygon{
     /** 重新设置控制点
      * @param {Vector2} points 控制点们 Vector2
      */
-     reset_points(points){
+    reset_points(points){
         this._derivatives=null;
         if(points&&points.length){
             this._points=new Array(points.length);
@@ -2560,30 +2554,6 @@ class Polygon{
     }
     copy(){
         return BezierCurve.copy(this);
-    }
-    /** 生成 BezierNode (当前曲线的应该是三阶或二阶曲线才能正常使用)
-     * @returns {Bezier_Node[]}  BezierNode
-     */
-    toBezierNode(){
-        var l=this.points.length-1;
-        return [
-            new Bezier_Node(this.points[0],
-                this.points[0].sum(this.points[0].dif(this.points[1])),
-                this.points[1]
-                ),
-            new Bezier_Node(this.points[0],
-                this.points[l-1],
-                this.points[l].sum(this.points[l].dif(this.points[l-1]))
-                ),                
-        ]
-
-    }
-    /** 使用 Bezier_Node 创建 (三阶贝塞尔曲线)
-     * @param {Bezier_Node} node1
-     * @param {Bezier_Node} node2
-     */
-    static createBy_BezierNode(node1,node2){
-        return new BezierCurve([node1.node,node1.hand_after,node2.hand_before,node2.node]);
     }
     set points(points){
         this.reset_points(points);
@@ -2779,7 +2749,7 @@ class Polygon{
         }
         var rtn=this.derivatives?rootsOfCubic(this.derivatives.coefficient_X).concat(rootsOfCubic(this.derivatives.coefficient_Y)).concat(this.derivatives.get_root_t(depth-1)):[];
         if(!range_flag){
-            rtn=rtn.filter(BezierCurve.t_range);
+            rtn=rtn.filter(BezierCurve.is_tRange);
         }
         return rtn;
     }
@@ -2845,13 +2815,13 @@ class Polygon{
     /** t 是否在合法的取值范围
      * @param {Number} t 
      */
-    static t_range(t){
+    static is_tRange(t){
         return t>=0&&t<=1;
     }
     /** 曲线的拐点 仅用于三阶曲线
      * @returns {Number[]} 曲线拐点的 t 参数的集合
      */
-    inflections(){
+    get_inflections(){
         var points=this.align_proxy.points,
             a=points[2].x*points[1].y,
             b=points[3].x*points[1].y,
@@ -2875,19 +2845,19 @@ class Polygon{
      * @param {Number} x X坐标
      * @returns 对应的t值
      */
-    get_t_by_x(x){
+    get_t_byX(x){
         var temp=this.coefficient_X.concat();
         temp[0]-=x;
-        return rootsOfCubic(temp).filter(BezierCurve.t_range);
+        return rootsOfCubic(temp).filter(BezierCurve.is_tRange);
     }
     /** 使用坐标求t值
      * @param {Number} y Y坐标
      * @returns 对应的t值
      */
-    get_t_by_y(y){
+    get_t_byY(y){
         var temp=this.coefficient_Y.concat();
         temp[0]-=y;
-        return rootsOfCubic(temp).filter(BezierCurve.t_range);
+        return rootsOfCubic(temp).filter(BezierCurve.is_tRange);
     }
     /** 求弧长
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
@@ -2960,7 +2930,7 @@ class Polygon{
      * @param {Number} t 时间参数 t
      * @returns {Number} 当前点曲率
      */
-    kappa(t){
+    get_kappa(t){
         var d = this.derivative(t),
             dd = this.derivatives.derivative(t),
             numerator = d.x * dd.y - dd.x * d.y,
@@ -2973,8 +2943,8 @@ class Polygon{
      * @param {Data_Arc} tgtData 目标 data, 该参数传入后值将会被修改并返回，而不是返回新实例化的数据
      * @returns {Data_Arc} 当前点曲率拟合圆
      */
-    kappa_circle(t,tgtData){
-        var kr=-1/this.kappa(t),
+    create_kappaCircle(t,tgtData){
+        var kr=-1/this.get_kappa(t),
             pt=this.sample(t),
             n=this.get_normal(t).normalize(),
             c=pt.sum(n.np(kr));
@@ -2994,7 +2964,7 @@ class Polygon{
      * @return {{t:Number,v:Vector2,l:Number}} v2 最近的点的当前点
      * @return {{t:Number,v:Vector2,l:Number}} v3 最近的点的后一个点
      */
-    projection_point_first_by_arcLiength(v,type,step_size){
+    created_projectionPointFirst(v,type,step_size){
         var type=type||'t',
             step_size=step_size===undefined?this.polygon_proxy_want_sp:(this.polygon_proxy_want_sp=step_size);
 
@@ -3042,7 +3012,7 @@ class Polygon{
      * @param {Number} accuracy      逼近时的采样精度(0<sp<1) 值越小精度越高 默认0.0001
      * @returns {{t:Number,v:Vector2,l:Number}} 投影信息
      */
-    projection_point_refining(v,basics_points,accuracy){
+    refine_projectionPoint_halfApproximation(v,basics_points,accuracy){
         var accuracy=accuracy||0.0001;
         if(approximately(basics_points.v2.t,basics_points.v3.t,accuracy)){
             // 精度足够
@@ -3059,7 +3029,7 @@ class Polygon{
                 v:(nv2v=this.sample(nv2t)),
                 l:Math2D.get_lineLength(nv2v,v)
             }
-            return this.projection_point_refining(v,{
+            return this.refine_projectionPoint_halfApproximation(v,{
                 v1:basics_points.v2,
                 v2:nv2,
                 v3:temp,
@@ -3073,8 +3043,8 @@ class Polygon{
      * @param {Number} accuracy  逼近精度 0~1 越小精度越高
      * @returns {{t:Number,v:Vector2,l:Number}} 投影信息
      */
-    projection_point(v,type="t",step_size,accuracy=0.001){
-        return this.projection_point_refining(v,this.projection_point_first_by_arcLiength(v,type,step_size),accuracy);
+    create_projectionPoint(v,type="t",step_size,accuracy=0.001){
+        return this.refine_projectionPoint_halfApproximation(v,this.created_projectionPointFirst(v,type,step_size),accuracy);
     }
     /** 圆形与曲线的交点
      * @param {Vector2} c 圆心
@@ -3240,12 +3210,12 @@ class Unilateral_Bezier_Box{
             v12=this.v2 ||this.b.sample(this.t2),
             v21=bb.v1   ||  bb.b.sample(  bb.t1),
             v22=bb.v2   ||  bb.b.sample(  bb.t2);
-        return Math2D.get_intersectionOfBoxBox(v11,v12,v21,v22);
+        return Math2D.get_intersectionOfBoxBox_f(v11,v12,v21,v22);
     }
     /** 立刻使用向量求交, 如果曲线的导数差异较大可能会导致求交失败
      * @returns {Vector2[]}
      */
-    all_get_intersectionOfLineLine(){
+    all_get_intersectionOfLineLine_f(){
         var tb,rtn=[];
         for(var i=this.sb.length-1;i>=0;--i){
             tb=this.sb[i];
@@ -3257,7 +3227,7 @@ class Unilateral_Bezier_Box{
      * @param {Unilateral_Bezier_Box} 
      * @returns {Vector2}
      */
-    get_intersectionOfLineLine(bb){
+    get_intersectionOfLineLine_f(bb){
         return Math2D.get_intersectionOfLineLine_v(this.v1.x,this.v1.y,this.v2.x,this.v2.y,bb.v1.x,bb.v1.y,bb.v2.x,bb.v2.y);
     }
 }
@@ -3538,11 +3508,11 @@ class Bezier_Polygon{
         i=this.nodes.length-1;
         if(f===-1){
             // 线段
-            rtn+=Math2D.get_intersectionOfXRadialLine(x,y,this.nodes[i].node,this.nodes[0].node)
+            rtn+=Math2D.get_intersectionOfXRadialLine_f(x,y,this.nodes[i].node,this.nodes[0].node)
         }
         // 射线穿过曲线
         for(f==1?1:--i;i>=0;--i){
-            rtn+=Math2D.get_intersectionOfXRadialBezier(x,y,this.get_bezierCurve(i));
+            rtn+=Math2D.get_intersectionOfXRadialBezier_f(x,y,this.get_bezierCurve(i));
         }
         return !!(rtn%2);
     }
@@ -3556,7 +3526,7 @@ class Bezier_Polygon{
                 if(this.nodes[index+1]){
                     i=index+1;   
                 }
-                this._bezierCurves[index]=(BezierCurve.createBy_BezierNode(this.nodes[index],this.nodes[i]));
+                // this._bezierCurves[index]=(BezierCurve.createBy_BezierNode(this.nodes[index],this.nodes[i])); // todo
             }
         }
         return this._bezierCurves[index];
@@ -3600,9 +3570,7 @@ class Bezier_Polygon{
             return Math2D.get_lineLength(this.nodes[index].node,this.nodes[0].node);
         }
         var d=this.get_bezierCurve(index).arc_length_table;
-        return d[d.length-1].l
-
-        
+        return d[d.length-1].l;
     }
     /** 多边形所有边的长度和
      * @param {Boolean} closeFlag 如何闭合多边形 1为曲线闭合 -1为直线闭合 0为不闭合
@@ -3658,7 +3626,6 @@ class Data_Arc__Ellipse extends Data_Arc {
         this.polygon_proxy_want_sp=20;
         this._polygon_proxy_sp=20;
     }
-
     /** 局部 to 世界
      * @param {Vector2} v 局部坐标
      */

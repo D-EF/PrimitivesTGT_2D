@@ -174,7 +174,7 @@ cnm.onmousemove=function(e){
     ctx.clearRect(0,0,1000,1000)
     renderer.render_all();
     var v=t4.worldToLocal(Vector2.copy({x:e.offsetX,y:e.offsetY}));
-    CtrlCanvas2d.dot(ctx,t4.localToWorld(ka.projection_point(v,"t").v),3,"#0f0");
+    CtrlCanvas2d.dot(ctx,t4.localToWorld(ka.create_projectionPoint(v,"t").v),3,"#0f0");
     
     if(PrimitiveTGT.isTouch(d,t1))console.log("is touching t1");
     if(PrimitiveTGT.isTouch(d,t2))console.log("is touching t2");

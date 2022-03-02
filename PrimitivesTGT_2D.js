@@ -724,7 +724,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Rect],func
         nodes=t2d.nodes;
 
     for(;i>0;--i){
-        if(Math2D.get_intersectionOfArcLine(tgt1.data,nodes[i],nodes[i-1])){
+        if(Math2D.get_intersectionOfArcLine_f(tgt1.data,nodes[i],nodes[i-1])){
             return true;
         }
     }
@@ -734,18 +734,18 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Rect],func
         opv=Vector2.sum(tgt1.data.opv,tgt1.data.c);
         edv=tgt1.data.edv.sum(tgt1.data.c);
         for(i=l;i>0;--i){
-            if(Math2D.get_intersectionOfLineLine(opv,edv,nodes[i],nodes[i-1])){
+            if(Math2D.get_intersectionOfLineLine_f(opv,edv,nodes[i],nodes[i-1])){
                 return true;
             }
         }
     }
     if((l>1&&tgt2.want_to_closePath)&&(!tgt2.data.isClosed())){
         // 规定闭合路径的多边形, 多算一次
-        if(Math2D.get_intersectionOfArcLine(tgt1.data,nodes[0],nodes[l])){
+        if(Math2D.get_intersectionOfArcLine_f(tgt1.data,nodes[0],nodes[l])){
             return true;
         }
         if(tgt1.want_to_closePath){
-            if(Math2D.get_intersectionOfLineLine(tgt1.data.opv,tgt1.data.edv,nodes[0],nodes[l])){
+            if(Math2D.get_intersectionOfLineLine_f(tgt1.data.opv,tgt1.data.edv,nodes[0],nodes[l])){
                 return true;
             }
         }
@@ -800,13 +800,13 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Rect],funct
         nodes=t2d.nodes;
 
     for(;i>0;--i){
-        if(Math2D.get_intersectionOfSectorLine(tgt1.data,nodes[i],nodes[i-1])){
+        if(Math2D.get_intersectionOfSectorLine_f(tgt1.data,nodes[i],nodes[i-1])){
             return true;
         }
     }
     if((l>1&&tgt2.want_to_closePath)&&(!tgt2.data.isClosed())){
         // 规定闭合路径的多边形, 多算一次
-        if(Math2D.get_intersectionOfSectorLine(tgt1.data,nodes[0],nodes[l])){
+        if(Math2D.get_intersectionOfSectorLine_f(tgt1.data,nodes[0],nodes[l])){
             return true;
         }
     }
@@ -864,10 +864,10 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
         // 曲线对象正在使用直线闭合起点~终点 
         j=t2d1.nodes.length-1;
         if(tgt2.want_to_closePath){
-            if(Math2D.get_intersectionOfLineLine(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
+            if(Math2D.get_intersectionOfLineLine_f(t2d1.nodes[j],t2d1.nodes[0],t1d_w.nodes[0].node,t1d_w.nodes[i].node))return true;
         }
         for(--j;j>=0;--j){
-            if(Math2D.get_intersectionOfLineLine(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1.nodes[j],t2d1.nodes[j+1]))return true;
+            if(Math2D.get_intersectionOfLineLine_f(t1d_w.nodes[0].node,t1d_w.nodes[i].node,t2d1.nodes[j],t2d1.nodes[j+1]))return true;
         }
     }
     if(tgt1._want_to_closePath!==1)--i;
@@ -918,11 +918,11 @@ function isTouch_Bezier_Arc(tgt1,tgt2){
         // 曲线对象正在使用直线闭合起点~终点 
         if(tgt2.want_to_closePath){
             // 弧形自闭合,多计算一个直线段(弦)
-            if(Math2D.get_intersectionOfLineLine(t2d.opv,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+            if(Math2D.get_intersectionOfLineLine_f(t2d.opv,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
                 return true;
             }
         }
-        if(Math2D.get_intersectionOfArcLine(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+        if(Math2D.get_intersectionOfArcLine_f(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
             return true;
         }
     }
@@ -962,12 +962,12 @@ function isTouch_Bezier_Sector(tgt1,tgt2){
         // 曲线对象正在使用直线闭合起点~终点 
         if(tgt2.want_to_closePath){
             // 弧形自闭合,多计算一个直线段(弦)
-            if( Math2D.get_intersectionOfLineLine(t2d.c,t2d.opv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)||
-                Math2D.get_intersectionOfLineLine(t2d.c,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+            if( Math2D.get_intersectionOfLineLine_f(t2d.c,t2d.opv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)||
+                Math2D.get_intersectionOfLineLine_f(t2d.c,t2d.edv,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
                 return true;
             }
         }
-        if(Math2D.get_intersectionOfArcLine(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
+        if(Math2D.get_intersectionOfArcLine_f(t2d,t1d_l2.nodes[0].node,t1d_l2.nodes[i].node)){
             return true;
         }
     }
@@ -1007,7 +1007,7 @@ function isTouch_Bezier_Bezier(tgt1,tgt2){
         // 曲线对象1正在使用直线闭合起点~终点 
         j=t2d_w.nodes.length-1;
         if(tgt2.want_to_closePath===-1){
-            if(Math2D.get_intersectionOfLineLine(t2d_w.nodes[j].node,t2d_w.nodes[0].node,t1d_w.nodes[j].node,t1d_w.nodes[0].node))return true;
+            if(Math2D.get_intersectionOfLineLine_f(t2d_w.nodes[j].node,t2d_w.nodes[0].node,t1d_w.nodes[j].node,t1d_w.nodes[0].node))return true;
         }
         if(tgt2._want_to_closePath!==1)--j;
         for(;j>=0;--j){
@@ -1022,7 +1022,7 @@ function isTouch_Bezier_Bezier(tgt1,tgt2){
         if(tgt2._want_to_closePath!==1)--j;
         for(;j>=0;--j){
             tempBezierCurve2=t2d_w.get_bezierCurve(j);
-            if(Math2D.get_intersectionOfBezierBezier(tempBezierCurve,tempBezierCurve2,0.01,true).length){
+            if(Math2D.get_intersectionOfBezierBezier_f(tempBezierCurve,tempBezierCurve2,0.01,true).length){
                 return true;
             }
         }
