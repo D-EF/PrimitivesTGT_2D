@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-02 15:29:29
+ * @LastEditTime: 2022-03-02 21:53:59
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -867,7 +867,7 @@ class Data_Rect{
      * @returns {Polygon} 返回一个多边形
      */
     create_polygonProxy(){
-        return Polygon.rect(this.x,this.y,this.w,this.h);
+        return Polygon.create_rect(this.x,this.y,this.w,this.h);
     }
 }
 
@@ -896,7 +896,10 @@ class Data_Rect{
         this._angle;
         this._min;
         this._max;
+        /** @type {Polygon} 多边形拟合代理对象 */
         this._polygon_proxy=null;
+        /** @type {Number} 每个点相差的弧度 */
+        this._polygon_proxy_want_sp=10*deg;
         // 访问器
         this.setAngle_AB(angle_A,angle_B);
     }
@@ -963,13 +966,7 @@ class Data_Rect{
      * @returns {Data_Arc}
      */
     copy(){
-        return new Data_Arc(
-            this.c.x,
-            this.c.y,
-            this._r,
-            this._startAngle,
-            this._endAngle,
-            );
+        return this.constructor.copy(this);
     }
     /**弧形起点
      * @returns {Vector2}
@@ -1298,24 +1295,160 @@ class Data_Rect{
         // 不在半径内直接判定为外
         return false;
     }
-    /** 获取代理用的多边形
-     * @param {Number}  _accuracy   弧形转换成多边形时代精度
-     * @param {Boolean} _closeFlag  当不足为整个圆时 是否要封闭
-     */
-    get_polygonProxy(){
-        if(!this._polygonProxy){
-            this._polygonProxy=this.create_polygonProxy();
-        }
-        return this._polygonProxy;
+    /** @type {Number} 每个点相差的弧度 */
+    get polygon_proxy_want_sp(){
+        return this._polygon_proxy_want_sp;
     }
-    /** 生成代理用的多边形
-     * @param {Number}  _accuracy   弧形转换成多边形时代精度
-     * @param {Boolean} _closeFlag  当不足为整个圆时 是否要封闭
+    /** @type {Number} 每个点相差的弧度 */
+    set polygon_proxy_want_sp(val){
+        if(val===this._polygon_proxy_want_sp){
+            return val;
+        }
+        this.polygon_proxy=null;
+        return this._polygon_proxy_want_sp=val;
+    }
+    /** 获取代理用的多边形
+     * @param {Number}  step_size   弧形转换成多边形时的精度 每个点相差的弧度
      */
-    create_polygonProxy(_accuracy,_closeFlag){
-        var rtn=Polygon.arc(this.r,this.startAngle,this.endAngle,_accuracy,_closeFlag);
+    get_polygonProxy(step_size){
+        if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
+        if(!this._polygon_proxy){
+            this._polygon_proxy=this.create_polygonProxy();
+        }
+        return this._polygon_proxy;
+    }
+    /** 生成拟合弧形的多边形
+     * @param {Number}  step_size   弧形转换成多边形时的精度 每个点相差的弧度
+     */
+    create_polygonProxy(step_size){
+        var rtn=Polygon.create_arc_byStepLong(this.r,this.startAngle,this.endAngle,step_size||this.polygon_proxy_want_sp);
         rtn.translate(this.c);
         return rtn;
+    }
+}
+
+class Data_Arc__Ellipse extends Data_Arc {
+    /**
+     * @param {Number} cx       圆心坐标 x
+     * @param {Number} cy       圆心坐标 y
+     * @param {Number} rx       x 方向 半径
+     * @param {Number} ry       y 方向 半径
+     * @param {Number} angle_A  未进行变换时的 起点角度
+     * @param {Number} angle_B  未进行变换时的 终点角度
+     */
+    constructor(cx,cy,rx,ry,angle_A,angle_B){
+        super(0,0,rx,angle_A,angle_B);
+        /** @type {Number} ry, rx d的比 */
+        this.ry_ratio_rx=ry/rx;
+        /** @type {Matrix2x2T} */
+        this.transform_matrix=new Matrix2x2T().scale(1,ry_ratio_rx).translate(cx,cy);
+    }
+    static copy(d){
+        return new Data_Arc__Ellipse(
+            this.c.x,
+            this.c.y,
+            this.rx,
+            this.ry,
+            this._startAngle,
+            this._endAngle,
+        );
+    }
+    set rx(r){
+        this.r=r
+        this.ry_ratio_rx=this.ry/r;
+
+        this.reset_transformMatrix();
+        return r;
+    }
+    get rx(){
+        return this.r;
+    }
+    set ry(r){
+        this.ry_ratio_rx=r/this.rx;
+        this.reset_transformMatrix();
+        return r;
+    }
+    get ry(){
+        return this.r*this.ry_ratio_rx;
+    }
+    reset_transformMatrix(){
+        /** @type {Matrix2x2T} 局部坐标 to 世界坐标 的矩阵 (向量后乘矩阵)*/
+        this.transform_matrix.set(new Matrix2x2T().scale(1,ry_ratio_rx).translate(this.c.x,this.c.y));
+    }
+    /** 局部 to 世界
+     * @param {Vector2} v 局部坐标
+     */
+    locToWorld(v){
+        return Vector2.linearMapping_afterTranslate(v,this.transformMatrix)
+    }
+    /** 世界 to 局部
+     * @param {Vector2} v 
+     */
+    worldToLoc(v){
+        var tm=this.worldToLocalM;
+        return Vector2.linearMapping_beforeTranslate(v,tm);
+    }
+    get_minAmax(){
+        var mm=super.get_minAmax()
+        return {
+            max:this.locToWorld(mm.max),
+            min:this.locToWorld(mm.min),
+        }
+    }
+    get_tangent(t){
+        return this.locToWorld(super.get_tangent(t));
+    }
+    get_normal(t){
+        return this.locToWorld(super.get_normal(t)).normalize();
+    }
+    sample(t){
+        return this.locToWorld(super.sample(t));
+    }
+    sample_byAngle(angle){
+        return this.locToWorld(super.sample_byAngle(angle));
+    }
+    get_opv(){
+        return this.locToWorld(super.get_opv());
+    }
+    get_edv(){
+        return this.locToWorld(super.get_edv());
+    }
+    get_polygonProxy(step_size){
+        if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
+        if(!this._polygon_proxy){
+            this._polygon_proxy=this.create_polygonProxy();
+            this._polygon_proxy.linearMapping(this.transform_matrix);
+        }
+        return this._polygon_proxy;
+    }
+    /** 求弧长
+     * @param {Number} step_size 弧度采样精度 在变换前的采样点间的弧度差异
+     * @returns {Number} 使用多边形拟合曲线求得的长度
+     */
+    get_arcLength(step_size){
+        return this.get_polygonProxy(step_size).get_all_lineLength();
+    }
+    // todo
+    /** 使用弧长求t值
+     * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时取0
+     * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
+     * @returns {Number} 对应的时间参数t
+     */
+    get_t_by_arc_length(length,step_size){
+        if(step_size) this.polygon_proxy_want_sp=step_size;
+        var tb=this.arc_length_table,
+            i=tb.length-1,
+            l=length>=0?length:tb[i]+length;
+        for(--i;i>=0;--i){
+            if(tb[i].l<l){
+                // return this._polygon_proxy_sp*(i+(l-tb[i])/(tb[i+1]-tb[i]))
+                if(tb[i+1]){
+                    return tb[i].t+(l-tb[i].l)/(tb[i+1].l-tb[i].l)*(tb[i+1].t-tb[i].t);
+                }
+                return 0
+            }
+        }
+        return 0;
     }
 }
 
@@ -2271,7 +2404,7 @@ class Polygon{
      * @return {Number} l 点到目标的距离
      * @return {Number} k 目标为边时点到边的投影的系数
      */
-    point_in_node_or_line(point,r,line_width,want_to_close){
+    pointInNodeOrLine(point,r,line_width,want_to_close){
         var nodes=this.nodes;
         var i=nodes.length-1,min=Infinity,temp=0,ti=i;
         if(r>0){
@@ -2308,7 +2441,7 @@ class Polygon{
      * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
      * @returns {Number} 返回线段的长度
      */
-    get_get_lineLength(index){
+    get_lineLength(index){
         var j=index===this.nodes.length-1?0:index+1;
         if(this._lines_length[index]===undefined||this._lines_length[index]<0){
             this._lines_length[index]=Math2D.get_lineLength(this.nodes[index],this.nodes[j]);
@@ -2319,7 +2452,7 @@ class Polygon{
      * @param {Boolean} closeFlag 是否闭合多边形
      * @returns {Number}
      */
-    get_all_get_lineLength(closeFlag){
+    get_all_lineLength(closeFlag){
         if(this._all_lines_length<0||this._all_lines_length===undefined){
             var rtn=0;
             var i=this.nodes.length-1;
@@ -2327,7 +2460,7 @@ class Polygon{
                 --i;
             }
             for(;i>=0;--i){
-                rtn+=this.get_get_lineLength(i);
+                rtn+=this.get_lineLength(i);
             }
             this._all_lines_length=rtn;
         }
@@ -2339,15 +2472,15 @@ class Polygon{
      * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
     sample(t,closeFlag){
-        var l=t%1*this.get_all_get_lineLength(closeFlag),temp,
+        var l=t%1*this.get_all_lineLength(closeFlag),temp,
             i=0,j=0,
             lt,
             v,n;
-        while(l>(temp=this.get_get_lineLength(i))){
+        while(l>(temp=this.get_lineLength(i))){
             l-=temp;
             ++i;
         }
-        lt=l/this.get_get_lineLength(i);
+        lt=l/this.get_lineLength(i);
         j=i===this.nodes.length-1?0:i+1;
         v=Math2D.sample_line(this.nodes[i],this.nodes[j],lt);
         n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.rotate90);
@@ -2371,7 +2504,7 @@ class Polygon{
      * @param {Number} _accuracy         精度 最小为2, 表示弧形由个顶点构成
      * @param {Boolean} _closeFlag 当不足为整个圆时 是否要封闭
      */
-    static arc(r,_startAngle,_endAngle,_accuracy,_closeFlag){
+    static create_arc(r,_startAngle,_endAngle,_accuracy,_closeFlag){
         var rtn=new Polygon();
         var accuracy=_accuracy>=2?_accuracy:2,
             startAngle,endAngle,cyclesflag,
@@ -2405,8 +2538,38 @@ class Polygon{
         }
         return rtn;
     }
+    /** 生成拟合弧形的多边形
+     * @param {Number} r                半径
+     * @param {Number} startAngle       开始的弧度(rad)
+     * @param {Number} endAngle         结束的弧度(rad)
+     * @param {Number} _accuracy        步长    每个采样点距离上一个采样点的弧度
+     * @param {Boolean} _closeFlag      是否链接起点和终点
+     * @returns 
+     */
+    static create_arc_byStepLong(r,_startAngle,_endAngle,_stepLong,_closeFlag){
+        var rtn=new Polygon();
+        var startAngle,endAngle,
+            stepLong=_stepLong||10*deg,
+            i=0,tempAngle;
+        startAngle=_startAngle;
+        endAngle=_endAngle;
+        tempAngle=startAngle+i*stepLong;
+        do{
+            rtn.add_Node(new Vector2(Math.cos(tempAngle)*r,Math.sin(tempAngle)*r));
+            ++i;
+            tempAngle=startAngle+i*stepLong;
+        }while(tempAngle>=endAngle);
+        if(tempAngle>endAngle){
+            rtn.add_Node(new Vector2(Math.cos(endAngle)*r,Math.sin(endAngle)*r));
+        }
+        if(_closeFlag){
+            rtn.seal();
+        }
+        return rtn;
+    }
     static sector(r,_startAngle,_endAngle,_accuracy){
-        var rtn=Polygon.arc(r,_startAngle,_endAngle,_accuracy,false)
+        var rtn=Polygon.create_arc(r,_startAngle,_endAngle,_accuracy,false);
+        if((endAngle-startAngle>=cycles||endAngle-startAngle<=-1*cycles)) return rtn;
         rtn.insert_node(0,new Vector2(0,0));
         rtn.add_Node(new Vector2(0,0));
         return rtn;
@@ -2490,7 +2653,7 @@ class BezierCurve{
         /**@type {Number} 目标的多边形代理的步长,如果和_polygon_proxy_sp不同时，get访问器会重新生成多边形代理*/
         this._polygon_proxy_want_sp;
         this.polygon_proxy_want_sp=0.1;
-        /**@type {{t:Number,l:Number}[]} 弧长记录表 */
+        /**@type {{t:Number,l:Number}[]} 弧长显式查找表 */
         this._arc_length_table=null;
         if(points) this.reset_points(points);
         /**@type {Object} t参数对应的点的集合 */
@@ -2889,7 +3052,7 @@ class BezierCurve{
         }
         return 0;
     }
-    /** 弧长记录表 */
+    /** 弧长显式查找表 */
     get arc_length_table(){
         var polygon=this.polygon_proxy;
         if(this._arc_length_table[0].l===null){
@@ -3336,14 +3499,14 @@ class Bezier_Polygon{
     }
     /** 线性变换 切换前两个参数的顺序以控制前乘矩阵还是后乘矩阵 arg1*arg2
      * @param {Bezier_Polygon} bezier_Polygon 变换的多边形
-     * @param {Matrix2x2T} transform_m 变换矩阵
+     * @param {Matrix2x2T} transform_matrix 变换矩阵
      * @param {Boolean} f 先平移或后平移
      * @param {Vector2} anchorPoint 变换使用的基准点
      */
-    static linearMapping(bezier_Polygon,transform_m,f,anchorPoint){
+    static linearMapping(bezier_Polygon,transform_matrix,f,anchorPoint){
         var rtn=new Bezier_Polygon();
         var tf=bezier_Polygon instanceof Bezier_Polygon;
-        var m,p=tf?(m=transform_m,bezier_Polygon):(m=bezier_Polygon,transform_m);
+        var m,p=tf?(m=transform_matrix,bezier_Polygon):(m=bezier_Polygon,transform_matrix);
         for(var i=0;i<p._nodes.length;++i){
             rtn.add_Node(tf?{
                 node:Vector2.linearMapping(p.nodes[i].node,m,f,anchorPoint),
@@ -3613,116 +3776,6 @@ class Bezier_Polygon{
     }
 }
 
-
-class Data_Arc__Ellipse extends Data_Arc {
-    constructor(cx,cy,rx,ry,angle_A,angle_B){
-        super(0,0,rx,angle_A,angle_B);
-        /** @type {Matrix2x2T} 局部坐标 to 世界坐标 的矩阵 (向量后乘矩阵)*/
-        this.transform_m=new Matrix2x2T().scale(1,ry/rx).translate(cx,cy);
-        
-        this._arc_length_table=null;
-        /** @type {Polygon} 拟合圆弧多边形 */
-        this._polygon_proxy=null;
-        this.polygon_proxy_want_sp=20;
-        this._polygon_proxy_sp=20;
-    }
-    /** 局部 to 世界
-     * @param {Vector2} v 局部坐标
-     */
-    locToWorld(v){
-        return Vector2.linearMapping_afterTranslate(v,this.transformMatrix)
-    }
-    /** 世界 to 局部
-     * @param {Vector2} v 
-     */
-    worldToLoc(v){
-        var tm=this.worldToLocalM;
-        return Vector2.linearMapping_beforeTranslate(v,tm);
-    }
-    /** 清空所有代理对象和导函数, 应该在控制点或计算系数改动时使用
-     */
-    clearProxy(){
-        super.refresh_cache();
-    }
-    get_minAmax(){
-        var mm=super.get_minAmax()
-        return {
-            max:this.locToWorld(mm.max),
-            min:this.locToWorld(mm.min),
-        }
-    }
-    get_tangent(t){
-        return this.locToWorld(super.get_tangent(t));
-    }
-    get_normal(t){
-        return this.locToWorld(super.get_normal(t)).normalize();
-    }
-    sample(t){
-        return this.locToWorld(super.sample(t));
-    }
-    sample_byAngle(angle){
-        return this.locToWorld(super.sample_byAngle(angle));
-    }
-    get_opv(){
-        return this.locToWorld(super.get_opv());
-    }
-    get_edv(){
-        return this.locToWorld(super.get_edv());
-    }
-    /** 创建多边形拟合曲线
-     * @param {Number} step_size t 时间参数的步长, 设置越接近0精度越高; 默认为 0.1
-     * @returns {Polygon} 多边形拟合曲线
-     */
-    create_polygonProxy(step_size){
-        var temp=super.create_polygonProxy();
-        temp.linearMapping(this.transform_m,false,)
-
-    }
-    /** 求弧长
-     * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
-     * @returns {Number} 使用多边形拟合曲线求得的长度
-     */
-    get_arcLength(step_size){
-        if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
-        var tb=this.arc_length_table;
-        return tb[tb.length-1].l;
-    }
-    /** 使用弧长求t值
-     * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时取0
-     * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
-     * @returns {Number} 对应的时间参数t
-     */
-    get_t_by_arc_length(length,step_size){
-        if(step_size) this.polygon_proxy_want_sp=step_size;
-        var tb=this.arc_length_table,
-            i=tb.length-1,
-            l=length>=0?length:tb[i]+length;
-        for(--i;i>=0;--i){
-            if(tb[i].l<l){
-                // return this._polygon_proxy_sp*(i+(l-tb[i])/(tb[i+1]-tb[i]))
-                if(tb[i+1]){
-                    return tb[i].t+(l-tb[i].l)/(tb[i+1].l-tb[i].l)*(tb[i+1].t-tb[i].t);
-                }
-                return 0
-            }
-        }
-        return 0;
-    }
-    /** 弧长记录表 */
-    get arc_length_table(){
-        var polygon=this.polygon_proxy;
-        if(this._arc_length_table[0].l===null){
-            var temp;
-            this._arc_length_table[0].l=0;
-            for(var i=1;i<polygon.nodes.length;++i){
-                temp=polygon.nodes[i].dif(polygon.nodes[i-1]).get_mag();
-                this._arc_length_table[i].l=this._arc_length_table[i-1].l+temp;
-            }
-        }
-        return this._arc_length_table;
-    }
-
-}
 
 class PathCommand{
     constructor(){

@@ -152,8 +152,8 @@ d.fill_Material=spritesMap_Material;
 d.fill_uv={x:4,y:6};
 d.fill_uvwh={x:0.5,y:0.5};
 renderer.tgtList.push(d);
-var ka=window.ka=d.data.get_bezierCurve(0);
-var l=ka.get_arcLength(),spl=l/15;
+// var ka=window.ka=d.data.get_bezierCurve(0);
+// var l=ka.get_arcLength(),spl=l/15;
 
 var cnm=document.getElementById("cnm");
 cnm.style.left="30px";
@@ -174,7 +174,7 @@ cnm.onmousemove=function(e){
     ctx.clearRect(0,0,1000,1000)
     renderer.render_all();
     var v=t4.worldToLocal(Vector2.copy({x:e.offsetX,y:e.offsetY}));
-    CtrlCanvas2d.dot(ctx,t4.localToWorld(ka.create_projectionPoint(v,"t").v),3,"#0f0");
+    // CtrlCanvas2d.dot(ctx,t4.localToWorld(ka.create_projectionPoint(v,"t").v),3,"#0f0");
     
     if(PrimitiveTGT.isTouch(d,t1))console.log("is touching t1");
     if(PrimitiveTGT.isTouch(d,t2))console.log("is touching t2");
