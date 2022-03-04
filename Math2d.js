@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-04 15:29:46
+ * @LastEditTime: 2022-03-04 16:26:23
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1408,9 +1408,11 @@ class Data_Arc__Ellipse extends Data_Arc {
         /** @type {Number} ry, rx d的比 */
         this.ry_ratio_rx=ry/rx;
         /** @type {Matrix2x2T} */
-        this._transform_matrix=new Matrix2x2T().scale(1,this.ry_ratio_rx);
+        this._transform_matrix=new Matrix2x2T();
+        this._transform_matrix.scale(1,this.ry_ratio_rx);
         if(rotate){
             this._transform_matrix.rotate(rotate);
+            console.log(this._transform_matrix)
         }
         this._cx=cx;
         this._cy=cy;
@@ -1503,7 +1505,7 @@ class Data_Arc__Ellipse extends Data_Arc {
     sample(t){
         return this.sample_useTimeByArcLength(t);
     }
-    sample_useArcLengthByTime(t){
+    sample_useTimeByArcLength(t){
         return this.locToWorld(
             super.sample(this.get_t_byArcLength(t*this.get_arcLength()))
         );
@@ -1522,7 +1524,7 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     create_polygonProxy(step_size){
         var temp=super.create_polygonProxy(step_size);
-        temp.polygon.linearMapping(this.transform_matrix,false,false);
+        temp.polygon.linearMapping(this.transform_matrix,true,false);
         return temp
     }
     /** 求弧长
@@ -1556,6 +1558,8 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     is_inside(x,y,f){
         var tempv=this.worldToLoc({x:x,y:y});
+        console.log(x,y,tempv);
+        console.log(this.locToWorld(tempv));
         return super.is_inside(tempv.x,tempv.y,f);
     }
 }
@@ -1963,6 +1967,22 @@ class Data_Sector extends Data_Arc{
         this.d=d;
         return this;
     }
+    /** 当前矩阵前乘一个矩阵
+     * @param {Matrix2x2} m 右(后)矩阵
+     * @returns {Matrix2x2} 返回当前矩阵
+     */
+    multiplication_before(m){
+        var 
+        a=m.a*this.a+m.b*this.c,
+        b=m.a*this.b+m.b*this.d,
+        c=m.c*this.a+m.d*this.c,
+        d=m.c*this.b+m.d*this.d;
+        this.a=a;
+        this.b=b;
+        this.c=c;
+        this.d=d;
+        return this;
+    }
     /** 当前矩阵后乘一个矩阵
      * @param {Matrix2x2} m 右(后)矩阵
      * @returns {Matrix2x2} 新的矩阵
@@ -2165,6 +2185,20 @@ class Matrix2x2T extends Matrix2x2{
         if(!(m.e===undefined)){
             this.e+=m.e;
             this.f+=m.f;
+        }
+        return this;
+    }
+    /** 当前矩阵前乘一个矩阵
+     * @param {Matrix2x2} m 右(后)矩阵
+     * @returns {Matrix2x2} 返回当前矩阵
+     */
+    multiplication_before(m){
+        super.multiplication_before(m);
+        if(!(m.e===undefined)){
+            var e=m.e*this.a+m.f*this.c,
+                f=m.e*this.b+m.f*this.d;
+            this.e+=e;
+            this.f+=f;
         }
         return this;
     }

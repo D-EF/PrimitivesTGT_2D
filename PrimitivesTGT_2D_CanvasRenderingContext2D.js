@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-04 15:30:32
+ * @LastEditTime: 2022-03-04 16:30:01
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -10,7 +10,6 @@
 import {
     OlFunction,
 } from "../basics/basics.js";
-import { cycles } from "../basics/math_ex.js";
 import {
     Math2D,
     Data_Rect,
@@ -149,7 +148,7 @@ class Renderer_PrimitiveTGT__Canvas2D extends Renderer_PrimitiveTGT{
         ctx.globalAlpha=tgt.globalAlpha;
         ctx.setLineDash(tgt.lineDash);
         ctx.lineDashOffset=tgt.lineDashOffset;
-        ctx.transform(tgt.transformMatrix.a,tgt.transformMatrix.b,tgt.transformMatrix.c,tgt.transformMatrix.d,tgt.transformMatrix.e||0,tgt.transformMatrix.f||0);
+        ctx.transform(tgt.transform_matrix.a,tgt.transform_matrix.b,tgt.transform_matrix.c,tgt.transform_matrix.d,tgt.transform_matrix.e||0,tgt.transform_matrix.f||0);
         if(tgt.fill_Material){
             ctx.fillStyle=tgt.fill_Material.get(tgt,this.ctx,"fill");
         }

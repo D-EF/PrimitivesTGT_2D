@@ -141,7 +141,7 @@ class PrimitiveTGT{
     static copy(tgt){
         var rtn;
         rtn                   = PrimitiveTGT.create_ByDataType[tgt.dataType](tgt.data);
-        rtn.transformMatrix   = Matrix2x2T.copy(tgt._transformMatrix);
+        rtn.transform_matrix   = Matrix2x2T.copy(tgt._transformMatrix);
         rtn._worldToLocalM    = Matrix2x2T.copy(tgt._worldToLocalM);
         rtn.want_to_closePath = tgt.want_to_closePath;
         rtn.fill_Material     = this.fill_Material;
@@ -173,7 +173,7 @@ class PrimitiveTGT{
     /** 变换矩阵 不要直接修改矩阵的参数 
      * @param {Matrix2x2T} m 
      */
-    set transformMatrix(m){
+    set transform_matrix(m){
         this._transformMatrix=m.copy();
         this._worldToLocalM=undefined;
         return this._transformMatrix;
@@ -212,7 +212,7 @@ class PrimitiveTGT{
      */
     refresh_worldToLocalM(){
         if(this._worldToLocalM===undefined){
-            this._worldToLocalM=this.transformMatrix.create_inverse();
+            this._worldToLocalM=this.transform_matrix.create_inverse();
         }
     }
     /** 判断某一点是否在目标内部
@@ -233,7 +233,7 @@ class PrimitiveTGT{
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
-        rtn.transformMatrix=(this.transformMatrix);
+        rtn.transform_matrix=(this.transform_matrix);
         return rtn;
     }
     
@@ -365,12 +365,12 @@ class PrimitiveTGT__Polygon extends PrimitiveTGT{
      * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
      */
     nodesToWorld(clear_tfm_f=true){
-        // this.data.linearMapping(this.transformMatrix,true)
+        // this.data.linearMapping(this.transform_matrix,true)
         for(var i=this.data.nodes.length-1;i>=0;--i){
             this.data.nodes[i]=this.localToWorld(this.data.nodes[i]);
         }
         if(clear_tfm_f){
-            this.transformMatrix=new Matrix2x2T();
+            this.transform_matrix=new Matrix2x2T();
         }
     }   
     
@@ -395,7 +395,7 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
         this._world_bezier=null;
     }
     set transformMatrix(m){
-        super.transformMatrix=m;
+        super.transform_matrix=m;
         this._world_bezier=null;
     }
     get transformMatrix(){
@@ -447,7 +447,7 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
      * @returns {Bezier_Polygon}
      */
     refresh_worldBezier(){
-        return this._world_bezier=Bezier_Polygon.linearMapping(this.data,this.transformMatrix);
+        return this._world_bezier=Bezier_Polygon.linearMapping(this.data,this.transform_matrix);
     }
     /** 获取世界坐标的节点
      * @param {Number} i 节点下标
@@ -478,14 +478,14 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
     * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
     */
     nodesToWorld(clear_tfm_f=true){
-        // this.data.linearMapping(this.transformMatrix,true)
+        // this.data.linearMapping(this.transform_matrix,true)
         for(var i=this.data.nodes.length-1;i>=0;--i){
             this.data.nodes[i].node=this.localToWorld(this.data.nodes[i].node);
             this.data.nodes[i].hand_before=this.localToWorld(this.data.nodes[i].hand_before);
             this.data.nodes[i].hand_after=this.localToWorld(this.data.nodes[i].hand_after);
         }
         if(clear_tfm_f){
-            this.transformMatrix=new Matrix2x2T();
+            this.transform_matrix=new Matrix2x2T();
         }
     }
 }
@@ -596,7 +596,7 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
         }
         console.log('rtn :>> ', rtn);
         for(i=rtn.length-1;i>=0;--i){
-            rtn[i].transformMatrix=this.transformMatrix;
+            rtn[i].transform_matrix=this.transform_matrix;
             rtn[i].nodesToWorld();
         }
         return rtn;
@@ -617,7 +617,7 @@ PrimitiveTGT.prototype.is_inside.addOverload([Vector2],function(_v){
 
 // 局部坐标 to 世界坐标
 function _PrimitiveTGT__localToWorld(v){
-    return Vector2.linearMapping_afterTranslate(v,this.transformMatrix);
+    return Vector2.linearMapping_afterTranslate(v,this.transform_matrix);
 }
 PrimitiveTGT.prototype.localToWorld=OlFunction.create();
 PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
@@ -684,7 +684,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Arc,PrimitiveTGT__Rect],function
  */
 function isTouch_Rect_Polygon(tgt1,tgt2){
     
-    var t2d=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    var t2d=Polygon.linearMapping(tgt2.data,tgt2.transform_matrix,false);
         nodes=t2d.nodes;
 
     var i =nodes.length-1;
@@ -719,7 +719,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Rect],func
         l=i;
     if(l<0)return false;
     console.log(1)
-    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transform_matrix,false);
     var t2d=Polygon.linearMapping(t2d1,tgt1.worldToLocalM,true);
         nodes=t2d.nodes;
 
@@ -795,7 +795,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Rect],funct
         l=i;
     if(l<0)return false;
     console.log(1)
-    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transform_matrix,false);
     var t2d=Polygon.linearMapping(t2d1,tgt1.worldToLocalM,true);
         nodes=t2d.nodes;
 
@@ -852,7 +852,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Sector],isT
  */
 function isTouch_Bezier_Polygon(tgt1,tgt2){
     var t1d_w=tgt1.world_bezier;
-    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transformMatrix,false);
+    var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transform_matrix,false);
     if(t2d1.is_inside(t1d_w.nodes[0].node)||t1d_w.is_inside(t2d1.nodes[0])){
         return true;
     }
@@ -1050,7 +1050,7 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
         }
     }
     for(i=tgts.length-1;i>=0;--i){
-        tgts[i].transformMatrix=g.transformMatrix;
+        tgts[i].transform_matrix=g.transform_matrix;
         for(j=g.data.length-1;j>=0;--j){
             if(g.data[j] instanceof PrimitiveTGT__Group){
                 if(isTouch_noTransformPolygons_Group(tgts,g.data[j],g)){
