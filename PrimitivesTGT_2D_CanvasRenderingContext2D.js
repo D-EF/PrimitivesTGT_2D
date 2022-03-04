@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-02-28 14:01:09
+ * @LastEditTime: 2022-03-04 15:30:32
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -10,6 +10,7 @@
 import {
     OlFunction,
 } from "../basics/basics.js";
+import { cycles } from "../basics/math_ex.js";
 import {
     Math2D,
     Data_Rect,
@@ -193,7 +194,7 @@ Renderer_PrimitiveTGT__Canvas2D.createCanvasPath={
         ctx.arc(tgt.data.c.x,tgt.data.c.y,tgt.data.r,tgt.data.startAngle,tgt.data.endAngle,false);
         if(tgt.want_to_closePath){
             var arcA=Math.abs((tgt.data.anticlockwise?(tgt.data.startAngle-tgt.data.endAngle):(tgt.data.endAngle-tgt.data.startAngle)));
-            if((Math.PI*2>arcA)&&tgt.want_to_closePath){
+            if((cycles>arcA)&&tgt.want_to_closePath){
                 ctx.closePath();
             }
         }
@@ -204,7 +205,7 @@ Renderer_PrimitiveTGT__Canvas2D.createCanvasPath={
         if(tgt.want_to_closePath){
             var arcA=Math.abs((tgt.data.anticlockwise?(tgt.data.startAngle-tgt.data.endAngle):(tgt.data.endAngle-tgt.data.startAngle)));
             ctx.lineTo(tgt.data.c.x,tgt.data.c.y)
-            if((Math.PI*2>arcA)){
+            if((cycles>arcA)){
                 ctx.closePath();
             }
         }

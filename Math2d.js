@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-03 21:25:27
+ * @LastEditTime: 2022-03-04 15:29:46
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -19,6 +19,7 @@ import {
     calcPascalsTriangle,
     getPascalsTriangle,
     deg,
+    cycles,
 } from "../basics/math_ex.js";
 
 import {
@@ -1101,7 +1102,6 @@ class Data_Rect{
         /**弧形终点 */
         this.edv=this.get_edv();
     }
-    
     /** 获取起点的向量 (相对于圆心)
      */
     get_opv(){
@@ -1254,16 +1254,19 @@ class Data_Rect{
     get_min(){
         return this.min;
     }
-    /** 点是否在内部
-     * @param {Number} _x 点的坐标x
-     * @param {Number} _y 点的坐标y
-     * @param {Boolean} f want_to_closePath 当没有成为完整的圆时, 是否需要将其当作一个割圆
-     * @returns {Boolean} 返回 点是否在内部
+    /** 点是否在box内 (使用aabb)
+     * @param {Nuimber} x 点的x坐标
+     * @param {Nuimber} y 点的y坐标
+     * @returns 
      */
-    is_inside(_x,_y,f){
-        if((_x>this.max.x)||(_x<this.min.x)||(_y>this.max.y)||(_y<this.min.y)){
-            return false;
-        }
+    is_inBox(x,y){
+        return(!((x>this.max.x)||(x<this.min.x)||(y>this.max.y)||(y<this.min.y)));
+    }
+    /** 点是否在弧形(割圆)内
+     * @param {Number} x 
+     * @param {Number} y 
+     */
+    is_inArc(_x,_y,f){
         var r=this._r;
         var x=_x-this.c.x,
             y=_y-this.c.y;
@@ -1271,7 +1274,7 @@ class Data_Rect{
         var tr=Math.sqrt(x*x+y*y);
         if(tr<=r){
             // 在半径内
-            if(Math.PI*2<=arcA){
+            if(cycles<=arcA){
                 return true;//圆形
             }
             else{
@@ -1279,8 +1282,8 @@ class Data_Rect{
                     return false;
                 }
                 // 弧线的两端点
-                var l1op=this.opv,
-                    l1ed=this.edv;
+                var l1op=this.opv,  // new Vector2(Math.cos(this.startAngle)*r,Math.sin(this.startAngle)*r),
+                    l1ed=this.edv;  // new Vector2(Math.cos(this.endAngle)*r,Math.sin(this.endAngle)*r);
                 // 圆心和实参的坐标
                 var l2op=new Vector2(0,0);
                 var l2ed=new Vector2(x,y);
@@ -1292,15 +1295,26 @@ class Data_Rect{
                 else{
                     if(arcA===Math.PI){
                         // 等于半圆
-                        return Math2D.get_vetorInAngle(this.opv,this.edv,new Vector2(x,y),arcA>Math.PI);
+                        return Math2D.get_vetorInAngle(l1op,l1ed,new Vector2(x,y),arcA>Math.PI);
                     }
                     // 小于半圆
                     return ISF!==0;
                 }
-
             }
         }
         // 不在半径内直接判定为外
+        return false;
+    }
+    /** 点是否在内部
+     * @param {Number} _x 点的坐标x
+     * @param {Number} _y 点的坐标y
+     * @param {Boolean} f want_to_closePath 当没有成为完整的圆时, 是否需要将其当作一个割圆
+     * @returns {Boolean} 返回 点是否在内部
+     */
+    is_inside(x,y,f){
+        if(this.is_inBox(x,y)){
+            return this.is_inArc(x,y,f);
+        }
         return false;
     }
     /** @type {Number} 每个点相差的弧度 */
@@ -1387,15 +1401,35 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @param {Number} ry       y 方向 半径
      * @param {Number} angle_A  未进行变换时的 起点角度
      * @param {Number} angle_B  未进行变换时的 终点角度
+     * @param {Number} rotate   旋转椭圆的弧度
      */
-    constructor(cx,cy,rx,ry,angle_A,angle_B){
+    constructor(cx,cy,rx,ry,angle_A,angle_B,rotate){
         super(0,0,rx,angle_A,angle_B);
         /** @type {Number} ry, rx d的比 */
         this.ry_ratio_rx=ry/rx;
         /** @type {Matrix2x2T} */
-        this._transform_matrix=new Matrix2x2T().scale(1,this.ry_ratio_rx).translate(cx,cy);
+        this._transform_matrix=new Matrix2x2T().scale(1,this.ry_ratio_rx);
+        if(rotate){
+            this._transform_matrix.rotate(rotate);
+        }
+        this._cx=cx;
+        this._cy=cy;
+        this._transform_matrix.translate(cx,cy);
+        this._rotate=rotate||0;
         this._world_to_local_matrix=null;
     }
+    set cx(val){
+        this._cx=val;
+        this.reset_transformMatrix();
+        return r;
+    }
+    set cy(val){
+        this._cy=val;
+        this.reset_transformMatrix();
+        return r;
+    }
+    get cy(){return this._cy}
+    get cx(){return this._cx}
     static copy(d){
         return new Data_Arc__Ellipse(
             this.c.x,
@@ -1424,6 +1458,14 @@ class Data_Arc__Ellipse extends Data_Arc {
     get ry(){
         return this.r*this.ry_ratio_rx;
     }
+    set rotate(val){
+        this._rotate=val;
+        this.reset_transformMatrix();
+        return val;
+    }
+    get rotate(){
+        return this._rotate;
+    }
     get transform_matrix(){
         return this._transform_matrix;
     }
@@ -1435,7 +1477,7 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     reset_transformMatrix(){
         /** @type {Matrix2x2T} 局部坐标 to 世界坐标 的矩阵 (向量后乘矩阵)*/
-        this.transform_matrix.set(new Matrix2x2T().scale(1,ry_ratio_rx).translate(this.c.x,this.c.y));
+        this.transform_matrix.set(new Matrix2x2T().scale(1,ry_ratio_rx).rotate(this.rotate).translate(this.cx,this.cy));
         this._world_to_local_matrix=null;
     }
     /** 局部 to 世界
@@ -1451,29 +1493,31 @@ class Data_Arc__Ellipse extends Data_Arc {
         var tm=this.world_to_local_matrix;
         return Vector2.linearMapping_beforeTranslate(v,tm);
     }
-    get_minAmax(){
-        var mm=super.get_minAmax()
-        return {
-            max:this.locToWorld(mm.max),
-            min:this.locToWorld(mm.min),
-        }
-    }
     get_tangent(t){
         return this.locToWorld(super.get_tangent(t));
     }
     get_normal(t){
         return this.locToWorld(super.get_normal(t)).normalize();
+    
     }
     sample(t){
-        return this.locToWorld(super.sample(t));
+        return this.sample_useTimeByArcLength(t);
+    }
+    sample_useArcLengthByTime(t){
+        return this.locToWorld(
+            super.sample(this.get_t_byArcLength(t*this.get_arcLength()))
+        );
+    }
+    sample_useAngleByTime(t){
+        return super.sample(t);
     }
     sample_byAngle(angle){
         return this.locToWorld(super.sample_byAngle(angle));
     }
-    get_opv(){
+    get_opv__world(){
         return this.locToWorld(super.get_opv());
     }
-    get_edv(){
+    get_edv__world(){
         return this.locToWorld(super.get_edv());
     }
     create_polygonProxy(step_size){
@@ -1486,7 +1530,8 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @returns {Number} 使用多边形拟合曲线求得的长度
      */
     get_arcLength(step_size){
-        return this.get_polygonProxy(step_size).get_all_lineLength();
+        if(step_size) this.polygon_proxy_want_sp=step_size;
+        return this.polygon_proxy.get_all_lineLength();
     }
     /** 使用弧长求t值
      * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时取0
@@ -1508,6 +1553,10 @@ class Data_Arc__Ellipse extends Data_Arc {
             }
         }
         return 0;
+    }
+    is_inside(x,y,f){
+        var tempv=this.worldToLoc({x:x,y:y});
+        return super.is_inside(tempv.x,tempv.y,f);
     }
 }
 
@@ -1542,7 +1591,7 @@ class Data_Sector extends Data_Arc{
         var tr=Math.sqrt(x*x+y*y);
         if(tr<=r){
             // 在半径内
-            if(Math.PI*2<=arcA){
+            if(cycles<=arcA){
                 return true;//圆形
             }
             else{
@@ -2137,10 +2186,9 @@ class Matrix2x2T extends Matrix2x2{
      * @param {Number} y y轴偏移量
      */
     translate(x,y){
-        var rtn = this.copy();
-        rtn.e+=x;
-        rtn.f+=y;
-        return rtn;
+        this.e+=x;
+        this.f+=y;
+        return this;
     }
     /** 将线段作为局部坐标系x轴正方向单位生成矩阵
      * @param {Vector2} v1 线段的起点
@@ -2568,7 +2616,6 @@ class Polygon{
         var accuracy=_accuracy>=2?_accuracy:2,
             startAngle,endAngle,cyclesflag,
             stepLong,
-            cycles=Math.PI*2,
             i,tempAngle;
         // if(anticlockwise){
         //     // 逆时针
