@@ -121,7 +121,7 @@ d.data.add_Node({
     },
 });
 renderer.tgtList.push(d);
-d.transformMatrix=new Matrix2x2T().translate(0,200).scale(2,2);
+d.transform_matrix=new Matrix2x2T().translate(0,200).scale(2,2);
 
 var i=1;
 var a=new AnimationCtrl(function(t){

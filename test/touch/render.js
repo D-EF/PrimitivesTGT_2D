@@ -53,7 +53,7 @@ t2.fill_uvwh={x:0.5,y:1};
 t2.lineWidth=2;
 t2.want_to_closePath=true;
 t2.stroke_Material=new Canvas2d__Material("#0f0");
-t2.transformMatrix=new Matrix2x2T().set_translate(120,200).rotate(45*deg);
+t2.transform_matrix=new Matrix2x2T().set_translate(120,200).rotate(45*deg);
 t2.globalAlpha=0.5;
 
 var t3=new PrimitiveTGT__Polygon(new Polygon([
@@ -68,7 +68,7 @@ t3.fill_Material=spritesMap_Material;
 t3.fill_uv={x:2,y:2};
 t3.lineWidth=2;
 t3.stroke_Material=new Canvas2d__Material("#f00");
-t3.transformMatrix=new Matrix2x2T().set_translate(150,150).rotate(-45*deg);
+t3.transform_matrix=new Matrix2x2T().set_translate(150,150).rotate(-45*deg);
 
 
 var renderer=new Renderer_PrimitiveTGT__Canvas2D([t1,t2,t3],ctx);
@@ -108,7 +108,7 @@ t4.data.add_Node({
     },
 });
 
-t4.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
+t4.transform_matrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
 t4.want_to_closePath=1;
 t4.fill_Material=spritesMap_Material;
 t4.fill_uv={x:4,y:6};
@@ -146,7 +146,7 @@ d.data.add_Node({
     },
 });
 
-d.transformMatrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
+d.transform_matrix=new Matrix2x2T().translate(400,100).rotate(90*deg);
 d.want_to_closePath=-1;
 d.fill_Material=spritesMap_Material;
 d.fill_uv={x:4,y:6};
@@ -170,7 +170,7 @@ cnm.onclick=function(e){
     }
 }
 cnm.onmousemove=function(e){
-    d.transformMatrix=new Matrix2x2T().translate(e.offsetX,e.offsetY).rotate(90*deg);
+    d.transform_matrix=new Matrix2x2T().translate(e.offsetX,e.offsetY).rotate(90*deg);
     ctx.clearRect(0,0,1000,1000)
     renderer.render_all();
     var v=t4.worldToLocal(Vector2.copy({x:e.offsetX,y:e.offsetY}));

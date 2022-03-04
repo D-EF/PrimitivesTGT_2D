@@ -100,7 +100,7 @@ class PrimitiveTGT{
         /**@type {Boolean} 自动闭合路径 开关*/
         this.want_to_closePath=false;
         /**@type {Matrix2x2T} 局部坐标变换到世界坐标的矩阵*/
-        this._transformMatrix=new Matrix2x2T();
+        this._transform_matrix=new Matrix2x2T();
         /**@type {Matrix2x2T} 世界坐标变换到局部坐标的矩阵*/
         this._worldToLocalM;
         /**@type {Boolean} 是否渲染*/
@@ -141,7 +141,7 @@ class PrimitiveTGT{
     static copy(tgt){
         var rtn;
         rtn                   = PrimitiveTGT.create_ByDataType[tgt.dataType](tgt.data);
-        rtn.transform_matrix   = Matrix2x2T.copy(tgt._transformMatrix);
+        rtn.transform_matrix   = Matrix2x2T.copy(tgt._transform_matrix);
         rtn._worldToLocalM    = Matrix2x2T.copy(tgt._worldToLocalM);
         rtn.want_to_closePath = tgt.want_to_closePath;
         rtn.fill_Material     = this.fill_Material;
@@ -174,13 +174,13 @@ class PrimitiveTGT{
      * @param {Matrix2x2T} m 
      */
     set transform_matrix(m){
-        this._transformMatrix=m.copy();
+        this._transform_matrix=m.copy();
         this._worldToLocalM=undefined;
-        return this._transformMatrix;
+        return this._transform_matrix;
     }
     /**@type {Matrix2x2T} 变换矩阵 不要直接修改矩阵的参数 */
-    get transformMatrix(){
-        return this._transformMatrix;
+    get transform_matrix(){
+        return this._transform_matrix;
     }
     /** 世界坐标变成局部坐标的矩阵 */
     get worldToLocalM(){
@@ -394,12 +394,12 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
         /**@type {Bezier_Polygon} */
         this._world_bezier=null;
     }
-    set transformMatrix(m){
+    set transform_matrix(m){
         super.transform_matrix=m;
         this._world_bezier=null;
     }
-    get transformMatrix(){
-        return this._transformMatrix;
+    get transform_matrix(){
+        return this._transform_matrix;
     }
     get want_to_closePath(){
         return this._want_to_closePath;

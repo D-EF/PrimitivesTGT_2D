@@ -81,13 +81,13 @@ var tgt_group=new CanvasTGT_Group([
 ]);
 
 var text_group=new CanvasTGT_Group();
-text_group.transformMatrix=new Matrix2x2T().scale(2,2).translate(400,200);
+text_group.transform_matrix=new Matrix2x2T().scale(2,2).translate(400,200);
 var fillScale=100/6;
-tgt_group.transformMatrix=new Matrix2x2T().scale(fillScale,fillScale).translate(0,200);
+tgt_group.transform_matrix=new Matrix2x2T().scale(fillScale,fillScale).translate(0,200);
 
-itemTGT0._transformMatrix=new Matrix2x2T().rotate(90*Math.DEG).translate(60,0);
-itemTGT1._transformMatrix=itemTGT0.transformMatrix;
-itemTGT2._transformMatrix=itemTGT0.transformMatrix;
+itemTGT0._transform_matrix=new Matrix2x2T().rotate(90*Math.DEG).translate(60,0);
+itemTGT1._transform_matrix=itemTGT0.transform_matrix;
+itemTGT2._transform_matrix=itemTGT0.transform_matrix;
 
 function ctxRender(){
     bg.render(ctx);
@@ -99,7 +99,7 @@ ctxRender();
 
 var animation1=new AnimationCtrl();
 var om=new Matrix2x2T();
-var gm=tgt_group.transformMatrix,
+var gm=tgt_group.transform_matrix,
     gm_end=new Matrix2x2T().scale(4,4).translate(231.8221983093764,231.8221983093764);
 
 // 因为这个UnitBezier是图形学的,这个x坐标并不是时间轴t的控制点.
@@ -132,16 +132,16 @@ function rect_to_logoItem(t){
  */
 function logoScale(t){
     var t=animation_curve.sample_y(animation_curve.get_t_byX(t));
-    tgt_group._transformMatrix=m2tAnimation(gm,gm_end,t);
+    tgt_group._transform_matrix=m2tAnimation(gm,gm_end,t);
     ctxRender();
 }
 /** 把logo从item变成完整的一块
  */
 function logoItemShow(t){
     var t=animation_curve.sample_y(animation_curve.get_t_byX(t));
-    tgt_group0._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0, 45,t)*Math.DEG);
-    tgt_group1._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,165,t)*Math.DEG);
-    tgt_group2._transformMatrix=new Matrix2x2T().rotate(valueAnimation(0,285,t)*Math.DEG);
+    tgt_group0._transform_matrix=new Matrix2x2T().rotate(valueAnimation(0, 45,t)*Math.DEG);
+    tgt_group1._transform_matrix=new Matrix2x2T().rotate(valueAnimation(0,165,t)*Math.DEG);
+    tgt_group2._transform_matrix=new Matrix2x2T().rotate(valueAnimation(0,285,t)*Math.DEG);
     ctxRender();
 }
 
@@ -188,7 +188,7 @@ var textPolygonE1=new Polygon([
 var textTGT_E1=new CanvasPolygonTGT();
 textTGT_E1.data=textPolygonE1;
 text_group.addChildren(textTGT_E1);
-textTGT_E1.transformMatrix=new Matrix2x2T().translate(100,0)
+textTGT_E1.transform_matrix=new Matrix2x2T().translate(100,0)
 
 var textPolygonE2=new Polygon([
     new Vector2(),
@@ -197,7 +197,7 @@ var textPolygonE2=new Polygon([
 var textTGT_E2=new CanvasPolygonTGT();
 textTGT_E2.data=textPolygonE2;
 text_group.addChildren(textTGT_E2);
-textTGT_E2.transformMatrix=new Matrix2x2T().translate(100,0)
+textTGT_E2.transform_matrix=new Matrix2x2T().translate(100,0)
 
 var textPolygonF1=new Polygon([
     new Vector2(),
@@ -208,10 +208,10 @@ var textPolygonF1=new Polygon([
 var textTGT_F1=new CanvasPolygonTGT();
 textTGT_F1.data=textPolygonF1;
 text_group.addChildren(textTGT_F1);
-textTGT_F1.transformMatrix=new Matrix2x2T().translate(200,0)
+textTGT_F1.transform_matrix=new Matrix2x2T().translate(200,0)
 
 var textTGT_F2=textTGT_E2.copy();
-textTGT_F2.transformMatrix=new Matrix2x2T().translate(200,0)
+textTGT_F2.transform_matrix=new Matrix2x2T().translate(200,0)
 text_group.addChildren(textTGT_F2);
 
 var animation2=new AnimationCtrl();
