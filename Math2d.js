@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-04 16:26:23
+ * @LastEditTime: 2022-03-04 21:04:02
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -3999,10 +3999,11 @@ class PathCommand{
         if(pathCommand.command==='z'||pathCommand.command==='Z'){
             return Vector2.copy(mPoint);
         }
+        var _opPoint=opPoint||{x:0,y:0};
         var l=pathCommand.ctrl.length-1;
         if(pathCommand.command>='a'&&pathCommand.command<='z'){
             // 相对坐标
-            return Vector2.sum({x:pathCommand.ctrl[l-1],y:pathCommand.ctrl[l]},opPoint);
+            return Vector2.sum({x:pathCommand.ctrl[l-1],y:pathCommand.ctrl[l]},_opPoint);
         }else{
             // 绝对坐标
             return Vector2(pathCommand.ctrl[l-1],pathCommand.ctrl[l]);
@@ -4015,8 +4016,9 @@ class Path{
      * @param {PathCommand[]} pathStr 和 svg 的 path 的 语法相同
      */
     constructor(command_set){
+        /** @type {PathCommand[][]} */
         this._command_set=[];
-        this.command_set=command_set;
+        this._command_set=command_set;
 
         // onlyRoid
         /** @type {Array} 数学对象 可能的值有 弧形, 向量, 贝塞尔曲线数学对象 */
@@ -4042,6 +4044,7 @@ class Path{
     get command_length(){
         return this._command_set.length;
     }
+    
     /** 插入一段指令
      * @param {Number} index 插入的下标
      * @param {pathCommand} command 
@@ -4053,19 +4056,22 @@ class Path{
      * @param {Number} index 要修改的下标
      * @param {pathCommand} command 指令
      */
-    set_command(index,command){}
-    
+    set_command(index,command){
+
+    }
     /** 追加一条指令
      * @param {pathCommand} command 
      */
-    add_command(command){}
-    /**
-     * 
+    add_command(command){
+
+    }
+    /** 移除一条指令
      * @param {Number} index  下标
      */
-    remove_command(index){}
-    /**
-     * 读取一段指令
+    remove_command(index){
+
+    }
+    /** 读取一段指令
      * @param {Number} index 下标
      */
     get_command(index){
