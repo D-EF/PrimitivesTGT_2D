@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-04 21:04:02
+ * @LastEditTime: 2022-03-05 16:13:19
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1897,7 +1897,6 @@ class Data_Sector extends Data_Arc{
     static get_mag(v){
         return Math.sqrt(v.x*v.x+v.y*v.y);
     }
-    
     /** 向量夹角运算
      * @param {Vector2} v1 表示角的一边的射线上 的 向量
      * @param {Vector2} v2 表示角的一边的射线上 的 向量
@@ -1907,6 +1906,7 @@ class Data_Sector extends Data_Arc{
         return Vector2.dot(v1,v2)/(Vector2.get_mag(v1)*Vector2.get_mag(v2));
     }
 }
+Vector2.ZERO_POINT=new Vector2(0,0);
 
 /* 矩阵 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -3980,7 +3980,7 @@ class PathCommand{
      * @param {PathCommand[]} list 变更的数组的引用
      * @returns {PathCommand[]} 返回命令组
      */
-    static loadSvgString(svgStr,list){
+    static load_svgString(svgStr,list){
         var i=0,cmdList=list||[],temp=null,j=0;
         while(svgStr[i]){
             temp=PathCommand.loadSvgCommand(svgStr,i);
@@ -3991,17 +3991,17 @@ class PathCommand{
         return cmdList;
     }
     /** 计算落点(终点)
-     * @param {PathCommand} pathCommand 
+     * @param {PathCommand} pathCommand 控制字符
      * @param {Vector2} opPoint 起点(用作相对坐标)
-     * @param {Vector2} mPoint  
+     * @param {Vector2} mPoint  上次的m进入的坐标
      */
-    static endPoint(pathCommand,opPoint,mPoint){
+    static calc_landingPoint(pathCommand,opPoint,mPoint){
         if(pathCommand.command==='z'||pathCommand.command==='Z'){
             return Vector2.copy(mPoint);
         }
         var _opPoint=opPoint||{x:0,y:0};
         var l=pathCommand.ctrl.length-1;
-        if(pathCommand.command>='a'&&pathCommand.command<='z'){
+        if(pathCommand.command>='a'&&pathCommand.command<'z'){
             // 相对坐标
             return Vector2.sum({x:pathCommand.ctrl[l-1],y:pathCommand.ctrl[l]},_opPoint);
         }else{
@@ -4016,17 +4016,17 @@ class Path{
      * @param {PathCommand[]} pathStr 和 svg 的 path 的 语法相同
      */
     constructor(command_set){
-        /** @type {PathCommand[][]} */
+        /** @type {PathCommand[]} */
         this._command_set=[];
         this._command_set=command_set;
 
         // onlyRoid
-        /** @type {Array} 数学对象 可能的值有 弧形, 向量, 贝塞尔曲线数学对象 */
-        this.math_data=[];
-        /** @type {Matrix2x2T} 一般是给弧线使用的   */
-        this.mathData_Matrix2x2T=[];
+        /** @type {Array} 缓存的数学对象 可能的值有 弧形, 向量, 贝塞尔曲线数学对象 */
+        this._math_data=[];
+        /** @type {Vector2[]} 缓存落点 */
+        this._landing_points=[];
     }
-    /** 写指令 */
+    /** 指令集合 */
     set command_set(val){
         if(val.constructor===String||val instanceof String){
             this._command_set.length=0;
@@ -4040,9 +4040,81 @@ class Path{
         }
         re
     }
+    /** 指令集合 */
+    get command_set(){
+        return this._command_set;
+    }
     /** 指令的长度(个数) */
     get command_length(){
         return this._command_set.length;
+    }
+    /** 指令修改后的回调 清理需要相对坐标的缓存内容
+     * @param {Number} index  修改的下标
+     * @return {Path} 返回this
+     */
+    refresh_relative(index){
+        var i=index,
+            d=this.command_set[i];
+        while(d.command>='a'&&d.command<'z'){
+            this._math_data[i]=null;
+            this._landing_points[i]=null;
+            ++i;
+            d=this.command_set[i];
+        }
+        this._math_data[i]=null;
+
+        return this;
+    }
+    /** 获取落点
+     * @param {Number} index 要获取的落点的 下标
+     * @returns 
+     */
+    get_landingPoint(index){
+        var i=index,    //确定落点
+            j=index,    //m指令
+            cmds=this.command_set,
+            landing_points=this._landing_points,
+            mf=false,
+            df,
+            isCloseFlag=false,;
+        if(index<0){
+            return Vector2.ZERO_POINT;
+        }
+        if(!landing_points[index]){
+            if(cmds[j].command==="Z"||cmds[j].command==="Z"){
+                mf=true;
+                isCloseFlag=true
+            }else{
+                j=-1;
+            }
+            df=((cmds[i].command>='a'&&cmds[i].command<'z'&&i>0)&&!landing_points[i]);
+            while(df||mf){
+                if(df){
+                    // 找到上一个能直接确定的落点的下标
+                    --i;
+                    df=((cmds[i].command>='a'&&cmds[i].command<'z'&&i>0)&&!landing_points[i]);
+                }
+                if(mf){
+                    // 找到上一个m指令的下标
+                    --j;
+                    if(j<0){
+                        break;
+                    }
+                    mf=!(cmds[j].command==="M"||cmds[j].command==="m");
+                }
+            }
+            if(isCloseFlag){
+                // z 指令, 使用上一个 m 指令来得到落点
+                landing_points[index]=this.get_landingPoint(j);
+            }else{
+                // 普通指令, 用上一个已知的坐标或绝对坐标得到落点
+                do{
+                    landing_points[i]=PathCommand.calc_landingPoint(d,landing_points[i-1],this.get_landingPoint(j));
+                    ++i;
+                }while(i<=index);
+            }
+        }
+        return landing_points[index];
     }
     
     /** 插入一段指令
