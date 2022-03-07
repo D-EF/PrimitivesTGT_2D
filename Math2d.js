@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-05 16:13:19
+ * @LastEditTime: 2022-03-07 21:59:03
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -24,6 +24,7 @@ import {
 
 import {
     canBeNumberChar,
+    DEF_Caller,
     Delegate,
     OlFunction,
 } from "../basics/Basics.js";
@@ -3996,7 +3997,7 @@ class PathCommand{
      * @param {Vector2} mPoint  上次的m进入的坐标
      */
     static calc_landingPoint(pathCommand,opPoint,mPoint){
-        if(pathCommand.command==='z'||pathCommand.command==='Z'){
+        if((pathCommand.command==='z')||(pathCommand.command==='Z')){
             return Vector2.copy(mPoint);
         }
         var _opPoint=opPoint||{x:0,y:0};
@@ -4006,7 +4007,7 @@ class PathCommand{
             return Vector2.sum({x:pathCommand.ctrl[l-1],y:pathCommand.ctrl[l]},_opPoint);
         }else{
             // 绝对坐标
-            return Vector2(pathCommand.ctrl[l-1],pathCommand.ctrl[l]);
+            return new Vector2(pathCommand.ctrl[l-1],pathCommand.ctrl[l]);
         }
     }
 }
@@ -4018,19 +4019,33 @@ class Path{
     constructor(command_set){
         /** @type {PathCommand[]} */
         this._command_set=[];
-        this._command_set=command_set;
-
+        this.command_set=command_set;
+        this._hander_data_driven=new DEF_Caller(this.command_set);
         // onlyRoid
         /** @type {Array} 缓存的数学对象 可能的值有 弧形, 向量, 贝塞尔曲线数学对象 */
-        this._math_data=[];
+        this._math_data=this._hander_data_driven.create_listener({
+            insert:Path._callback_cmdInsert__toMathAndPoint,
+            remove:Path._callback_cmdremove__toMathAndPoint,
+            update:Path._callback_cmdUpdate__toMathAndPoint,
+        });
         /** @type {Vector2[]} 缓存落点 */
-        this._landing_points=[];
+        this._landing_points=this._hander_data_driven.create_listener({
+            insert:Path._callback_cmdInsert__toMathAndPoint,
+            remove:Path._callback_cmdremove__toMathAndPoint,
+            update:Path._callback_cmdUpdate__toMathAndPoint,
+        });
+    }
+    static copy(tgt){
+        return new Path(tgt._command_set);
+    }
+    copy(){
+        return Path.copy(this);
     }
     /** 指令集合 */
     set command_set(val){
-        if(val.constructor===String||val instanceof String){
+        if((val.constructor===String)||(val instanceof String)){
             this._command_set.length=0;
-            PathCommand.loadSvgString(val,this._command_set);
+            PathCommand.load_svgString(val,this._command_set);
         }else if(val instanceof Array){
             var i=val.length;
             this.command_set.length=i;
@@ -4038,7 +4053,7 @@ class Path{
                 this.command_set[i]=PathCommand.copy(val[i]);
             }
         }
-        re
+        return this.command_set;
     }
     /** 指令集合 */
     get command_set(){
@@ -4048,23 +4063,7 @@ class Path{
     get command_length(){
         return this._command_set.length;
     }
-    /** 指令修改后的回调 清理需要相对坐标的缓存内容
-     * @param {Number} index  修改的下标
-     * @return {Path} 返回this
-     */
-    refresh_relative(index){
-        var i=index,
-            d=this.command_set[i];
-        while(d.command>='a'&&d.command<'z'){
-            this._math_data[i]=null;
-            this._landing_points[i]=null;
-            ++i;
-            d=this.command_set[i];
-        }
-        this._math_data[i]=null;
-
-        return this;
-    }
+    
     /** 获取落点
      * @param {Number} index 要获取的落点的 下标
      * @returns 
@@ -4074,14 +4073,14 @@ class Path{
             j=index,    //m指令
             cmds=this.command_set,
             landing_points=this._landing_points,
-            mf=false,
+            mf=false,   
             df,
-            isCloseFlag=false,;
+            isCloseFlag=false;
         if(index<0){
             return Vector2.ZERO_POINT;
         }
         if(!landing_points[index]){
-            if(cmds[j].command==="Z"||cmds[j].command==="Z"){
+            if((cmds[j].command==='z')||(cmds[j].command==='Z')){
                 mf=true;
                 isCloseFlag=true
             }else{
@@ -4100,19 +4099,19 @@ class Path{
                     if(j<0){
                         break;
                     }
-                    mf=!(cmds[j].command==="M"||cmds[j].command==="m");
+                    mf=!((cmds[j].command==="M")||(cmds[j].command==="m"));
                 }
             }
-            if(isCloseFlag){
-                // z 指令, 使用上一个 m 指令来得到落点
-                landing_points[index]=this.get_landingPoint(j);
-            }else{
-                // 普通指令, 用上一个已知的坐标或绝对坐标得到落点
+            // if(isCloseFlag){
+            //     // z 指令, 使用上一个 m 指令来得到落点
+            //     landing_points[index]=this.get_landingPoint(j);
+            // }else{
+            //     // 普通指令, 用上一个已知的坐标或绝对坐标得到落点
                 do{
-                    landing_points[i]=PathCommand.calc_landingPoint(d,landing_points[i-1],this.get_landingPoint(j));
+                    landing_points[i]=PathCommand.calc_landingPoint(this.command_set[i],landing_points[i-1],this.get_landingPoint(j));
                     ++i;
                 }while(i<=index);
-            }
+            // }
         }
         return landing_points[index];
     }
@@ -4122,34 +4121,105 @@ class Path{
      * @param {pathCommand} command 
      */
     insert_command(index,command){
-        
+        var temp=Path.bePathCommandSet(command);
+        this._command_set.insertList(index,temp);
+        this._hander_data_driven.call("insert",this._command_set,index,1);
     }
     /** 修改一条指令
      * @param {Number} index 要修改的下标
      * @param {pathCommand} command 指令
      */
     set_command(index,command){
-
+        this._command_set[index].set(command);
+        this._hander_data_driven.call("update",this._command_set,index);
     }
     /** 追加一条指令
      * @param {pathCommand} command 
      */
     add_command(command){
-
+        var l=this._command_set.length;
+        this.insert_command(l,command);
     }
     /** 移除一条指令
      * @param {Number} index  下标
      */
     remove_command(index){
-
+        this._command_set.splice(index,1);
+        this._hander_data_driven.call("remove",this._command_set,index);
     }
     /** 读取一段指令
      * @param {Number} index 下标
      */
     get_command(index){
+        return  this._command_set[index];
+    }
+    /** 转换成path指令集
+     * @param {*} svg_path_data 对象
+     * @returns 
+     */
+    static bePathCommandSet(svg_path_data){
+        var temp;
         
+        if(svg_path_data.constructor===String){
+            return PathCommand.load_svgString(svg_path_data);
+        }else if(svg_path_data instanceof Array){
+            return svg_path_data;
+        }else if(svg_path_data._command_set){
+            temp=Path.copy(svg_path_data);
+            return temp._command_set;
+        }else if(svg_path_data.command){
+            return [svg_path_data]
+        }
+    }
+
+    /** 指令修改后的回调 清理需要相对坐标的缓存内容 
+     * @this {Array} 缓存对象
+     * @param {Number} index  修改的下标
+     */
+    static _callback_cmdUpdate__toMathAndPoint(cmds,index){
+        var i=index,
+            d=cmds[i];
+        while(d&&(d.command>='a'&&d.command<'z')){
+            this[i]=null;
+            ++i;
+            d=cmds[i];
+        }
+        this[i]=null;
+    }
+    /** 指令修改后的回调 清理需要相对坐标的缓存内容 
+     * @this {Array} 缓存对象
+     * @param {Number} index  修改的下标
+     */
+    static _callback_cmdremove__toMathAndPoint(cmds,index){
+        this.splice(index,1);
+        var i=index,
+            d=cmds[i];
+        while(d&&(d.command>='a'&&d.command<'z')){
+            this[i]=null;
+            ++i;
+            d=cmds[i];
+        }
+    }
+    static _callback_cmdInsert__toMathAndPoint(cmds,index,length){
+        var l=length,
+            i=index,d;
+        this.splice(index,0,new Array(length));
+        for(l;l>0;--l){
+            ++i;
+        }
+        d=cmds[i];
+        while(d&&(d.command>='a'&&d.command<'z')){
+            this[i]=null;
+            ++i;
+            d=cmds[i];
+        }
+        this[i]=null;
     }
 }
+var k=new Path("m130 110 c 120 140, 180 140, 170 110z");
+console.log(k);
+window.kp=k;
+
 
 export{
     Math2D,
