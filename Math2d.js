@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-07 21:59:03
+ * @LastEditTime: 2022-03-08 21:35:54
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1092,7 +1092,7 @@ class Data_Rect{
     }
     /** 求弧长
      * @returns {Number} 弧长 */
-    get_arcLength(){
+    get_lengthLong(){
         return this.angle*this.r;
     }
     /** 重新计算起点和终点的坐标 (相对于圆心)
@@ -1377,7 +1377,7 @@ class Data_Rect{
         
         rtn=new Polygon(temp);
         rtn.translate(this.c);
-        console.log(t_lut,temp)
+        // console.log(t_lut,temp)
         return {
             polygon:rtn,
             t_lut:t_lut
@@ -1388,7 +1388,7 @@ class Data_Rect{
      * @returns {Number} 对应的时间参数t
      */
     get_t_byArcLength(length){
-        var arcl=this.get_arcLength();
+        var arcl=this.get_lengthLong();
         var l=length>=0?length:arcl+length;
         return 0;
     }
@@ -1413,7 +1413,7 @@ class Data_Arc__Ellipse extends Data_Arc {
         this._transform_matrix.scale(1,this.ry_ratio_rx);
         if(rotate){
             this._transform_matrix.rotate(rotate);
-            console.log(this._transform_matrix)
+            // console.log(this._transform_matrix)
         }
         this._cx=cx;
         this._cy=cy;
@@ -1508,7 +1508,7 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     sample_useTimeByArcLength(t){
         return this.locToWorld(
-            super.sample(this.get_t_byArcLength(t*this.get_arcLength()))
+            super.sample(this.get_t_byArcLength(t*this.get_lengthLong()))
         );
     }
     sample_useAngleByTime(t){
@@ -1532,9 +1532,9 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @param {Number} step_size 弧度采样精度 在变换前的采样点间的弧度差异
      * @returns {Number} 使用多边形拟合曲线求得的长度
      */
-    get_arcLength(step_size){
+    get_lengthLong(step_size){
         if(step_size) this.polygon_proxy_want_sp=step_size;
-        return this.polygon_proxy.get_all_lineLength();
+        return this.polygon_proxy.get_lengthLong();
     }
     /** 使用弧长求t值
      * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时取0
@@ -1908,6 +1908,8 @@ class Data_Sector extends Data_Arc{
     }
 }
 Vector2.ZERO_POINT=new Vector2(0,0);
+Vector2.INFINITY=new Vector2(Infinity,Infinity);
+
 
 /* 矩阵 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -2594,7 +2596,7 @@ class Polygon{
      * @param {Boolean} closeFlag 是否闭合多边形
      * @returns {Number}
      */
-    get_all_lineLength(closeFlag){
+    get_lengthLong(closeFlag){
         if(this._all_lines_length<0||this._all_lines_length===undefined){
             var rtn=0;
             var i=this.nodes.length-1;
@@ -2614,7 +2616,7 @@ class Polygon{
      * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
     sample(t,closeFlag){
-        var l=t%1*this.get_all_lineLength(closeFlag),temp,
+        var l=t%1*this.get_lengthLong(closeFlag),temp,
             i=0,j=0,
             lt,
             v,n;
@@ -3138,7 +3140,7 @@ class BezierCurve{
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
      * @returns {Number} 使用多边形拟合曲线求得的长度
      */
-    get_arcLength(step_size){
+    get_lengthLong(step_size){
         if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
         var tb=this.arc_length_table;
         return tb[tb.length-1].l;
@@ -3245,7 +3247,7 @@ class BezierCurve{
         var type=type||'t',
             step_size=step_size===undefined?this.polygon_proxy_want_sp:(this.polygon_proxy_want_sp=step_size);
 
-        var al=this.get_arcLength(),
+        var al=this.get_lengthLong(),
             temp_t,
             tv,
             temp={v1:null,v2:null,v3:null},
@@ -3345,7 +3347,7 @@ class BezierCurve{
         var type=type||'t',
             step_size=step_size===undefined?this.polygon_proxy_want_sp:(this.polygon_proxy_want_sp=step_size);
 
-        var al=this.get_arcLength(),
+        var al=this.get_lengthLong(),
             temp_t,
             tv,
             temp= {v1:null,v2:null,v3:null},
@@ -3890,6 +3892,36 @@ class Bezier_Polygon{
     }
 }
 
+class Line{
+    constructor(op,ed){
+        this.op=op;
+        this.ed=ed;
+        this._tangent=null;
+        this._normal=null;
+    }
+    refresh_cache(){
+        this._tangent=null;
+        this._normal=null;
+    }
+    get_lengthLong(){
+        return Math2D.get_lineLength(this.op,this.ed);
+    }
+    sample(t){
+        return Math2D.sample_line(this.op,this.ed,t);
+    }
+    get_tangent(){
+        if(!this._tangent){
+            this._tangent=Vector2.dif(this.ed,this.op);
+        }
+        return this._tangent;
+    }
+    get_normal(){
+        if(!this._normal){
+            this._normal=Vector2.linearMapping(this.get_tangent(),Matrix2x2T.rotate90).normalize();
+        }
+        return this._normal;
+    }
+}
 
 class PathCommand{
     constructor(){
@@ -3907,7 +3939,7 @@ class PathCommand{
     set(data){
         var d;
         if(data.constructor===String){
-            d=PathCommand.loadSvgCommand().c;
+            d=PathCommand.loadSvgCommand(data).c;
         }else{
             d=data;
         }
@@ -4003,11 +4035,19 @@ class PathCommand{
         var _opPoint=opPoint||{x:0,y:0};
         var l=pathCommand.ctrl.length-1;
         if(pathCommand.command>='a'&&pathCommand.command<'z'){
+            if(pathCommand.command==='h'){
+                return new Vector2(_opPoint.x+(pathCommand.ctrl[l]||0),  _opPoint.y);
+            }
+            if(pathCommand.command==='v'){
+                // y坐标移动
+                return new Vector2(_opPoint.x,  _opPoint.y+(pathCommand.ctrl[l]||0));
+            }
             // 相对坐标
-            return Vector2.sum({x:pathCommand.ctrl[l-1],y:pathCommand.ctrl[l]},_opPoint);
+            return Vector2.sum({x:pathCommand.ctrl[l-1]||0,y:pathCommand.ctrl[l]||0},_opPoint);
+            
         }else{
             // 绝对坐标
-            return new Vector2(pathCommand.ctrl[l-1],pathCommand.ctrl[l]);
+            return new Vector2(pathCommand.ctrl[l-1]||0,pathCommand.ctrl[l]||0);
         }
     }
 }
@@ -4020,20 +4060,11 @@ class Path{
         /** @type {PathCommand[]} */
         this._command_set=[];
         this.command_set=command_set;
-        this._hander_data_driven=new DEF_Caller(this.command_set);
         // onlyRoid
         /** @type {Array} 缓存的数学对象 可能的值有 弧形, 向量, 贝塞尔曲线数学对象 */
-        this._math_data=this._hander_data_driven.create_listener({
-            insert:Path._callback_cmdInsert__toMathAndPoint,
-            remove:Path._callback_cmdremove__toMathAndPoint,
-            update:Path._callback_cmdUpdate__toMathAndPoint,
-        });
+        this._math_data=[];
         /** @type {Vector2[]} 缓存落点 */
-        this._landing_points=this._hander_data_driven.create_listener({
-            insert:Path._callback_cmdInsert__toMathAndPoint,
-            remove:Path._callback_cmdremove__toMathAndPoint,
-            update:Path._callback_cmdUpdate__toMathAndPoint,
-        });
+        this._landing_points=[];
     }
     static copy(tgt){
         return new Path(tgt._command_set);
@@ -4063,12 +4094,17 @@ class Path{
     get command_length(){
         return this._command_set.length;
     }
-    
     /** 获取落点
      * @param {Number} index 要获取的落点的 下标
      * @returns 
      */
     get_landingPoint(index){
+        if(index<0){
+            return Vector2.ZERO_POINT;
+        }
+        if(index>=this.command_set.length){
+            return Vector2.INFINITY;
+        }
         var i=index,    //确定落点
             j=index,    //m指令
             cmds=this.command_set,
@@ -4076,9 +4112,6 @@ class Path{
             mf=false,   
             df,
             isCloseFlag=false;
-        if(index<0){
-            return Vector2.ZERO_POINT;
-        }
         if(!landing_points[index]){
             if((cmds[j].command==='z')||(cmds[j].command==='Z')){
                 mf=true;
@@ -4115,7 +4148,9 @@ class Path{
         }
         return landing_points[index];
     }
-    
+    get_mathData(index){
+        // todo
+    }
     /** 插入一段指令
      * @param {Number} index 插入的下标
      * @param {pathCommand} command 
@@ -4123,7 +4158,7 @@ class Path{
     insert_command(index,command){
         var temp=Path.bePathCommandSet(command);
         this._command_set.insertList(index,temp);
-        this._hander_data_driven.call("insert",this._command_set,index,1);
+        this._callback_cmdInsert__toMathAndPoint(index,1);
     }
     /** 修改一条指令
      * @param {Number} index 要修改的下标
@@ -4131,7 +4166,7 @@ class Path{
      */
     set_command(index,command){
         this._command_set[index].set(command);
-        this._hander_data_driven.call("update",this._command_set,index);
+        this._callback_cmdUpdate__toMathAndPoint(index);
     }
     /** 追加一条指令
      * @param {pathCommand} command 
@@ -4145,7 +4180,7 @@ class Path{
      */
     remove_command(index){
         this._command_set.splice(index,1);
-        this._hander_data_driven.call("remove",this._command_set,index);
+        this._callback_cmdremove__toMathAndPoint(index);
     }
     /** 读取一段指令
      * @param {Number} index 下标
@@ -4154,12 +4189,11 @@ class Path{
         return  this._command_set[index];
     }
     /** 转换成path指令集
-     * @param {*} svg_path_data 对象
+     * @param {*} svg_path_data 原数据来源; 可以是 string 或者 PathCommand 或者 PathCommand 数组 或者 Path
      * @returns 
      */
     static bePathCommandSet(svg_path_data){
         var temp;
-        
         if(svg_path_data.constructor===String){
             return PathCommand.load_svgString(svg_path_data);
         }else if(svg_path_data instanceof Array){
@@ -4172,53 +4206,98 @@ class Path{
         }
     }
 
-    /** 指令修改后的回调 清理需要相对坐标的缓存内容 
-     * @this {Array} 缓存对象
-     * @param {Number} index  修改的下标
+    /** 使用index清除缓存的落点和数学对象 如果是后继是相对坐标, 将会继续清理
+     * @param {Number}} index 开始计算的下标
      */
-    static _callback_cmdUpdate__toMathAndPoint(cmds,index){
-        var i=index,
-            d=cmds[i];
+    clear_pointMath__byIndex(index,m_flag){
+        var cmds=this.command_set,
+            i=index,
+            d=cmds[i],
+            mf=m_flag;
+
+        if(!d){
+            return index;
+        }
         while(d&&(d.command>='a'&&d.command<'z')){
-            this[i]=null;
+            if(d.command==='m'){
+                mf=true;
+            }
+            this._landing_points[i]=null;
+            this._math_data[i]=null;
             ++i;
             d=cmds[i];
         }
-        this[i]=null;
-    }
-    /** 指令修改后的回调 清理需要相对坐标的缓存内容 
-     * @this {Array} 缓存对象
-     * @param {Number} index  修改的下标
-     */
-    static _callback_cmdremove__toMathAndPoint(cmds,index){
-        this.splice(index,1);
-        var i=index,
-            d=cmds[i];
-        while(d&&(d.command>='a'&&d.command<'z')){
-            this[i]=null;
+        this._math_data[i]=null;
+        while(mf&&d){
+            if((d.command==='m')||(d.command==='M')){
+                mf=false;
+            }
+            if((d.command==='Z')||(d.command==='z')){
+                this._math_data[i]=null;
+                this._math_data[i+1]=null;
+                i=this.clear_pointMath__byIndex(i);
+                
+            }
             ++i;
             d=cmds[i];
         }
+        return i;
     }
-    static _callback_cmdInsert__toMathAndPoint(cmds,index,length){
-        var l=length,
-            i=index,d;
-        this.splice(index,0,new Array(length));
+    /** 清除所有缓存的落点和数学对象
+     */
+    clear_pointMath__all(){
+        this._math_data.length=0;
+        this._landing_points.length=0;
+    }
+    /** 指令修改后的回调 清理需要相对坐标的缓存内容 
+     * @param {Number} index  修改的下标
+     */
+    _callback_cmdUpdate__toMathAndPoint(index){
+        this.clear_pointMath__byIndex(index);
+    }
+    /** 移除指令后的回调 清理需要相对坐标的缓存内容 
+     * @param {Number} index  修改的下标
+     * @param {Boolean} 移除的指令是否是m指令
+     */
+    _callback_cmdremove__toMathAndPoint(index,m_flag){
+        var cmds=this.command_set,
+            i=index,
+            d=cmds[i];
+        this._landing_points.splice(index,1);
+        this._math_data.splice(index,1);
+        this.clear_pointMath__byIndex(index,m_flag);
+        this._math_data[i]=null;
+    }
+    /** 插入指令后的回调 清理需要相对坐标的缓存内容 
+     * @param {Number} index  修改的下标
+     * @param {Number} length 插入的长度
+     */
+    _callback_cmdInsert__toMathAndPoint(index,length){
+        var cmds=this.command_set,
+            l=length,
+            i=index,
+            mf=false;
+        this._landing_points.splice(index,0,new Array(length));
+        this._math_data.splice(index,0,new Array(length));
         for(l;l>0;--l){
+            this._landing_points[i]=null;
+            this._math_data[i]=null;
+            if((!mf)&&((cmds[i].command==='m')||(cmds[i].command==='M'))){
+                mf=true;
+            }
             ++i;
         }
-        d=cmds[i];
-        while(d&&(d.command>='a'&&d.command<'z')){
-            this[i]=null;
-            ++i;
-            d=cmds[i];
-        }
-        this[i]=null;
+        this.clear_pointMath__byIndex(i,mf);
     }
+
 }
-var k=new Path("m130 110 c 120 140, 180 140, 170 110z");
+var k=new Path("M0 0, l80 80 h50 v20 Z m100 100 l10 10 l-20 0 z M30 20 l12 32 l55 -20 z");
 console.log(k);
 window.kp=k;
+for(var i=0;i<k._command_set.length;i++){
+    console.log(k.get_landingPoint(i));
+}
+
 
 
 export{
