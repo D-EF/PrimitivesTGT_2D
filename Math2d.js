@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-08 21:35:54
+ * @LastEditTime: 2022-03-09 21:24:19
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -40,6 +40,37 @@ class Math2D{
         var a=v2.x-v1.x,
             b=v2.y-v1.y;
         return Math.sqrt(a*a+b*b);
+    }
+    /** 取向量和x正方向的弧度
+     * @param {Vector2} v 坐标
+     */
+    static get_angle(v){
+        return Math.atan2(v.y,v.x);
+    }
+    /**
+     * 水平翻转角度值
+     */
+    static angleFlipHorizontal(angle){
+        if(angle>Math.PI){
+            return 3*Math.PI-angle
+        }else{
+            return Math.PI-angle;
+        }
+    }
+
+    /** 将相同起点终点的弧度变成更长的
+     * @param {Number} angle_a 端点弧度 取值范围在 -PI~PI
+     * @param {Number} angle_b 端点弧度 取值范围在 -PI~PI
+     * @return {Number[]}
+     */
+    static toLargeArc(angle_a,angle_b){
+        var a=angle_a,b=angle_b;
+        if(a<b){
+            a+=Math.PI*2;
+        }else{
+            b+=Math.PI*2;
+        }
+        return [a,b];
     }
     /** 点在线段上的投影
      * @param {Vector2} point   点
@@ -242,7 +273,6 @@ class Math2D{
         }
         return false;
     }
-
     /** 扇形与线段是否相交
      * @param {Data_Sector} sector     弧形数据
      * @param {Vector2} lop     线段端点
@@ -257,7 +287,6 @@ class Math2D{
                 Math2D.get_intersectionOfLineLine_f(lop,led,sector.c.sum(sector.edv),sector.c)
         );
     }
-
     /** 判断两条线段相交情况
      * @param {Vector2} l1op    线段1的起点
      * @param {Vector2} l1ed    线段1的终点
@@ -301,7 +330,6 @@ class Math2D{
         }
         return 0;
     }
-    
     /** 求线段交点坐标
      * @param {Number} x1 线段a端点1 x坐标
      * @param {Number} y1 线段a端点1 y坐标
@@ -332,7 +360,6 @@ class Math2D{
         }
         return {x:t.x*bx+x1,y:t.x*by+y1};
     }
-    
     /** 求贝塞尔曲线的导函数的控制点
      * @param {{x:Number,y:Number}[]} points 原曲线的控制点集合 
      * @returns {{x:Number,y:Number}[]} 导函数的控制点
@@ -350,7 +377,6 @@ class Math2D{
         }
         return rtn;
     }
-
     /** 二维中的贝塞尔曲线分割
      * @param {Vector2[]} points 控制点集合
      * @param {Number} t t时间参数
@@ -1424,12 +1450,12 @@ class Data_Arc__Ellipse extends Data_Arc {
     set cx(val){
         this._cx=val;
         this.reset_transformMatrix();
-        return r;
+        return val;
     }
     set cy(val){
         this._cy=val;
         this.reset_transformMatrix();
-        return r;
+        return val;
     }
     get cy(){return this._cy}
     get cx(){return this._cx}
@@ -1480,7 +1506,7 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     reset_transformMatrix(){
         /** @type {Matrix2x2T} 局部坐标 to 世界坐标 的矩阵 (向量后乘矩阵)*/
-        this.transform_matrix.set(new Matrix2x2T().scale(1,ry_ratio_rx).rotate(this.rotate).translate(this.cx,this.cy));
+        this.transform_matrix.set_Matrix2x2(new Matrix2x2T().scale(1,this.ry_ratio_rx).rotate(this.rotate).translate(this.cx,this.cy));
         this._world_to_local_matrix=null;
     }
     /** 局部 to 世界
@@ -1559,9 +1585,52 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     is_inside(x,y,f){
         var tempv=this.worldToLoc({x:x,y:y});
-        console.log(x,y,tempv);
-        console.log(this.locToWorld(tempv));
+        // console.log(x,y,tempv);
+        // console.log(this.locToWorld(tempv));
         return super.is_inside(tempv.x,tempv.y,f);
+    }
+
+    /** 使用起点, 终点, 半径 等参数创建弧形
+     * @param {Vector2} op                 起点
+     * @param {Vector2} ed                 终点
+     * @param {Number}  rx                 水平方向半径
+     * @param {Number}  ry                 垂直方向半径
+     * @param {Boolean} rotate_angle       旋转弧度(用圆心进行旋转)
+     * @param {Boolean} large_arc_flag     使用更长或更短的边   和 sweep_flag 联动来确定弧线
+     * @param {Boolean} sweep_flag         弧形绘制方向        和 large_arc_flag 联动来确定弧线
+     * 除了起点和终点, 参数可以参考 https://developer.mozilla.org/zh-CN/docs/Web/SVG/Tutorial/Paths#arcs
+     */
+    static create_byEndPointRadiusRotate(op,ed,rx,ry,rotate_angle,large_arc_flag,sweep_flag){
+        var arc=new Data_Arc__Ellipse(0,0,rx,ry,0,0,rotate_angle),
+            _ed=arc.worldToLoc(Vector2.dif(ed,op)),
+            wi=Math2D.get_intersectionOfCircleCircle_V(Vector2.ZERO_POINT,rx,_ed,rx),
+            cf=(large_arc_flag===sweep_flag),
+            i=cf?1:0,
+            temp,
+            c_op,c_ed,
+            op_a,ed_a;
+        
+        var c=Vector2.sum(op,arc.locToWorld(wi[i]));
+        arc.cx=c.x;
+        arc.cy=c.y;
+
+        c_op=arc.worldToLoc(op);
+        c_ed=arc.worldToLoc(ed);
+        op_a=Math.atan2(c_op.y,c_op.x)+2*Math.PI;
+        ed_a=Math.atan2(c_ed.y,c_ed.x)+2*Math.PI;
+
+        if(!sweep_flag){
+            temp=Math2D.toLargeArc(op_a,ed_a);
+            op_a=temp[0];
+            ed_a=temp[1];
+        }
+
+        arc.setAngle_AB(
+            op_a,
+            ed_a,
+        );
+        console.log(arc.startAngle,arc.endAngle);
+        return arc;
     }
 }
 
@@ -3899,6 +3968,12 @@ class Line{
         this._tangent=null;
         this._normal=null;
     }
+    static copy(tgt){
+        return new Line(Vector2.copy(tgt.op),Vector2.copy(tgt.ed));
+    }
+    copy(){
+        return Line.copy(this);
+    }
     refresh_cache(){
         this._tangent=null;
         this._normal=null;
@@ -4148,8 +4223,38 @@ class Path{
         }
         return landing_points[index];
     }
+    /** 取创建数学对象
+     * @param {Number} index  指令的下标
+     * @returns 
+     */
     get_mathData(index){
-        // todo
+        if(!this._math_data[index]){
+            this._math_data[index]=this.create__mathData(index);
+        }
+        return this._math_data[index];
+    }
+    static _vector2_c="Mm";
+    static _line_c="LlHhVv";
+    static _arc_c="Aa";
+    static _bezier_c="CcSs";
+    /** 创建数学对象 */
+    create__mathData(index){
+        var c=this.command_set[index].command;
+        var last_lp,now_lp;
+
+        now_lp=this.get_landingPoint(index);
+        last_lp=this.get_landingPoint(index-1);
+
+        if(!Path._vector2_c.indexOf(c)===-1){
+            return now_lp();
+        }
+        if(!Path._line_c.indexOf(c)===-1){
+            return new Line(last_lp,now_lp);
+        }else if(!Path._arc_c.indexOf(c)===-1){
+            Data_Arc__Ellipse.create_byEndPointRadiusRotate(now_lp,last_lp,rx,ry,rotate_angle,large_arc_flag,sweep_flag)
+        }else if(!Path._bezier_c.indexOf(c)===-1){
+            
+        }
     }
     /** 插入一段指令
      * @param {Number} index 插入的下标
@@ -4291,14 +4396,13 @@ class Path{
     }
 
 }
-var k=new Path("M0 0, l80 80 h50 v20 Z m100 100 l10 10 l-20 0 z M30 20 l12 32 l55 -20 z");
-console.log(k);
-window.kp=k;
-for(var i=0;i<k._command_set.length;i++){
-    console.log(k.get_landingPoint(i));
-}
 
-
+// var k=new Path("M0 0, l80 80 h50 v20 Z m100 100 l10 10 l-20 0 z M30 20 l12 32 l55 -20 z");
+// console.log(k);
+// window.kp=k;
+// for(var i=0;i<k._command_set.length;i++){
+//     console.log(k.get_landingPoint(i));
+// }
 
 export{
     Math2D,
