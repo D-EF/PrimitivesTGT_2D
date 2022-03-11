@@ -52,7 +52,7 @@ class Sprites{
     }
     /**
      * 渲染精灵图像
-     * @param {*} tgt 上下文, 可以是 Element 或者 CanvasRenderingContext2D
+     * @param {Element|CanvasRenderingContext2D} tgt 渲染上下文, 可以是 Element 或者 CanvasRenderingContext2D
      * @param {Number} sx  当前的X坐标(单位: 格)
      * @param {Number} sy  当前的Y坐标(单位: 格)
      * @param {Number} dx  图像绘制位置X  仅供canvas使用

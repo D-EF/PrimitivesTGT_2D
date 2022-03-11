@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-09 21:24:19
+ * @LastEditTime: 2022-03-11 21:31:46
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -784,7 +784,7 @@ class Math2D{
             arc=Math2D.create_circleBy3Point(p1,p2,p3);
             
         // B点切线方向
-        n=Vector2.dif(arc.c,p2).linearMapping(Matrix2x2T.rotate90,false,false).normalize();
+        n=Vector2.dif(arc.c,p2).linearMapping(Matrix2x2.ROTATE_90,false,false).normalize();
         // B点切线长度
         l=d/3;
         // B点在基线哪侧
@@ -948,7 +948,7 @@ class Data_Rect{
      * @return {Vector2} 返回一个标准化的相对坐标
      */
     get_tangent(t){
-        return this.get_normal(t).linearMapping(Matrix2x2T.rotate90);
+        return this.get_normal(t).linearMapping(Matrix2x2.ROTATE_90);
     }
     /** 法线
      * @param {Number} t t参数0~1
@@ -1429,8 +1429,9 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @param {Number} angle_A  未进行变换时的 起点角度
      * @param {Number} angle_B  未进行变换时的 终点角度
      * @param {Number} rotate   旋转椭圆的弧度
+     * @param {Boolean} flip_horizontal_flag 水平翻转
      */
-    constructor(cx,cy,rx,ry,angle_A,angle_B,rotate){
+    constructor(cx,cy,rx,ry,angle_A,angle_B,rotate,flip_horizontal_flag){
         super(0,0,rx,angle_A,angle_B);
         /** @type {Number} ry, rx d的比 */
         this.ry_ratio_rx=ry/rx;
@@ -1441,11 +1442,15 @@ class Data_Arc__Ellipse extends Data_Arc {
             this._transform_matrix.rotate(rotate);
             // console.log(this._transform_matrix)
         }
+        if(flip_horizontal_flag){
+            this._transform_matrix.multiplication(Matrix2x2.FLIP_HORIZONTAL);
+        }
         this._cx=cx;
         this._cy=cy;
         this._transform_matrix.translate(cx,cy);
         this._rotate=rotate||0;
         this._world_to_local_matrix=null;
+        this._flip_horizontal_flag=flip_horizontal_flag;
     }
     set cx(val){
         this._cx=val;
@@ -1459,6 +1464,9 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     get cy(){return this._cy}
     get cx(){return this._cx}
+    get_c_ABS(){
+        return new Vector2(this._cx,this._cy);
+    }
     static copy(d){
         return new Data_Arc__Ellipse(
             this.c.x,
@@ -1495,6 +1503,14 @@ class Data_Arc__Ellipse extends Data_Arc {
     get rotate(){
         return this._rotate;
     }
+    set flip_horizontal_flag(val){
+        this._flip_horizontal_flag=val
+        this.reset_transformMatrix();
+        return this._flip_horizontal_flag;
+    }
+    get flip_horizontal_flag(){
+        return this._flip_horizontal_flag;
+    }
     get transform_matrix(){
         return this._transform_matrix;
     }
@@ -1506,7 +1522,15 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     reset_transformMatrix(){
         /** @type {Matrix2x2T} 局部坐标 to 世界坐标 的矩阵 (向量后乘矩阵)*/
-        this.transform_matrix.set_Matrix2x2(new Matrix2x2T().scale(1,this.ry_ratio_rx).rotate(this.rotate).translate(this.cx,this.cy));
+        this.transform_matrix.set_Matrix2x2(
+            new Matrix2x2T().
+            scale(1,this.ry_ratio_rx).
+            rotate(this.rotate)
+        );
+        if(this._flip_horizontal_flag){
+            this.transform_matrix.multiplication(Matrix2x2.FLIP_HORIZONTAL);
+        }
+        this.transform_matrix.translate(this.cx,this.cy);
         this._world_to_local_matrix=null;
     }
     /** 局部 to 世界
@@ -1514,6 +1538,12 @@ class Data_Arc__Ellipse extends Data_Arc {
      */
     locToWorld(v){
         return Vector2.linearMapping_afterTranslate(v,this.transform_matrix)
+    }
+    /** 局部to世界 不使用平移量
+     * @param {Vector2} v 
+     */
+    locToWorld__untransform(v){
+        return Vector2.linearMapping_base(v,this.transform_matrix);
     }
     /** 世界 to 局部
      * @param {Vector2} v 
@@ -1523,11 +1553,11 @@ class Data_Arc__Ellipse extends Data_Arc {
         return Vector2.linearMapping_beforeTranslate(v,tm);
     }
     get_tangent(t){
-        return this.locToWorld(super.get_tangent(t));
+        return this.locToWorld__untransform(super.get_normal(t).linearMapping(Matrix2x2.ROTATE_90_I));
     }
     get_normal(t){
-        return this.locToWorld(super.get_normal(t)).normalize();
-    
+        console.log(this.locToWorld__untransform(super.get_normal(t)));
+        return this.locToWorld__untransform(super.get_normal(t)).normalize();
     }
     sample(t){
         return this.sample_useTimeByArcLength(t);
@@ -1619,17 +1649,23 @@ class Data_Arc__Ellipse extends Data_Arc {
         op_a=Math.atan2(c_op.y,c_op.x)+2*Math.PI;
         ed_a=Math.atan2(c_ed.y,c_ed.x)+2*Math.PI;
 
-        if(!sweep_flag){
+        if((!!large_arc_flag)===(Math.abs(op_a-ed_a)<180*deg)){
             temp=Math2D.toLargeArc(op_a,ed_a);
             op_a=temp[0];
             ed_a=temp[1];
         }
+        if(op_a>ed_a){
+            arc.flip_horizontal_flag=true;
+            op_a=Math2D.angleFlipHorizontal(op_a);
+            ed_a=Math2D.angleFlipHorizontal(ed_a);
+        }
+        // console.log(op_a,ed_a);
 
         arc.setAngle_AB(
             op_a,
             ed_a,
         );
-        console.log(arc.startAngle,arc.endAngle);
+        // console.log(arc.startAngle,arc.endAngle);
         return arc;
     }
 }
@@ -1787,12 +1823,20 @@ class Data_Sector extends Data_Arc{
      * @returns{Vector2} 返回新的向量
      */
     instead(){return new Vector2(-1*this.x,-1*this.y);}
-
     /**向量和
      * @param {Vector2} v2
      * @returns {Vector2} 返回新的向量
      */
     sum(v2){return new Vector2(this.x+v2.x,this.y+v2.y);}
+    /** 再平移
+     * @param {Vector2} v2  偏移量向量
+     * @returns {Vector2} 返回当前
+     */
+    translate(v2){
+        this.x+=v2.x;
+        this.y+=v2.y;
+        return this;
+    }
     /**数字乘向量 
      * @param {Number} n
      * @returns {Vector2} 返回新的向量
@@ -2181,8 +2225,9 @@ Matrix2x2.create={
         return new Matrix2x2(v.x,v.y,-v.y,v.x)
     }
 }
-Matrix2x2.rotate90=new Matrix2x2(0,1,-1,0);
-
+Matrix2x2.ROTATE_90=new Matrix2x2(0,1,-1,0);
+Matrix2x2.ROTATE_90_I=new Matrix2x2(0,-1,1,0);
+Matrix2x2.FLIP_HORIZONTAL=new Matrix2x2(-1,0,0,1)
 /** 2*2矩阵 + 平移
  * @param {Number} a  矩阵的参数 m11
  * @param {Number} b  矩阵的参数 m12
@@ -2696,7 +2741,7 @@ class Polygon{
         lt=l/this.get_lineLength(i);
         j=i===this.nodes.length-1?0:i+1;
         v=Math2D.sample_line(this.nodes[i],this.nodes[j],lt);
-        n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.rotate90);
+        n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.ROTATE_90);
         return {v:v,n:n};
     }
     /** 创建矩形
@@ -3992,7 +4037,7 @@ class Line{
     }
     get_normal(){
         if(!this._normal){
-            this._normal=Vector2.linearMapping(this.get_tangent(),Matrix2x2T.rotate90).normalize();
+            this._normal=Vector2.linearMapping(this.get_tangent(),Matrix2x2.ROTATE_90).normalize();
         }
         return this._normal;
     }
@@ -4009,7 +4054,7 @@ class PathCommand{
 
     }
     /** 修改当前命令数据
-     * @param {String||pathCommand} data 
+     * @param {String|pathCommand} data 
      */
     set(data){
         var d;
@@ -4233,28 +4278,103 @@ class Path{
         }
         return this._math_data[index];
     }
+
+    // 用于创建数学对象使用的关键字集合
     static _vector2_c="Mm";
     static _line_c="LlHhVv";
     static _arc_c="Aa";
-    static _bezier_c="CcSs";
-    /** 创建数学对象 */
+    static _bezier="CcQq";
+    static _bezier_t="Tt";
+    static _bezier_s="Ss";
+    static _bezier_c3="CcSs";
+    static _bezier_c2="TtQq";
+    /** 创建数学对象
+     * @param {Number} index 基于下标创建数学对象
+     * @return {Vector2|Line|Data_Arc__Ellipse|BezierCurve}
+     */
     create__mathData(index){
-        var c=this.command_set[index].command;
+        var c=this.command_set[index].command,
+            d=this.command_set[index].ctrl;
         var last_lp,now_lp;
+        var low_FN=0; //low or up flag number 可以使用 low_FN%2===0判断是否是大写字母
 
         now_lp=this.get_landingPoint(index);
         last_lp=this.get_landingPoint(index-1);
 
-        if(!Path._vector2_c.indexOf(c)===-1){
-            return now_lp();
+        // m点
+        if(!(low_FN=Path._vector2_c.indexOf(c))===-1){
+            return now_lp;
         }
-        if(!Path._line_c.indexOf(c)===-1){
+        // 直线
+        if(!(low_FN=Path._line_c.indexOf(c))===-1){
             return new Line(last_lp,now_lp);
-        }else if(!Path._arc_c.indexOf(c)===-1){
-            Data_Arc__Ellipse.create_byEndPointRadiusRotate(now_lp,last_lp,rx,ry,rotate_angle,large_arc_flag,sweep_flag)
-        }else if(!Path._bezier_c.indexOf(c)===-1){
-            
         }
+        // 弧线
+        if(!(low_FN=Path._arc_c.indexOf(c))===-1){
+            var rx=d[0],
+                ry=d[1],
+                rotate_angle=d[2],
+                large_arc_flag=d[3],
+                sweep_flag=d[4];
+            return Data_Arc__Ellipse.create_byEndPointRadiusRotate(last_lp,now_lp,rx,ry,rotate_angle,large_arc_flag,sweep_flag);
+        }
+
+        // 贝塞尔曲线 op
+        var temp_arr=[],i=0,k=0;
+        temp_arr.push(last_lp);
+        
+        // 简化二阶曲线
+        var last_cmd=this.command_set[index-1];
+        /**@type {BezierCurve} 上一个曲线数学对象*/
+        var last_mathData=null;
+        var proxy_v=null,
+            can_use_last=false,
+            is_simple=false,
+            l=0;
+
+        // 简化三阶曲线
+        if(!(low_FN=Path._bezier_s.indexOf(c))===-1){
+            is_simple=true;
+            can_use_last=(last_cmd&&(Path._bezier_c3.index(last_cmd.command)!==-1));
+        }
+        // 简化二阶曲线
+        if(!(low_FN=Path._bezier_t.indexOf(c))===-1){
+            is_simple=true;
+            can_use_last=(last_cmd&&(Path._bezier_c2.index(last_cmd.command)!==-1));
+        }
+        if(is_simple){
+            if(can_use_last){
+                last_mathData=this.get_mathData(index-1);
+                l=last_mathData.points.length-1;
+                proxy_v=Math2D.sample_line(last_mathData.points[l-1],last_mathData.points[l],2);
+            }else{
+                proxy_v=last_lp;
+            }
+            temp_arr.push(proxy_v);
+    
+            k=temp_arr.push(new Vector2(d[i],d[i+1]))-1;
+            if(low_FN>>1<<1===low_FN){
+                temp_arr[k].translate(last_lp);
+            }
+            temp_arr.push(now_lp);
+        }
+
+        // 完整曲线命令
+        if(!(low_FN=Path._bezier.indexOf(c))===-1){
+            do{
+                k=temp_arr.push(new Vector2(d[i],d[i+1]))-1;
+                if(low_FN>>1<<1===low_FN){
+                    // 相对to世界
+                    temp_arr[k].translate(last_lp);
+                }
+                i+=2;
+            }while(d[i]);
+        }
+
+        return new BezierCurve(temp_arr);
+        // 贝塞尔曲线 ed
+        // todo test 待测试
+
     }
     /** 插入一段指令
      * @param {Number} index 插入的下标
@@ -4294,7 +4414,7 @@ class Path{
         return  this._command_set[index];
     }
     /** 转换成path指令集
-     * @param {*} svg_path_data 原数据来源; 可以是 string 或者 PathCommand 或者 PathCommand 数组 或者 Path
+     * @param {String|PathCommand|PathCommand[]|Path} svg_path_data 原数据来源
      * @returns 
      */
     static bePathCommandSet(svg_path_data){
@@ -4310,7 +4430,6 @@ class Path{
             return [svg_path_data]
         }
     }
-
     /** 使用index清除缓存的落点和数学对象 如果是后继是相对坐标, 将会继续清理
      * @param {Number}} index 开始计算的下标
      */
@@ -4394,7 +4513,6 @@ class Path{
         }
         this.clear_pointMath__byIndex(i,mf);
     }
-
 }
 
 // var k=new Path("M0 0, l80 80 h50 v20 Z m100 100 l10 10 l-20 0 z M30 20 l12 32 l55 -20 z");
