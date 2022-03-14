@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-11 21:31:46
+ * @LastEditTime: 2022-03-15 01:45:28
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -4281,13 +4281,13 @@ class Path{
 
     // 用于创建数学对象使用的关键字集合
     static _vector2_c="Mm";
-    static _line_c="LlHhVv";
+    static _line_c="LlHhVvZz";
     static _arc_c="Aa";
-    static _bezier="CcQq";
-    static _bezier_t="Tt";
-    static _bezier_s="Ss";
-    static _bezier_c3="CcSs";
-    static _bezier_c2="TtQq";
+    static _bezier_c="CcQq";
+    static _bezier_c__t="Tt";
+    static _bezier_c__s="Ss";
+    static _bezier_c__c3="CcSs";
+    static _bezier_c__c2="TtQq";
     /** 创建数学对象
      * @param {Number} index 基于下标创建数学对象
      * @return {Vector2|Line|Data_Arc__Ellipse|BezierCurve}
@@ -4333,14 +4333,14 @@ class Path{
             l=0;
 
         // 简化三阶曲线
-        if(!(low_FN=Path._bezier_s.indexOf(c))===-1){
+        if(!(low_FN=Path._bezier_c__s.indexOf(c))===-1){
             is_simple=true;
-            can_use_last=(last_cmd&&(Path._bezier_c3.index(last_cmd.command)!==-1));
+            can_use_last=(last_cmd&&(Path._bezier_c__c3.index(last_cmd.command)!==-1));
         }
         // 简化二阶曲线
-        if(!(low_FN=Path._bezier_t.indexOf(c))===-1){
+        if(!(low_FN=Path._bezier_c__t.indexOf(c))===-1){
             is_simple=true;
-            can_use_last=(last_cmd&&(Path._bezier_c2.index(last_cmd.command)!==-1));
+            can_use_last=(last_cmd&&(Path._bezier_c__c2.index(last_cmd.command)!==-1));
         }
         if(is_simple){
             if(can_use_last){
@@ -4360,7 +4360,7 @@ class Path{
         }
 
         // 完整曲线命令
-        if(!(low_FN=Path._bezier.indexOf(c))===-1){
+        if(!(low_FN=Path._bezier_c.indexOf(c))===-1){
             do{
                 k=temp_arr.push(new Vector2(d[i],d[i+1]))-1;
                 if(low_FN>>1<<1===low_FN){
@@ -4536,5 +4536,6 @@ export{
     Bezier_Polygon,
     BezierCurve,
     PathCommand,
+    Line,
     Path,
 }

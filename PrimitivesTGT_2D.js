@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-15 00:59:27
+ * @LastEditTime: 2022-03-15 01:23:49
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -27,6 +27,7 @@ import {
     Bezier_Node,
     Bezier_Polygon,
     BezierCurve,
+    Path,
         }from "./Math2d.js";
 
 /** @type {Number} 默认转换多边形的精度 用于圆弧或曲线转换 */
@@ -498,6 +499,20 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
     }
 }
 
+class PrimitiveTGT__Path extends PrimitiveTGT{
+    /**
+     * @param {Path} path 
+     */
+    constructor(path){
+        super();
+        if(path)
+        /** @type {Path} */
+        this.data=Path.copy(path);
+        this.dataType="Path";
+        this.want_to_closePath=false;
+    }
+}
+
 /** PrimitiveTGT 组
  */
  class PrimitiveTGT__Group extends PrimitiveTGT{
@@ -646,6 +661,7 @@ PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT__worldTo
 );
 
 export{
+    
     Material,
     Renderer_PrimitiveTGT,
     PrimitiveTGT,
@@ -654,5 +670,6 @@ export{
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
     PrimitiveTGT__Bezier,
-    PrimitiveTGT__Group
+    PrimitiveTGT__Group,
+    PrimitiveTGT__Path
 };

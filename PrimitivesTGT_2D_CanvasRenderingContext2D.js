@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-04 16:30:01
+ * @LastEditTime: 2022-03-15 01:45:34
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -22,9 +22,12 @@ import {
     Bezier_Node,
     Bezier_Polygon,
     BezierCurve,
+    Path,
+    Line,
         }from "./Math2d.js";
 
 import {
+    
     Material,
     Renderer_PrimitiveTGT,
     PrimitiveTGT,
@@ -33,7 +36,8 @@ import {
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
     PrimitiveTGT__Bezier,
-    PrimitiveTGT__Group
+    PrimitiveTGT__Group,
+    PrimitiveTGT__Path
 }from "./PrimitivesTGT_2D.js"
 
 import {
@@ -237,6 +241,40 @@ Renderer_PrimitiveTGT__Canvas2D.createCanvasPath={
             }
         }
     },
+    /**
+     * 
+     * @param {Renderer_PrimitiveTGT__Canvas2D} that 
+     * @param {PrimitiveTGT__Path} tgt 
+     */
+    "Path"          : function(that,tgt){
+        var ctx=that.ctx;
+        var i=0,
+            path=tgt.data,
+            cmds=tgt.data.command_set,
+            t_c,
+            lufn;   //low or up flag_number
+        var temp=null;
+
+        while(i<cmds.length){
+            t_c=cmds[i].command;
+            if((lufn=Path._vector2_c.indexOf(t_c))!==-1){
+                /** @type {Vector2} */
+                temp= path.get_mathData(i);
+                ctx.moveTo(temp);
+            }
+            if((lufn=Path._line_c.indexOf(t_c))!==-1){
+                /** @type {Line} */
+                temp= path.get_mathData(i);
+                ctx.lineTo(temp.ed);
+            }
+            if((lufn=Path._arc_c.indexOf(t_c))!==-1){
+                // todo
+            }
+            if((lufn=Path._bezier_c.indexOf(t_c))!==-1){
+                
+            }
+        }
+    }
 }
 
 export{

@@ -25,6 +25,7 @@ import {
     BezierCurve,
         }from "./Math2d.js";
 import {
+    
     Material,
     Renderer_PrimitiveTGT,
     PrimitiveTGT,
@@ -33,7 +34,8 @@ import {
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
     PrimitiveTGT__Bezier,
-    PrimitiveTGT__Group
+    PrimitiveTGT__Group,
+    PrimitiveTGT__Path
 } from './PrimitivesTGT_2D.js';
 /** @type {Number} 默认精度 用于弧形转换成多边形 */
 PrimitiveTGT.accuracy=20;
