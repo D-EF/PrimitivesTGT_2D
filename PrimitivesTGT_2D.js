@@ -1,3 +1,11 @@
+/*
+ * @Author: Darth_Eternalfaith
+ * @Date: 2022-03-14 23:34:06
+ * @LastEditors: Darth_Eternalfaith
+ * @LastEditTime: 2022-03-15 00:59:27
+ * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
+ * 
+ */
 /*!
  *  图元 面向对象化的 库
  *  坐标系 大部分情况是 x 正方向向右, y 正方向向下的。
@@ -255,7 +263,7 @@ class PrimitiveTGT{
         rtn.nodesToWorld(true);
         return [rtn];
     }
-    /** 碰撞检测 有多个重载, 在class外面实现
+    /** 碰撞检测 有多个重载, 在 PrimitivesTGT_Touch.js 实现
      * @param {PrimitiveTGT} primitive1 需要检测碰撞的对象
      * @param {PrimitiveTGT} primitive2 需要检测碰撞的对象
      */
@@ -636,7 +644,6 @@ PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
 });
 PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT__worldToLocal
 );
-//碰撞检测函数 ----------------------------------------------------------------------------------------------------------------------------------
 
 export{
     Material,

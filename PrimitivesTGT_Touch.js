@@ -1,9 +1,10 @@
 /*
- * @Author: your name
+ * @Author: Darth_Eternalfaith
  * @Date: 2022-03-15 00:41:42
- * @LastEditTime: 2022-03-15 00:46:47
- * @LastEditors: Please set LastEditors
+ * @LastEditors: Darth_Eternalfaith
+ * @LastEditTime: 2022-03-15 00:59:12
  * @FilePath: \def-web\js\visual\PrimitivesTGT_Touch.js
+ * 碰撞检测函数
  */
 
 import {
@@ -480,5 +481,5 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT,PrimitiveTGT__Group],function (tg
 
 
 export{
-    // not thing
+    // not anything export
 }
