@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-15 23:51:19
+ * @LastEditTime: 2022-03-16 00:44:16
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1560,15 +1560,17 @@ class Data_Arc__Ellipse extends Data_Arc {
         return this.locToWorld__untransform(super.get_normal(t)).normalize();
     }
     sample(t){
-        return this.sample_useTimeByArcLength(t);
+        return this.sample__byLengthLong(t);
     }
-    sample_useTimeByArcLength(t){
+    sample__byLengthLong(t){
         return this.locToWorld(
             super.sample(this.get_t_byArcLength(t*this.get_lengthLong()))
         );
     }
-    sample_useAngleByTime(t){
-        return super.sample(t);
+    sample__byTime(t){
+        return this.locToWorld(
+            super.sample(t)
+        );
     }
     sample_byAngle(angle){
         return this.locToWorld(super.sample_byAngle(angle));
@@ -2724,7 +2726,7 @@ class Polygon{
         }
         return this._all_lines_length;
     }
-    /** 使用权值参数t获取多边形上的点的坐标和法向
+    /** 使用参数t获取多边形上的点的坐标和法向
      * @param {Number} t 全多边形的时间参数t
      * @param {Boolean} closeFlag 是否闭合多边形
      * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
@@ -2743,6 +2745,15 @@ class Polygon{
         v=Math2D.sample_line(this.nodes[i],this.nodes[j],lt);
         n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.ROTATE_90);
         return {v:v,n:n};
+    }
+    /** 用于同一接口的函数, 不推荐使用。 和 sample 完全一致
+     * 使用参数t获取多边形上的点的坐标和法向
+     * @param {Number} t 全多边形的时间参数t
+     * @param {Boolean} closeFlag 是否闭合多边形
+     * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
+     */
+    sample__byLengthLong(t,closeFlag){
+        return this.sample(t,closeFlag);
     }
     /** 创建矩形
      */
@@ -3073,6 +3084,21 @@ class BezierCurve{
      */
     sample(t){
         return this._point_t[t]||(this._point_t[t]=new Vector2(this.sample_x(t),this.sample_y(t)));
+    }
+    /** 使用弧长线性的采样 
+     * @param {Number} t t 参数
+     * @returns {Vector2} 返回坐标
+     */
+    sample__byLengthLong(t){
+        var _t=this.get_t_byArcLength(this.get_lengthLong()*t);
+        return this.sample(_t);
+    }
+    /** 使用弧长线性的t to bezier曲线采样算法的t的映射函数
+     * @param {Number} t t 参数
+     * @returns {Number} 采样算法的t参数
+     */
+    get_t_T(t){
+        return this.get_t_byArcLength(this.get_lengthLong()*t);
     }
     /** 导函数
      * @returns {BezierCurve}低一阶的贝塞尔曲线
@@ -4185,6 +4211,8 @@ class Path{
         this._math_data=[];
         /** @type {Vector2[]} 缓存落点 */
         this._landing_points=[];
+        /** @type {Number} 缓存 路径总长度 */
+        this._length_long=-1;
     }
     static copy(tgt){
         return new Path(Path.bePathCommandSet(tgt));
@@ -4270,7 +4298,7 @@ class Path{
     }
     /** 取创建数学对象
      * @param {Number} index  指令的下标
-     * @returns 
+     * @returns {Vector2|Line|Data_Arc__Ellipse|BezierCurve}
      */
     get_mathData(index){
         if(!this._math_data[index]){
@@ -4280,27 +4308,29 @@ class Path{
     }
 
     // 用于创建数学对象使用的关键字集合
-    static _vector2_c="Mm";
-    static _line_c="LlHhVvZz";
-    static _arc_c="Aa";
-    static _bezier_c="CcQq";
-    static _bezier_c__t="Tt";
-    static _bezier_c__s="Ss";
-    static _bezier_c__c3="CcSs";
-    static _bezier_c__c2="TtQq";
+        static _vector2_c="Mm";
+        static _line_c="LlHhVvZz";
+        static _arc_c="Aa";
+        static _bezier_c="CcQq";
+        static _bezier_c__t="Tt";
+        static _bezier_c__s="Ss";
+        static _bezier_c__c3="CcSs";
+        static _bezier_c__c2="TtQq";
+    // 
     /** 创建数学对象
      * @param {Number} index 基于下标创建数学对象
      * @return {Vector2|Line|Data_Arc__Ellipse|BezierCurve}
      */
     create__mathData(index){
+        if(this.command_set[index]){
+            throw new Error("Parameter index is out of range!");
+        }
         var c=this.command_set[index].command,
             d=this.command_set[index].ctrl;
         var last_lp,now_lp;
         var low_FN=0; //low or up flag number 可以使用 low_FN%2===0判断是否是大写字母
-
         now_lp=this.get_landingPoint(index);
-        last_lp=this.get_landingPoint(index-1);
-
+        last_lp=this.get_landingPoint(index-1);        
         // m点
         if(!((low_FN=Path._vector2_c.indexOf(c))===-1)){
             return now_lp;
@@ -4331,7 +4361,6 @@ class Path{
             can_use_last=false,
             is_simple=false,
             l=0;
-
         // 简化三阶曲线
         if(!((low_FN=Path._bezier_c__s.indexOf(c))===-1)){
             is_simple=true;
@@ -4468,12 +4497,6 @@ class Path{
         }
         return i;
     }
-    /** 清除所有缓存的落点和数学对象
-     */
-    clear_pointMath__all(){
-        this._math_data.length=0;
-        this._landing_points.length=0;
-    }
     /** 指令修改后的回调 清理需要相对坐标的缓存内容 
      * @param {Number} index  修改的下标
      */
@@ -4514,6 +4537,40 @@ class Path{
         }
         this.clear_pointMath__byIndex(i,mf);
     }
+
+    /** 刷新/清理 缓存
+     */
+    refresh_cache(){
+        this._length_long=-1;
+        this._landing_points.length=0;
+        this._math_data.length=0;
+    }
+    /** 获取路径总长度
+     * @returns {Number} 路径总长度
+     */
+    get_lengthLong(){
+        if(this._length_long<0){
+            // clac 
+            this._length_long=0;
+            var i,temp;
+            for(i=this.command_length-1;i>=0;--i){
+                temp=this.get_mathData(i);
+                // todo 弧长lut查找表
+                if(temp.get_lengthLong){
+                    this._length_long+=temp.get_lengthLong();
+                }
+            }
+        }
+        return this._length_long;
+    }
+    /** 采样点
+     * @param {Number} t 时间参数t 0~1
+     * @returns {Vector2} 使用长度的采样点
+     */
+    sample(t){
+        // todo
+    }
+
 }
 
 // var k=new Path("M0 0, l80 80 h50 v20 Z m100 100 l10 10 l-20 0 z M30 20 l12 32 l55 -20 z");
