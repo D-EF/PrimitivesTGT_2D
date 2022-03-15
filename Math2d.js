@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-15 01:45:28
+ * @LastEditTime: 2022-03-15 23:51:19
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1640,7 +1640,7 @@ class Data_Arc__Ellipse extends Data_Arc {
             c_op,c_ed,
             op_a,ed_a;
         
-        var c=Vector2.sum(op,arc.locToWorld(wi[i]));
+        var c=Vector2.sum(op,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
         arc.cx=c.x;
         arc.cy=c.y;
 
@@ -4187,7 +4187,7 @@ class Path{
         this._landing_points=[];
     }
     static copy(tgt){
-        return new Path(tgt._command_set);
+        return new Path(Path.bePathCommandSet(tgt));
     }
     copy(){
         return Path.copy(this);
@@ -4302,18 +4302,18 @@ class Path{
         last_lp=this.get_landingPoint(index-1);
 
         // m点
-        if(!(low_FN=Path._vector2_c.indexOf(c))===-1){
+        if(!((low_FN=Path._vector2_c.indexOf(c))===-1)){
             return now_lp;
         }
         // 直线
-        if(!(low_FN=Path._line_c.indexOf(c))===-1){
+        if(!((low_FN=Path._line_c.indexOf(c))===-1)){
             return new Line(last_lp,now_lp);
         }
         // 弧线
-        if(!(low_FN=Path._arc_c.indexOf(c))===-1){
+        if(!((low_FN=Path._arc_c.indexOf(c))===-1)){
             var rx=d[0],
                 ry=d[1],
-                rotate_angle=d[2],
+                rotate_angle=d[2]*deg,
                 large_arc_flag=d[3],
                 sweep_flag=d[4];
             return Data_Arc__Ellipse.create_byEndPointRadiusRotate(last_lp,now_lp,rx,ry,rotate_angle,large_arc_flag,sweep_flag);
@@ -4333,37 +4333,38 @@ class Path{
             l=0;
 
         // 简化三阶曲线
-        if(!(low_FN=Path._bezier_c__s.indexOf(c))===-1){
+        if(!((low_FN=Path._bezier_c__s.indexOf(c))===-1)){
             is_simple=true;
-            can_use_last=(last_cmd&&(Path._bezier_c__c3.index(last_cmd.command)!==-1));
+            can_use_last=(last_cmd&&(Path._bezier_c__c3.indexOf(last_cmd.command)!==-1));
         }
         // 简化二阶曲线
-        if(!(low_FN=Path._bezier_c__t.indexOf(c))===-1){
+        else if(!((low_FN=Path._bezier_c__t.indexOf(c))===-1)){
             is_simple=true;
-            can_use_last=(last_cmd&&(Path._bezier_c__c2.index(last_cmd.command)!==-1));
+            can_use_last=(last_cmd&&(Path._bezier_c__c2.indexOf(last_cmd.command)!==-1));
         }
         if(is_simple){
             if(can_use_last){
                 last_mathData=this.get_mathData(index-1);
                 l=last_mathData.points.length-1;
                 proxy_v=Math2D.sample_line(last_mathData.points[l-1],last_mathData.points[l],2);
+                console.log(proxy_v);
             }else{
                 proxy_v=last_lp;
             }
             temp_arr.push(proxy_v);
     
             k=temp_arr.push(new Vector2(d[i],d[i+1]))-1;
-            if(low_FN>>1<<1===low_FN){
+            if(low_FN>>1<<1!==low_FN){
                 temp_arr[k].translate(last_lp);
             }
             temp_arr.push(now_lp);
         }
 
         // 完整曲线命令
-        if(!(low_FN=Path._bezier_c.indexOf(c))===-1){
+        if(!((low_FN=Path._bezier_c.indexOf(c))===-1)){
             do{
                 k=temp_arr.push(new Vector2(d[i],d[i+1]))-1;
-                if(low_FN>>1<<1===low_FN){
+                if(low_FN>>1<<1!==low_FN){
                     // 相对to世界
                     temp_arr[k].translate(last_lp);
                 }

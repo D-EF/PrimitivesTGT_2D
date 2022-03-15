@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-15 01:45:34
+ * @LastEditTime: 2022-03-15 15:56:12
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -24,6 +24,7 @@ import {
     BezierCurve,
     Path,
     Line,
+    Data_Arc__Ellipse,
         }from "./Math2d.js";
 
 import {
@@ -257,22 +258,40 @@ Renderer_PrimitiveTGT__Canvas2D.createCanvasPath={
 
         while(i<cmds.length){
             t_c=cmds[i].command;
+            temp= path.get_mathData(i);
             if((lufn=Path._vector2_c.indexOf(t_c))!==-1){
-                /** @type {Vector2} */
-                temp= path.get_mathData(i);
-                ctx.moveTo(temp);
+                ctx.moveTo(temp.x,temp.y);
             }
             if((lufn=Path._line_c.indexOf(t_c))!==-1){
-                /** @type {Line} */
-                temp= path.get_mathData(i);
-                ctx.lineTo(temp.ed);
+                ctx.lineTo(temp.ed.x,temp.ed.y);
             }
             if((lufn=Path._arc_c.indexOf(t_c))!==-1){
-                // todo
+                ctx.save();
+                ctx.transform(
+                    temp.transform_matrix.a,
+                    temp.transform_matrix.b,
+                    temp.transform_matrix.c,
+                    temp.transform_matrix.d,
+                    temp.transform_matrix.e,
+                    temp.transform_matrix.f
+                );
+                ctx.arc(temp.c.x,temp.c.y,temp.r,temp.startAngle,temp.endAngle);
+                ctx.restore();
             }
-            if((lufn=Path._bezier_c.indexOf(t_c))!==-1){
-                
+            if((lufn=Path._bezier_c__c3.indexOf(t_c))!==-1){
+                ctx.bezierCurveTo(
+                    temp.points[1].x,   temp.points[1].y,
+                    temp.points[2].x,   temp.points[2].y,
+                    temp.points[3].x,   temp.points[3].y,
+                );
             }
+            if((lufn=Path._bezier_c__c2.indexOf(t_c))!==-1){
+                ctx.quadraticCurveTo(
+                    temp.points[1].x,   temp.points[1].y,
+                    temp.points[2].x,   temp.points[2].y,
+                );
+            }
+            ++i;
         }
     }
 }
