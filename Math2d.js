@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-16 00:44:16
+ * @LastEditTime: 2022-03-16 23:21:00
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -27,6 +27,7 @@ import {
     DEF_Caller,
     Delegate,
     OlFunction,
+    select_lut__binary,
 } from "../basics/Basics.js";
 /** 放了一点2d静态函数
  */
@@ -941,7 +942,7 @@ class Data_Rect{
         this._min=null;        
         this._polygon_proxy=null;
         this._polygon_proxy_sp=0;
-        this._arc_length_table=null;
+        this._length_long_lut=null;
     }
     /** 切线(方向)
      * @param {Number} t t参数0~1
@@ -1357,17 +1358,17 @@ class Data_Rect{
         return this._polygon_proxy_want_sp=val;
     }
     /** @type {{t:Number,l:Number}[]} 弧长显式查找表 */
-    get arc_length_table(){
+    get length_long_lut(){
         var polygon=this.polygon_proxy;
-        if(this._arc_length_table[0].l===null){
+        if(this._length_long_lut[0].l===null){
             var temp;
-            this._arc_length_table[0].l=0;
+            this._length_long_lut[0].l=0;
             for(var i=1;i<polygon.nodes.length;++i){
                 temp=polygon.nodes[i].dif(polygon.nodes[i-1]).get_mag();
-                this._arc_length_table[i].l=this._arc_length_table[i-1].l+temp;
+                this._length_long_lut[i].l=this._length_long_lut[i-1].l+temp;
             }
         }
-        return this._arc_length_table;
+        return this._length_long_lut;
     }
     /**@type {Polygon} 拟合曲线的多边形 */
     get polygon_proxy(){
@@ -1375,7 +1376,7 @@ class Data_Rect{
             var temp=this.create_polygonProxy(this.polygon_proxy_want_sp);
             this._polygon_proxy_sp=this.polygon_proxy_want_sp;
             this._polygon_proxy=temp.polygon;
-            this._arc_length_table=temp.t_lut;
+            this._length_long_lut=temp.t_lut;
         }
         return this._polygon_proxy;
     }
@@ -1601,7 +1602,7 @@ class Data_Arc__Ellipse extends Data_Arc {
      */
     get_t_byArcLength(length,step_size){
         if(step_size) this.polygon_proxy_want_sp=step_size;
-        var tb=this.arc_length_table,
+        var tb=this.length_long_lut,
             i=tb.length-1,
             l=length>=0?length:tb[i].l+length;
         for(--i;i>=0;--i){
@@ -2369,8 +2370,8 @@ class Polygon{
         if(nodes&&nodes.constructor==Array){
             this.add_Nodes(nodes);
         }
-        /**@type {Number[]} 边线长度暂存表 */
-        this._lines_length=[];
+        /**@type {Number[]} 边线长度lut表 */
+        this._length_long_lut=[];
         /**@type {Number} 所有边线总长度 为负数时说明是未计算状态*/
         this._all_lines_length=-1;
         /**@type {Delegate} 顶点插入或删除后的委托  */
@@ -2475,7 +2476,7 @@ class Polygon{
     /**移除所有顶点 */
     removeAll(){
         this.nodes.length=0;
-        this._lines_length.length=0;
+        this._length_long_lut.length=0;
         this._all_lines_length=-1;
     }
     /** 在插入顶点或删除顶点后的操作
@@ -2484,12 +2485,12 @@ class Polygon{
      */
     after_nodes_move(index,f){
         var j=index?index-1:this.nodes.length-1,i=index;
-        this._lines_length[j]=undefined;
+        this._length_long_lut[j]=undefined;
         if(f){
-            this._lines_length.splice(i,0,null);
+            this._length_long_lut.splice(i,0,null);
         }
         else{
-            this._lines_length.splice(i,1);
+            this._length_long_lut.splice(i,1);
         }
         this._all_lines_length=-1;
         this.after_nodes_move_Delegate(i,f);
@@ -2498,7 +2499,7 @@ class Polygon{
      * @param {Number} index 修改的点的下标
      */
     after_node_change(index){
-        this._lines_length[index]=undefined;
+        this._length_long_lut[index]=undefined;
         this._all_lines_length=-1;
         this.after_node_change_Delegate(i);
     }
@@ -2703,10 +2704,10 @@ class Polygon{
      */
     get_lineLength(index){
         var j=index===this.nodes.length-1?0:index+1;
-        if(this._lines_length[index]===undefined||this._lines_length[index]<0){
-            this._lines_length[index]=Math2D.get_lineLength(this.nodes[index],this.nodes[j]);
+        if(this._length_long_lut[index]===undefined||this._length_long_lut[index]<0){
+            this._length_long_lut[index]=Math2D.get_lineLength(this.nodes[index],this.nodes[j]);
         }
-        return this._lines_length[index];
+        return this._length_long_lut[index];
     }
     /** 多边形所有边的长度和
      * @param {Boolean} closeFlag 是否闭合多边形
@@ -2729,7 +2730,7 @@ class Polygon{
     /** 使用参数t获取多边形上的点的坐标和法向
      * @param {Number} t 全多边形的时间参数t
      * @param {Boolean} closeFlag 是否闭合多边形
-     * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
+     * @returns {{v:Vector2,n:Vector2}} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
     sample(t,closeFlag){
         var l=t%1*this.get_lengthLong(closeFlag),temp,
@@ -2746,14 +2747,14 @@ class Polygon{
         n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.ROTATE_90);
         return {v:v,n:n};
     }
-    /** 用于同一接口的函数, 不推荐使用。 和 sample 完全一致
+    /** 用于同一接口的函数, 不推荐使用。 
      * 使用参数t获取多边形上的点的坐标和法向
      * @param {Number} t 全多边形的时间参数t
      * @param {Boolean} closeFlag 是否闭合多边形
-     * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
+     * @returns {Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
     sample__byLengthLong(t,closeFlag){
-        return this.sample(t,closeFlag);
+        return this.sample(t,closeFlag).v;
     }
     /** 创建矩形
      */
@@ -2893,7 +2894,7 @@ class BezierCurve{
         this._polygon_proxy_want_sp;
         this.polygon_proxy_want_sp=0.1;
         /**@type {{t:Number,l:Number}[]} 弧长显式查找表 */
-        this._arc_length_table=null;
+        this._length_long_lut=null;
         if(points) this.reset_points(points);
         /**@type {Object} t参数对应的点的集合 */
         this._point_t={};
@@ -2907,7 +2908,7 @@ class BezierCurve{
         this._align_matrix_i=null;
         this._polygon_proxy=null;
         this._polygon_proxy_sp=0;
-        this._arc_length_table=null;
+        this._length_long_lut=null;
         this._aabb=null;
         this._point_t={};
     }
@@ -3282,7 +3283,7 @@ class BezierCurve{
      */
     get_lengthLong(step_size){
         if(step_size) this.polygon_proxy_want_sp=Math.abs(step_size);
-        var tb=this.arc_length_table;
+        var tb=this.length_long_lut;
         return tb[tb.length-1].l;
     }
     /** 使用弧长求t值
@@ -3292,7 +3293,7 @@ class BezierCurve{
      */
     get_t_byArcLength(length,step_size){
         if(step_size) this.polygon_proxy_want_sp=step_size;
-        var tb=this.arc_length_table,
+        var tb=this.length_long_lut,
             i=tb.length-1,
             l=length>=0?length:tb[i].l+length;
         for(--i;i>=0;--i){
@@ -3307,17 +3308,17 @@ class BezierCurve{
         return 0;
     }
     /** 弧长显式查找表 */
-    get arc_length_table(){
+    get length_long_lut(){
         var polygon=this.polygon_proxy;
-        if(this._arc_length_table[0].l===null){
+        if(this._length_long_lut[0].l===null){
             var temp;
-            this._arc_length_table[0].l=0;
+            this._length_long_lut[0].l=0;
             for(var i=1;i<polygon.nodes.length;++i){
                 temp=polygon.nodes[i].dif(polygon.nodes[i-1]).get_mag();
-                this._arc_length_table[i].l=this._arc_length_table[i-1].l+temp;
+                this._length_long_lut[i].l=this._length_long_lut[i-1].l+temp;
             }
         }
-        return this._arc_length_table;
+        return this._length_long_lut;
     }
     /**@type {Polygon} 拟合曲线的多边形 */
     get polygon_proxy(){
@@ -3325,7 +3326,7 @@ class BezierCurve{
             var temp=this.create_polygonProxy(this.polygon_proxy_want_sp);
             this._polygon_proxy_sp=polygon_proxy_want_sp;
             this._polygon_proxy=temp.polygon;
-            this._arc_length_table=temp.t_lut;
+            this._length_long_lut=temp.t_lut;
         }
         return this._polygon_proxy;
     }
@@ -3336,14 +3337,14 @@ class BezierCurve{
     create_polygonProxy(step_size){
         var sp=Math.abs(step_size)||0.1,
             temp=[];
-        var arc_length_table=[];
+        var length_long_lut=[];
         for(var i = 0; i<1; i+=sp){
             temp.push(this.sample(i));
-            arc_length_table.push({t:i,l:null});
+            length_long_lut.push({t:i,l:null});
         }
         temp.push(this.sample(1));
-        arc_length_table.push({t:1,l:null});
-        return {polygon:new Polygon(temp),t_lut:arc_length_table}
+        length_long_lut.push({t:1,l:null});
+        return {polygon:new Polygon(temp),t_lut:length_long_lut}
     }
     /** 某点的曲率
      * @param {Number} t 时间参数 t
@@ -3988,7 +3989,7 @@ class Bezier_Polygon{
         if(index===this.nodes.length&&closeFlag===-1){
             return Math2D.get_lineLength(this.nodes[index].node,this.nodes[0].node);
         }
-        var d=this.get_bezierCurve(index).arc_length_table;
+        var d=this.get_bezierCurve(index).length_long_lut;
         return d[d.length-1].l;
     }
     /** 多边形所有边的长度和
@@ -4211,8 +4212,8 @@ class Path{
         this._math_data=[];
         /** @type {Vector2[]} 缓存落点 */
         this._landing_points=[];
-        /** @type {Number} 缓存 路径总长度 */
-        this._length_long=-1;
+        /** @type {Number[]} 弧长查找表 */
+        this._length_long_lut=[];
     }
     static copy(tgt){
         return new Path(Path.bePathCommandSet(tgt));
@@ -4541,34 +4542,55 @@ class Path{
     /** 刷新/清理 缓存
      */
     refresh_cache(){
-        this._length_long=-1;
         this._landing_points.length=0;
         this._math_data.length=0;
+        this._length_long_lut.length=0;
     }
     /** 获取路径总长度
      * @returns {Number} 路径总长度
      */
     get_lengthLong(){
-        if(this._length_long<0){
-            // clac 
-            this._length_long=0;
-            var i,temp;
-            for(i=this.command_length-1;i>=0;--i){
+        return this.length_long_lut[this.command_length-1];
+    }
+    /** @type {Number[]} 长度显式查找表*/
+    get length_long_lut(){
+        if(this._length_long_lut.length!==this.command_length){
+            this._length_long_lut.length=0;
+            var i,temp,
+                l=this.command_length,
+                _length_long=0;
+            for(i=0;i<l;++i){
                 temp=this.get_mathData(i);
-                // todo 弧长lut查找表
                 if(temp.get_lengthLong){
-                    this._length_long+=temp.get_lengthLong();
+                    _length_long+=temp.get_lengthLong();
+                    this._length_long_lut.push(_length_long);
+                }else{
+                    this._length_long_lut.push(_length_long);
                 }
             }
         }
-        return this._length_long;
+        return this._length_long_lut;
+        // todo 待测试
+    }
+    
+    /** 获取边的长度
+     * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
+     * @returns {Number} 返回线段的长度
+     */
+    get_lineLength(index){
+        var j=index===this.nodes.length-1?0:index+1;
+        if(this._length_long_lut[index]===undefined||this._length_long_lut[index]<0){
+            this._length_long_lut[index]=Math2D.get_lineLength(this.nodes[index],this.nodes[j]);
+        }
+        return this._length_long_lut[index];
     }
     /** 采样点
      * @param {Number} t 时间参数t 0~1
-     * @returns {Vector2} 使用长度的采样点
+     * @returns {{v:Vector2,n:Vector2}} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
-    sample(t){
-        // todo
+    sample__getvn(t){
+        var l=t%1*this.get_lengthLong();
+        select_lut__binary(this.length_long_lut)
     }
 
 }
