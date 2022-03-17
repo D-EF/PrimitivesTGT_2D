@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-17 19:11:35
+ * @LastEditTime: 2022-03-18 03:00:11
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -3140,14 +3140,14 @@ class BezierCurve{
     }
     /** 当前点的法线
      * @param {Number} 时间参数 t
-     * @param {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
+     * @param {Vector2} 返回一个 pt 的相对坐标 这是一个标准化向量
      */
     get_normal(t){
         var d=this.derivatives.sample(t);
         return new Vector2(
             d.y,
             -d.x
-        )
+        ).normalize()
     }
     /** 获取当前点的导数
      * @param {Number} t 时间参数 t
@@ -3368,7 +3368,7 @@ class BezierCurve{
     create_kappaCircle(t,tgtData){
         var kr=-1/this.get_kappa(t),
             pt=this.sample(t),
-            n=this.get_normal(t).normalize(),
+            n=this.get_normal(t),
             c=pt.sum(n.np(kr));
         kr=Math.abs(kr);
         if(tgtData){
@@ -3938,7 +3938,8 @@ class Bezier_Polygon{
         }
         return !!(rtn%2);
     }
-    /** @param {Number} index 前驱顶点的下标
+    /** 获取曲线实例
+     * @param {Number} index 前驱顶点的下标
      * @returns {BezierCurve} 返回贝塞尔曲线实例
      */
     get_bezierCurve(index){
@@ -3948,7 +3949,6 @@ class Bezier_Polygon{
                 if(this.nodes[index+1]){
                     i=index+1;   
                 }
-                // this._bezierCurves[index]=(BezierCurve.createBy_BezierNode(this.nodes[index],this.nodes[i])); // todo
             }
         }
         return this._bezierCurves[index];
@@ -4030,7 +4030,7 @@ class Bezier_Polygon{
         lt=l/this.get_curve_length(i);
         temp_bezier=this.get_bezierCurve(i)
         v=temp_bezier.sample(lt);
-        n=temp_bezier.get_normal(lt).normalize();
+        n=temp_bezier.get_normal(lt);
         return {v:v,n:n};
     }
 }
@@ -4058,13 +4058,13 @@ class Line{
     sample(t){
         return Math2D.sample_line(this.op,this.ed,t);
     }
-    get_tangent(){
+    get_tangent(t){
         if(!this._tangent){
             this._tangent=Vector2.dif(this.ed,this.op);
         }
         return this._tangent;
     }
-    get_normal(){
+    get_normal(t){
         if(!this._normal){
             this._normal=Vector2.linearMapping(this.get_tangent(),Matrix2x2.ROTATE_90).normalize();
         }
@@ -4409,7 +4409,6 @@ class Path{
 
         return new BezierCurve(temp_arr);
         // 贝塞尔曲线 ed
-        // todo test 待测试
 
     }
     /** 插入一段指令
@@ -4575,16 +4574,24 @@ class Path{
             }
         }
         return this._length_long_lut;
-        // todo 待测试
     }
     
     /** 采样点
-     * @param {Number} t 时间参数t 0~1
-     * @returns {{v:Vector2,n:Vector2}} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
+     * @param {Number} t 时间参数t
+     * @returns {Vector2} 返回采样的坐标
      */
-    sample__getvn(t){
+    sample(t){
         var l=t*this.get_lengthLong(),
-            _t,
+            ti=this.get_ti_byLengthLong(l),
+            temp=this.get_mathData(ti.i);
+        return temp.sample(ti.t);
+    }
+    /** 使用长度求当前t值
+     * @param {Number} l Length Long
+     * @returns {{t:Number,i:Number}}  t为当前数学对象的t参数, i是指令(数学对线)的下标
+     */
+    get_ti_byLengthLong(l){
+        var _t,
             temp;
         if(l<0){
             l+=this.get_lengthLong();
@@ -4594,41 +4601,32 @@ class Path{
         _t=temp.get_t_byLengthLong(l-this.length_long_lut[i-1]);
         
         return {
-            v:temp.sample(_t),
-            n:i
+            t:_t,
+            i:i
         }
     }
-    /** 采样点
-     * @param {Number} t 时间参数t
-     * @returns {Vector2} 返回采样的坐标
+    /** 当前点的法线
+     * @param {Number} 时间参数 t
+     * @param {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
      */
-    sample(t){
-        return this.sample__getvn(t).v;
+    get_normal(t){
+        var l=t*this.get_lengthLong(),
+            ti=this.get_ti_byLengthLong(l),
+            temp=this.get_mathData(ti.i);
+        return temp.get_normal(ti.t);
     }
-    /** 使用长度求当前t值
-     * @param {Number} l Length Long
+    /** 当前点的方向
+     * @param {Number} 时间参数 t
+     * @param {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
      */
-    get_t_byLengthLong(l){
-        var _l,
-            tl=this.get_lengthLong();
-        if(l>0){
-            _l=l;
-        }else{
-            _l=this.get_lengthLong()+l;
-        }
-        l%=tl;
-        return _l/this.get_lengthLong();
+    get_tangent(t){
+        var l=t*this.get_lengthLong(),
+            ti=this.get_ti_byLengthLong(l),
+            temp=this.get_mathData(ti.i);
+        return temp.get_tangent(ti.t);
     }
 
 }
-
-// var k=new Path("M0 0, l80 80 h50 v20 Z m100 100 l10 10 l-20 0 z M30 20 l12 32 l55 -20 z");
-// console.log(k);
-// window.kp=k;
-// for(var i=0;i<k._command_set.length;i++){
-//     console.log(k.get_landingPoint(i));
-// }
-
 export{
     Math2D,
     Data_Rect,
