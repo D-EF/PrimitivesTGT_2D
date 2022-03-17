@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-16 23:21:00
+ * @LastEditTime: 2022-03-17 19:11:35
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1414,10 +1414,10 @@ class Data_Rect{
      * @param {Number} length 当前弧长, 为负数时使用终点开始算; 当弧长超出取值范围时取0
      * @returns {Number} 对应的时间参数t
      */
-    get_t_byArcLength(length){
+    get_t_byLengthLong(length){
         var arcl=this.get_lengthLong();
         var l=length>=0?length:arcl+length;
-        return 0;
+        return l/arcl;
     }
 }
 
@@ -1565,7 +1565,7 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     sample__byLengthLong(t){
         return this.locToWorld(
-            super.sample(this.get_t_byArcLength(t*this.get_lengthLong()))
+            super.sample(this.get_t_byLengthLong(t*this.get_lengthLong()))
         );
     }
     sample__byTime(t){
@@ -1600,7 +1600,7 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
      * @returns {Number} 对应的时间参数t
      */
-    get_t_byArcLength(length,step_size){
+    get_t_byLengthLong(length,step_size){
         if(step_size) this.polygon_proxy_want_sp=step_size;
         var tb=this.length_long_lut,
             i=tb.length-1,
@@ -1608,6 +1608,7 @@ class Data_Arc__Ellipse extends Data_Arc {
         for(--i;i>=0;--i){
             if(tb[i].l<l){
                 // return this._polygon_proxy_sp*(i+(l-tb[i])/(tb[i+1]-tb[i]))
+
                 if(tb[i+1]){
                     return tb[i].t+(l-tb[i].l)/(tb[i+1].l-tb[i].l)*(tb[i+1].t-tb[i].t);
                 }
@@ -2733,7 +2734,7 @@ class Polygon{
      * @returns {{v:Vector2,n:Vector2}} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
     sample(t,closeFlag){
-        var l=t%1*this.get_lengthLong(closeFlag),temp,
+        var l=t*this.get_lengthLong(closeFlag),temp,
             i=0,j=0,
             lt,
             v,n;
@@ -2747,6 +2748,7 @@ class Polygon{
         n=Vector2.dif(this.nodes[j],this.nodes[i]).normalize().linearMapping(Matrix2x2.ROTATE_90);
         return {v:v,n:n};
     }
+    
     /** 用于同一接口的函数, 不推荐使用。 
      * 使用参数t获取多边形上的点的坐标和法向
      * @param {Number} t 全多边形的时间参数t
@@ -3091,7 +3093,7 @@ class BezierCurve{
      * @returns {Vector2} 返回坐标
      */
     sample__byLengthLong(t){
-        var _t=this.get_t_byArcLength(this.get_lengthLong()*t);
+        var _t=this.get_t_byLengthLong(this.get_lengthLong()*t);
         return this.sample(_t);
     }
     /** 使用弧长线性的t to bezier曲线采样算法的t的映射函数
@@ -3099,7 +3101,7 @@ class BezierCurve{
      * @returns {Number} 采样算法的t参数
      */
     get_t_T(t){
-        return this.get_t_byArcLength(this.get_lengthLong()*t);
+        return this.get_t_byLengthLong(this.get_lengthLong()*t);
     }
     /** 导函数
      * @returns {BezierCurve}低一阶的贝塞尔曲线
@@ -3291,7 +3293,7 @@ class BezierCurve{
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的
      * @returns {Number} 对应的时间参数t
      */
-    get_t_byArcLength(length,step_size){
+    get_t_byLengthLong(length,step_size){
         if(step_size) this.polygon_proxy_want_sp=step_size;
         var tb=this.length_long_lut,
             i=tb.length-1,
@@ -3324,7 +3326,7 @@ class BezierCurve{
     get polygon_proxy(){
         if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
             var temp=this.create_polygonProxy(this.polygon_proxy_want_sp);
-            this._polygon_proxy_sp=polygon_proxy_want_sp;
+            this._polygon_proxy_sp=this.polygon_proxy_want_sp;
             this._polygon_proxy=temp.polygon;
             this._length_long_lut=temp.t_lut;
         }
@@ -3403,7 +3405,7 @@ class BezierCurve{
                 };
             }else{
                 temp.v3={
-                    t:(temp_t=this.get_t_byArcLength(al*i)),
+                    t:(temp_t=this.get_t_byLengthLong(al*i)),
                     v:(tv=this.sample(temp_t)),
                 };
             }
@@ -3502,7 +3504,7 @@ class BezierCurve{
                 };
             }else{
                 temp.v2={
-                    t:(temp_t=this.get_t_byArcLength(al*i)),
+                    t:(temp_t=this.get_t_byLengthLong(al*i)),
                     v:(tv=this.sample(temp_t)),
                 };
             }
@@ -4017,7 +4019,7 @@ class Bezier_Polygon{
      * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
     sample(t,closeFlag){
-        var l=t%1*this.get_all_curve_length(closeFlag),temp,temp_bezier,
+        var l=t*this.get_all_curve_length(closeFlag),temp,temp_bezier,
             i=0,
             lt,
             v,n;
@@ -4067,6 +4069,9 @@ class Line{
             this._normal=Vector2.linearMapping(this.get_tangent(),Matrix2x2.ROTATE_90).normalize();
         }
         return this._normal;
+    }
+    get_t_byLengthLong(l){
+        return l/this.get_lengthLong();
     }
 }
 
@@ -4323,7 +4328,7 @@ class Path{
      * @return {Vector2|Line|Data_Arc__Ellipse|BezierCurve}
      */
     create__mathData(index){
-        if(this.command_set[index]){
+        if(!this.command_set[index]){
             throw new Error("Parameter index is out of range!");
         }
         var c=this.command_set[index].command,
@@ -4573,24 +4578,46 @@ class Path{
         // todo 待测试
     }
     
-    /** 获取边的长度
-     * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
-     * @returns {Number} 返回线段的长度
-     */
-    get_lineLength(index){
-        var j=index===this.nodes.length-1?0:index+1;
-        if(this._length_long_lut[index]===undefined||this._length_long_lut[index]<0){
-            this._length_long_lut[index]=Math2D.get_lineLength(this.nodes[index],this.nodes[j]);
-        }
-        return this._length_long_lut[index];
-    }
     /** 采样点
      * @param {Number} t 时间参数t 0~1
      * @returns {{v:Vector2,n:Vector2}} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
      */
     sample__getvn(t){
-        var l=t%1*this.get_lengthLong();
-        select_lut__binary(this.length_long_lut)
+        var l=t*this.get_lengthLong(),
+            _t,
+            temp;
+        if(l<0){
+            l+=this.get_lengthLong();
+        }
+        var i=select_lut__binary(this.length_long_lut,l);
+        temp=this.get_mathData(i);
+        _t=temp.get_t_byLengthLong(l-this.length_long_lut[i-1]);
+        
+        return {
+            v:temp.sample(_t),
+            n:i
+        }
+    }
+    /** 采样点
+     * @param {Number} t 时间参数t
+     * @returns {Vector2} 返回采样的坐标
+     */
+    sample(t){
+        return this.sample__getvn(t).v;
+    }
+    /** 使用长度求当前t值
+     * @param {Number} l Length Long
+     */
+    get_t_byLengthLong(l){
+        var _l,
+            tl=this.get_lengthLong();
+        if(l>0){
+            _l=l;
+        }else{
+            _l=this.get_lengthLong()+l;
+        }
+        l%=tl;
+        return _l/this.get_lengthLong();
     }
 
 }
