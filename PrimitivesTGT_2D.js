@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-15 01:23:49
+ * @LastEditTime: 2022-03-19 02:04:28
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -137,9 +137,7 @@ class PrimitiveTGT{
         /**@type {Number} 虚线起始偏移*/
         this.lineDashOffset=0;
 
-        /** tgt的 data的类型 用于将json实例化为 PrimitiveTGT
-         * @type {String}
-         */
+        /** @type {String} tgt的 data的类型 用于将json实例化为 PrimitiveTGT*/
         this.dataType="Object";
 
     }

@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-18 03:00:11
+ * @LastEditTime: 2022-03-19 04:59:32
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -19,6 +19,7 @@ import {
     calcPascalsTriangle,
     getPascalsTriangle,
     deg,
+    deg_90,
     cycles,
 } from "../basics/math_ex.js";
 
@@ -929,6 +930,9 @@ class Data_Rect{
         /** @type {Number} 每个点相差的弧度 */
         this._polygon_proxy_want_sp=10*deg;
         this.polygon_proxy_sp=this._polygon_proxy_want_sp;
+
+        /** @type {Bezier_Polygon} 拟合圆的 贝塞尔曲线  */
+        this._bezier_curve_proxy=null;
         // 访问器
         this.setAngle_AB(angle_A,angle_B);
     }
@@ -943,6 +947,7 @@ class Data_Rect{
         this._polygon_proxy=null;
         this._polygon_proxy_sp=0;
         this._length_long_lut=null;
+        this._bezier_curve_proxy.clear_nodes();
     }
     /** 切线(方向)
      * @param {Number} t t参数0~1
@@ -1418,6 +1423,35 @@ class Data_Rect{
         var arcl=this.get_lengthLong();
         var l=length>=0?length:arcl+length;
         return l/arcl;
+    }
+    get bezier_curve_proxy(){
+        if(this._bezier_curve_proxy&&this._bezier_curve_proxy._nodes.length){
+            return this._bezier_curve_proxy;
+        }
+        // todo 生成 bezier_curve_proxy
+        if(!this._bezier_curve_proxy){
+            this._bezier_curve_proxy=new Bezier_Polygon();
+        }
+        var f=true,bcs=[],
+            t_op=this.startAngle,
+            t_ed=t_op+deg_90;
+        while(f){
+            t_op+=deg_90;
+            t_ed+=deg_90;
+            if(t_ed>this.endAngle){
+                t_ed=this.endAngle;
+                f=false;
+            }
+            bcs.unshift(Math2D.create_cubicBezierBy3Point(
+                this.sample_byAngle(t_op),
+                this.sample_byAngle(0.5*(t_op+t_ed)),
+                this.sample_byAngle(t_ed),
+                0.5
+            ));
+        }
+        
+
+        return this._bezier_curve_proxy;
     }
 }
 
@@ -2399,7 +2433,7 @@ class Polygon{
     }
     /** 刷新 最大xy 最小xy
      */
-    reMinMax(){
+    refresh_minMax(){
         if(!this.nodes.length)return;
         this.max.x=this.nodes[0].x;
         this.max.y=this.nodes[0].y;
@@ -2432,7 +2466,7 @@ class Polygon{
             }
         }
         else{
-            this.reMinMax();
+            this.refresh_minMax();
         }
     }
     /** 加入一组顶点数组
@@ -2455,7 +2489,7 @@ class Polygon{
                  if(v.y>this.max.y)this.max.y=v.y;
             else if(v.y<this.min.y)this.min.y=v.y;
         }else{
-            this.reMinMax();
+            this.refresh_minMax();
         }
         this.after_nodes_move(index,true);
     }
@@ -2471,7 +2505,7 @@ class Polygon{
                 tflag=1;
             }
         this.nodes.splice(index,1);
-        if(tflag)this.reMinMax();
+        if(tflag)this.refresh_minMax();
         this.after_nodes_move(index,false);
     }
     /**移除所有顶点 */
@@ -3745,14 +3779,14 @@ class Bezier_Polygon{
         for(var i=0;i<nodes.length;i++){
             this.nodes.push(new Bezier_Node(nodes[i],hand_befores[i],hand_afters[i]));
         }
-        /**@type {BezierCurves} Bezier曲线实例 */
+        /**@type {BezierCurves[]} Bezier曲线实例 */
         this._bezierCurves=[];
         this._aabb=null;
         /**@type {Number} 计算时使用的路径闭合情况: -1是使用直线闭合, 0是不闭合, 1是使用贝塞尔曲线闭合 */
         this.closed_Flag=0;
-        /**@type {Delegate} 在修改节点数据后执行的委托 */
+        /**@type {Delegate} 在修改节点数据后执行的委托 this.unins_bezierCurve_Delegate(i); 参数i为修改的下标, 当执行清除所有顶点时i为-1,  */
         this.unins_bezierCurve_Delegate = Delegate.create();
-        /**@type {Delegate} 在插入/删除节点后执行的委托 */
+        /**@type {Delegate} 在插入/删除节点后执行的委托 this.emptied_bezierCurve_Delegate(i); 参数i为修改的下标 */
         this.emptied_bezierCurve_Delegate = Delegate.create();
         
     }
@@ -3781,8 +3815,9 @@ class Bezier_Polygon{
     }
     static copy(tgt){
         var rtn=new Bezier_Polygon();
-        for(var i=0;i<tgt.nodes.length;++i){
-            rtn.nodes.push(Bezier_Node.copy(tgt.nodes[i]));
+        rtn.nodes.length=tgt.nodes.length;
+        for(var i=tgt.nodes.length-1;i>=0;--i){
+            rtn.nodes[i]=Bezier_Node.copy(tgt.nodes[i]);
         }
         return rtn;
     }
@@ -3811,7 +3846,7 @@ class Bezier_Polygon{
     }
     /** 清空代理
      */
-    clear_all_proxy(){
+    refresh_cache(){
         this._aabb=null;
     }
     /** 清空所有数学曲线
@@ -3826,7 +3861,7 @@ class Bezier_Polygon{
         var j=i?i-1:this.nodes.length-1;
         this._bezierCurves[i]=null;
         this._bezierCurves[j]=null;
-        this.unins_bezierCurve_Delegate(i)
+        this.unins_bezierCurve_Delegate(i);
     }
     /** 腾出数学曲线 在插入/删除顶点时使用
      * @param {Number} index 插入顶点的下标
@@ -3849,7 +3884,7 @@ class Bezier_Polygon{
     add_Node(bezierNode){
         this.nodes.push(Bezier_Node.copy(bezierNode));
         this.emptied_bezierCurve(this.nodes.length-1,true)
-        this.clear_all_proxy();
+        this.refresh_cache();
     }
     /** 追加顶点数组
      * @param {Bezier_Node[]} bezierNodes  装着顶点的数组
@@ -3858,7 +3893,7 @@ class Bezier_Polygon{
         for(var i=0;i<bezierNodes.length;++i){
             this.add_Node(bezierNodes[i]);
         }
-        this.clear_all_proxy();
+        this.refresh_cache();
     }
     /** 插入顶点
      * @param {Number} index    要插入的顶点的下标
@@ -3867,15 +3902,23 @@ class Bezier_Polygon{
     insert_node(index,bezierNode){
         this.nodes.splice(index,0,Bezier_Node.copy(bezierNode));
         this.emptied_bezierCurve(index,true);
-        this.clear_all_proxy();
+        this.refresh_cache();
     }
     /** 移除顶点
      * @param {Number} index 要删除的顶点的下标
      */
     remove_node(index){
         this.nodes.splice(index,1);
-        this.clear_all_proxy();
+        this.refresh_cache();
         this.emptied_bezierCurve(index,false);
+    }
+    /** 清除所有顶点
+     */
+    clear_nodes(){
+        this._nodes.length=0;
+        this._bezierCurves.length=0;
+        this.unins_bezierCurve_Delegate(-1);
+        this.refresh_cache();
     }
     /** 分割贝塞尔曲线
      * @param {Number} index 前驱端点下标
@@ -4072,6 +4115,18 @@ class Line{
     }
     get_t_byLengthLong(l){
         return l/this.get_lengthLong();
+    }
+    get_min(){
+        return new Vector2(
+            this.op.x<this.ed.x?this.op.x:this.ed.x,
+            this.op.y<this.ed.y?this.op.y:this.ed.y,
+        )
+    }
+    get_max(){
+        return new Vector2(
+            this.op.x>this.ed.x?this.op.x:this.ed.x,
+            this.op.y>this.ed.y?this.op.y:this.ed.y,
+        )
     }
 }
 
@@ -4308,7 +4363,7 @@ class Path{
      */
     get_mathData(index){
         if(!this._math_data[index]){
-            this._math_data[index]=this.create__mathData(index);
+            this._math_data[index]=this.create_mathData(index);
         }
         return this._math_data[index];
     }
@@ -4327,7 +4382,7 @@ class Path{
      * @param {Number} index 基于下标创建数学对象
      * @return {Vector2|Line|Data_Arc__Ellipse|BezierCurve}
      */
-    create__mathData(index){
+    create_mathData(index){
         if(!this.command_set[index]){
             throw new Error("Parameter index is out of range!");
         }
@@ -4624,6 +4679,25 @@ class Path{
             ti=this.get_ti_byLengthLong(l),
             temp=this.get_mathData(ti.i);
         return temp.get_tangent(ti.t);
+    }
+
+    refresh_minMax(){
+        
+    }
+    get_min(){
+        
+    }
+    get_max(){
+
+    }
+
+    /** 判断某点是否在内部
+     * @param {Number} x x坐标
+     * @param {Number} y y坐标
+     * @returns {Boolean} 返回是否在内部
+     */
+    is_inside(x,y){ 
+        
     }
 
 }
