@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-15 23:54:25
+ * @LastEditTime: 2022-03-19 18:55:01
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -75,6 +75,27 @@ import {
        ctx.quadraticCurveTo(bc.points[1].x,bc.points[1].y,bc.points[2].x,bc.points[2].y);
        ctx.stroke();
    }
+   /** 
+    * @param {CanvasRenderingContext2D} ctx 
+    * @param {BezierCurve} bc 
+    */
+    static bezier3(ctx,bc){
+        ctx.beginPath();
+        ctx.moveTo(bc.points[0].x,bc.points[0].y);
+        ctx.bezierCurveTo(bc.points[1].x,bc.points[1].y,bc.points[2].x,bc.points[2].y,bc.points[3].x,bc.points[3].y);
+        ctx.stroke();
+    }
+    /**
+     * 
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {Data_Arc} arc 
+     */
+    static arc(ctx,arc){
+        ctx.beginPath();
+        ctx.moveTo(arc.opv.translate(arc.c).x,arc.opv.y);
+        ctx.arc(arc.c.x,arc.c.y,arc.r,arc.startAngle,arc.endAngle);
+        ctx.stroke();
+    }
    /** 
     * @param {CanvasRenderingContext2D} ctx 
     * @param {Vector2[]} vs 

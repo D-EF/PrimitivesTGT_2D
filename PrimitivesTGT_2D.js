@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-19 02:04:28
+ * @LastEditTime: 2022-03-19 18:18:43
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -503,9 +503,9 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      */
     constructor(path){
         super();
-        if(path)
+        // if(path)
         /** @type {Path} */
-        this.data=Path.copy(path);
+        this.data=new Path(path);
         this.dataType="Path";
         this.want_to_closePath=false;
     }

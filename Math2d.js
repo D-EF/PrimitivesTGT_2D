@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-19 04:59:32
+ * @LastEditTime: 2022-03-21 03:00:44
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -21,6 +21,8 @@ import {
     deg,
     deg_90,
     cycles,
+    calc_k_bezierToCyles,
+    BEZIER_TO_CYCLES_K__1D4,
 } from "../basics/math_ex.js";
 
 import {
@@ -33,6 +35,13 @@ import {
 /** 放了一点2d静态函数
  */
 class Math2D{
+    /** 旋转的单位向量
+     * @param {Number} angle 旋转弧度
+     * @returns  {Vector2} 返回一个单位向量
+     */
+    static rotateVector2(angle){
+        return (new Vector2(Math.cos(angle),Math.sin(angle)))
+    }
     /** 计算线段长度
      * @param {Vector2} v1 线段端点
      * @param {Vector2} v2 线段端点
@@ -931,8 +940,8 @@ class Data_Rect{
         this._polygon_proxy_want_sp=10*deg;
         this.polygon_proxy_sp=this._polygon_proxy_want_sp;
 
-        /** @type {Bezier_Polygon} 拟合圆的 贝塞尔曲线  */
-        this._bezier_curve_proxy=null;
+        /** @type {BezierCurve[]} 拟合圆的 贝塞尔曲线  */
+        this._bezier_curve_proxy=[];
         // 访问器
         this.setAngle_AB(angle_A,angle_B);
     }
@@ -947,14 +956,15 @@ class Data_Rect{
         this._polygon_proxy=null;
         this._polygon_proxy_sp=0;
         this._length_long_lut=null;
-        this._bezier_curve_proxy.clear_nodes();
+        this._bezier_curve_proxy.length=0;
     }
-    /** 切线(方向)
+    /** 获取导向量
      * @param {Number} t t参数0~1
-     * @return {Vector2} 返回一个标准化的相对坐标
+     * @return {Vector2} 返回一个向量
      */
     get_tangent(t){
-        return this.get_normal(t).linearMapping(Matrix2x2.ROTATE_90);
+        var angle=this._startAngle*(1-t)+this._endAngle*t+deg_90;
+        return Math2D.rotateVector2(angle).np(this.r);
     }
     /** 法线
      * @param {Number} t t参数0~1
@@ -971,14 +981,14 @@ class Data_Rect{
     sample(t){
         var angle=this._startAngle*(1-t)+this._endAngle*t;
         var r= this.r;
-        return (new Vector2(Math.cos(angle)*r,Math.sin(angle)*r));
+        return (new Vector2(Math.cos(angle)*r,Math.sin(angle)*r)).translate(this.c);
     }
     /** 采样点 使用弧度采样
      * @param {Number} angle  采样弧度
      * @returns 
      */
     sample_byAngle(angle){
-        return (new Vector2(Math.cos(angle)*r,Math.sin(angle)*r));
+        return (new Vector2(Math.cos(angle)*this.r,Math.sin(angle)*this.r)).translate(this.c);
     }
     /** 重设两个端点的弧度
      * @param {Number} angle_A     弧形端点弧度
@@ -1424,34 +1434,46 @@ class Data_Rect{
         var l=length>=0?length:arcl+length;
         return l/arcl;
     }
+
+    /**@type {BezierCurve[]} 代理用的 */
     get bezier_curve_proxy(){
-        if(this._bezier_curve_proxy&&this._bezier_curve_proxy._nodes.length){
+        if(this._bezier_curve_proxy.length){
             return this._bezier_curve_proxy;
         }
-        // todo 生成 bezier_curve_proxy
-        if(!this._bezier_curve_proxy){
-            this._bezier_curve_proxy=new Bezier_Polygon();
-        }
-        var f=true,bcs=[],
+        var f=true,bcs=this._bezier_curve_proxy,
             t_op=this.startAngle,
-            t_ed=t_op+deg_90;
+            t_ed=t_op+deg_90,
+            true_ed=(true_ed=this.startAngle+cycles>this.endAngle)?this.endAngle:true_ed,
+            k=BEZIER_TO_CYCLES_K__1D4;
+
+        var p1,p2,p3,p4;
+
         while(f){
+            if(t_ed>true_ed){
+                t_ed=true_ed;
+                f=false;
+                if((t_ed-t_op)<deg_90){
+                    k=calc_k_bezierToCyles()
+                }
+            }
+            if(approximately(t_op,t_ed)){
+                break;
+            }
+            
+            p1=this.sample_byAngle(t_op);
+            p4=this.sample_byAngle(t_ed);
+
             t_op+=deg_90;
             t_ed+=deg_90;
-            if(t_ed>this.endAngle){
-                t_ed=this.endAngle;
-                f=false;
-            }
-            bcs.unshift(Math2D.create_cubicBezierBy3Point(
-                this.sample_byAngle(t_op),
-                this.sample_byAngle(0.5*(t_op+t_ed)),
-                this.sample_byAngle(t_ed),
-                0.5
-            ));
+            p2=Vector2.sum(p1,Math2D.rotateVector2(t_op).np(this.r*(+k)));
+            p3=Vector2.sum(p4,Math2D.rotateVector2(t_ed).np(this.r*(-k)));
+
+            console.log([p1,p2,p3,p4]);
+            bcs.unshift(new BezierCurve([p1,p2,p3,p4]));
         }
         
 
-        return this._bezier_curve_proxy;
+        return bcs;
     }
 }
 
