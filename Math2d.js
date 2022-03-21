@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-21 03:00:44
+ * @LastEditTime: 2022-03-22 01:30:33
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1443,17 +1443,18 @@ class Data_Rect{
         var f=true,bcs=this._bezier_curve_proxy,
             t_op=this.startAngle,
             t_ed=t_op+deg_90,
-            true_ed=(true_ed=this.startAngle+cycles>this.endAngle)?this.endAngle:true_ed,
+            true_ed=((true_ed=this.startAngle+cycles)>this.endAngle)?this.endAngle:true_ed,
             k=BEZIER_TO_CYCLES_K__1D4;
 
         var p1,p2,p3,p4;
+        console.log(true_ed);
 
         while(f){
             if(t_ed>true_ed){
                 t_ed=true_ed;
                 f=false;
-                if((t_ed-t_op)<deg_90){
-                    k=calc_k_bezierToCyles()
+                if((true_ed=t_ed-t_op)<deg_90){
+                    k=calc_k_bezierToCyles(true_ed);
                 }
             }
             if(approximately(t_op,t_ed)){
