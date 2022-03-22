@@ -116,7 +116,7 @@ class Sprites{
         scaleY = (dh * this.sprites_y)/(this.img.height  *(1-this.deviationY_before-this.deviationY_after)),
         translateX=dx-dw*sx-this.deviationX_before*scaleX*this.img.width,
         translateY=dy-dh*sy-this.deviationY_before*scaleY*this.img.height;
-        tempPattern.setTransform(m2t.scale(scaleX, scaleY).translate(translateX,translateY));
+        tempPattern.setTransform(m2t.normalize().scale(scaleX, scaleY).translate(translateX,translateY));
         return tempPattern;
     }
     /** 把精灵图像应用到 canvas 上

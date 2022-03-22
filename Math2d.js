@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-22 01:30:33
+ * @LastEditTime: 2022-03-22 09:40:09
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -2238,6 +2238,15 @@ Vector2.INFINITY=new Vector2(Infinity,Infinity);
     static create_byVector2(v){
         return new this(v.x,v.y,-1*v.y,v.x);
     }
+    /** 将矩阵标准化(回归初始状态)
+     */
+    normalize(){
+        this.a=1;
+        this.b=0;
+        this.c=0;
+        this.d=1;
+        return this;
+    }
 }
 
 /** 创建矩阵
@@ -2315,6 +2324,7 @@ class Matrix2x2T extends Matrix2x2{
         super.normalize();
         this.e=0;
         this.f=0;
+        return this;
     }
     static copy(m){
         if(m===undefined)return;
