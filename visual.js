@@ -137,7 +137,7 @@ class AnimationCtrl{
 }
 
 /**
- * 动画中向量使用的函数
+ * 动画中数字使用的函数
  * @param {Number} start 起点
  * @param {Number} end   终点
  * @param {Number}  t    权值

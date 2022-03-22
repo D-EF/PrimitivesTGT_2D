@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-22 09:40:09
+ * @LastEditTime: 2022-03-22 16:35:03
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -513,7 +513,7 @@ class Math2D{
      * @param {Vector2} v2 线段端点
      * @returns {Number} 射线穿过情况
      */
-    static get_intersectionOfXRadialLine_f(x,y,v1,v2){
+    static get_intersectionOfXRadialLine_fn(x,y,v1,v2){
         if(v1.x==x&&v1.y==y) return 1;//如果正好在顶点上直接算在内部
         if(v2.x==x&&v2.y==y) return -1;//如果正好在顶点上直接算在内部
         var tempK,temp;
@@ -534,13 +534,13 @@ class Math2D{
         }
         return 0;
     }
-    /** 射线穿过曲线
+    /** 射线穿过曲线次数
      * @param {Number} x 射线起点
      * @param {Number} y 射线起点
      * @param {BezierCurve} bezier 曲线实例
      * @returns {number} 射线穿过曲线次数 返回-1代表点正好在曲线坐标上
      */
-    static get_intersectionOfXRadialBezier_f(x,y,bezier){
+    static get_intersectionOfXRadialBezier_n(x,y,bezier){
         var nbs=bezier.get_t_byY(y),tx,rtn=0;
         for(var i=nbs.length-1;i>=0;--i){
             if(x>(tx=bezier.sample_x(nbs[i]))){
@@ -964,6 +964,9 @@ class Data_Rect{
      */
     get_tangent(t){
         var angle=this._startAngle*(1-t)+this._endAngle*t+deg_90;
+        return this.get_tangent__byAngle(angle);
+    }
+    get_tangent__byAngle(angle){
         return Math2D.rotateVector2(angle).np(this.r);
     }
     /** 法线
@@ -1466,8 +1469,8 @@ class Data_Rect{
 
             t_op+=deg_90;
             t_ed+=deg_90;
-            p2=Vector2.sum(p1,Math2D.rotateVector2(t_op).np(this.r*(+k)));
-            p3=Vector2.sum(p4,Math2D.rotateVector2(t_ed).np(this.r*(-k)));
+            p2=Vector2.sum(p1,this.get_tangent__byAngle(t_op).np(+k));
+            p3=Vector2.sum(p4,this.get_tangent__byAngle(t_ed).np(-k));
 
             console.log([p1,p2,p3,p4]);
             bcs.unshift(new BezierCurve([p1,p2,p3,p4]));
@@ -1610,8 +1613,8 @@ class Data_Arc__Ellipse extends Data_Arc {
         var tm=this.world_to_local_matrix;
         return Vector2.linearMapping_beforeTranslate(v,tm);
     }
-    get_tangent(t){
-        return this.locToWorld__untransform(super.get_normal(t).linearMapping(Matrix2x2.ROTATE_90_I));
+    get_tangent__byAngle(angle){
+        return this.locToWorld__untransform(super.get_tangent__byAngle(angle));
     }
     get_normal(t){
         console.log(this.locToWorld__untransform(super.get_normal(t)));
@@ -1679,6 +1682,29 @@ class Data_Arc__Ellipse extends Data_Arc {
         // console.log(x,y,tempv);
         // console.log(this.locToWorld(tempv));
         return super.is_inside(tempv.x,tempv.y,f);
+    }
+    get_minAmax(){
+        var temp=this.bezier_curve_proxy,
+            i=temp.length-1,
+            min,t_min,
+            max,t_max,
+        min=temp[i].get_min();
+        max=temp[i].get_max();
+        
+        for(--i;i>=0;--i){
+            t_min=temp[i].get_min();
+            t_max=temp[i].get_max();
+
+            if(t_min.x<min.x)min.x=t_min.x;
+            if(t_min.y<min.y)min.y=t_min.y;
+
+            if(t_max.x>max.x)max.x=t_max.x;
+            if(t_max.y>max.y)max.y=t_max.y;
+        }
+        return {
+            min:min,
+            max:max
+        };
     }
 
     /** 使用起点, 终点, 半径 等参数创建弧形
@@ -3276,6 +3302,18 @@ class BezierCurve{
         }
         return this._aabb;
     }
+    /** aabb的最小坐标
+     * @returns {Vector2}
+     */
+    get_min(){
+        return this.get_aabb().get_min();
+    }
+    /** aabb的最大坐标
+     * @returns {Vector2}
+     */
+    get_max(){
+        return this.get_aabb().get_max();
+    }
     /** 获取紧包围框
      * @returns {Polygon}
      */
@@ -4006,11 +4044,11 @@ class Bezier_Polygon{
         i=this.nodes.length-1;
         if(f===-1){
             // 线段
-            rtn+=Math2D.get_intersectionOfXRadialLine_f(x,y,this.nodes[i].node,this.nodes[0].node)
+            rtn+=Math2D.get_intersectionOfXRadialLine_fn(x,y,this.nodes[i].node,this.nodes[0].node)
         }
         // 射线穿过曲线
         for(f==1?1:--i;i>=0;--i){
-            rtn+=Math2D.get_intersectionOfXRadialBezier_f(x,y,this.get_bezierCurve(i));
+            rtn+=Math2D.get_intersectionOfXRadialBezier_n(x,y,this.get_bezierCurve(i));
         }
         return !!(rtn%2);
     }
@@ -4307,6 +4345,8 @@ class Path{
         this._landing_points=[];
         /** @type {Number[]} 弧长查找表 */
         this._length_long_lut=[];
+        this._min=null;
+        this._max=null;
     }
     static copy(tgt){
         return new Path(Path.bePathCommandSet(tgt));
@@ -4588,6 +4628,9 @@ class Path{
             ++i;
             d=cmds[i];
         }
+        // 清理aabb坐标
+        this._min=null;
+        this._max=null;
         return i;
     }
     /** 指令修改后的回调 清理需要相对坐标的缓存内容 
@@ -4637,6 +4680,8 @@ class Path{
         this._landing_points.length=0;
         this._math_data.length=0;
         this._length_long_lut.length=0;
+        this._min=null;
+        this._max=null;
     }
     /** 获取路径总长度
      * @returns {Number} 路径总长度
@@ -4714,14 +4759,55 @@ class Path{
         return temp.get_tangent(ti.t);
     }
 
-    refresh_minMax(){
+    get_minAmax(){
+        var i=this.command_length-1,
+            min,t_min,
+            max,t_max,
+            temp_math;
+            
+        do{
+            temp_math=this.get_mathData(i);
+            if(temp_math instanceof Vector2){
+                continue;
+            }
+            min=temp_math.get_min();
+            max=temp_math.get_max();
+        }while((--i>=0)&&(!max));
         
+        for(;i>=0;--i){
+            temp_math=this.get_mathData(i);
+            if(temp_math instanceof Vector2){
+                continue;
+            }
+            t_min=temp_math.get_min();
+            t_max=temp_math.get_max();
+
+            if(t_min.x<min.x)min.x=t_min.x;
+            if(t_min.y<min.y)min.y=t_min.y;
+
+            if(t_max.x>max.x)max.x=t_max.x;
+            if(t_max.y>max.y)max.y=t_max.y;
+        }
+        return {
+            min:min,
+            max:max
+        };
     }
     get_min(){
-        
+        if(!this._max){
+            var mm=this.get_minAmax();
+            this._max=mm.max;
+            this._min=mm.min;  
+        }
+        return this._min;
     }
     get_max(){
-
+        if(!this._max){
+            var mm=this.get_minAmax();
+            this._max=mm.max;
+            this._min=mm.min;  
+        }
+        return this._max;
     }
 
     /** 判断某点是否在内部
@@ -4730,10 +4816,39 @@ class Path{
      * @returns {Boolean} 返回是否在内部
      */
     is_inside(x,y){ 
-        
+        var i=0,j,k,
+            l=this.command_length;
+        /**@type {Vector2 | Line | Data_Arc__Ellipse | BezierCurve} */
+        var temp;
+        // 射线穿过曲线
+        for(;i<l;++i){
+            temp=this.get_mathData(i);
+            if(temp instanceof Line){
+                rtn+=Math2D.get_intersectionOfXRadialLine_fn(x,y,temp.op,temp.ed)
+                continue;
+            }
+            if(temp instanceof BezierCurve){
+                rtn+=(k=Math2D.get_intersectionOfXRadialBezier_n(x,y,temp1[j]));
+                if(k===-1)return true;
+                continue;
+            }
+            if(temp instanceof Vector2){
+                continue;
+            }
+            if(temp instanceof Data_Arc__Ellipse){
+                var temp1=temp.bezier_curve_proxy;
+                for(j=temp1.length-1;j>=0;--j){
+                    rtn+=(k=Math2D.get_intersectionOfXRadialBezier_n(x,y,temp1[j]));
+                    if(k===-1)return true;
+                }
+                continue;
+            }
+        }
+        return !!(rtn%2);
     }
-
 }
+
+// todo Path 的 aabb(get_max / get_min) 和 is_inside 待测试
 export{
     Math2D,
     Data_Rect,
