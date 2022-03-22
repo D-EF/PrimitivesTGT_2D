@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-22 16:35:03
+ * @LastEditTime: 2022-03-22 21:15:33
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -697,7 +697,7 @@ class Math2D{
         if(n===2){
             tk=t*t;
             tdk=td*td;
-            console.log(tdk/(tk+tdk));
+            // console.log(tdk/(tk+tdk));
             return tdk/(tk+tdk);
         }
         if(n===3){
@@ -1450,7 +1450,7 @@ class Data_Rect{
             k=BEZIER_TO_CYCLES_K__1D4;
 
         var p1,p2,p3,p4;
-        console.log(true_ed);
+        // console.log(true_ed);
 
         while(f){
             if(t_ed>true_ed){
@@ -1472,7 +1472,7 @@ class Data_Rect{
             p2=Vector2.sum(p1,this.get_tangent__byAngle(t_op).np(+k));
             p3=Vector2.sum(p4,this.get_tangent__byAngle(t_ed).np(-k));
 
-            console.log([p1,p2,p3,p4]);
+            // console.log([p1,p2,p3,p4]);
             bcs.unshift(new BezierCurve([p1,p2,p3,p4]));
         }
         
@@ -1617,7 +1617,7 @@ class Data_Arc__Ellipse extends Data_Arc {
         return this.locToWorld__untransform(super.get_tangent__byAngle(angle));
     }
     get_normal(t){
-        console.log(this.locToWorld__untransform(super.get_normal(t)));
+        // console.log(this.locToWorld__untransform(super.get_normal(t)));
         return this.locToWorld__untransform(super.get_normal(t)).normalize();
     }
     sample(t){
@@ -4510,7 +4510,7 @@ class Path{
                 last_mathData=this.get_mathData(index-1);
                 l=last_mathData.points.length-1;
                 proxy_v=Math2D.sample_line(last_mathData.points[l-1],last_mathData.points[l],2);
-                console.log(proxy_v);
+                // console.log(proxy_v);
             }else{
                 proxy_v=last_lp;
             }
@@ -4817,7 +4817,8 @@ class Path{
      */
     is_inside(x,y){ 
         var i=0,j,k,
-            l=this.command_length;
+            l=this.command_length,
+            rtn=0;
         /**@type {Vector2 | Line | Data_Arc__Ellipse | BezierCurve} */
         var temp;
         // 射线穿过曲线
@@ -4828,7 +4829,7 @@ class Path{
                 continue;
             }
             if(temp instanceof BezierCurve){
-                rtn+=(k=Math2D.get_intersectionOfXRadialBezier_n(x,y,temp1[j]));
+                rtn+=(k=Math2D.get_intersectionOfXRadialBezier_n(x,y,temp));
                 if(k===-1)return true;
                 continue;
             }
@@ -4848,7 +4849,7 @@ class Path{
     }
 }
 
-// todo Path 的 aabb(get_max / get_min) 和 is_inside 待测试
+// todo Path 的 aabb(get_max / get_min) 待测试
 export{
     Math2D,
     Data_Rect,
