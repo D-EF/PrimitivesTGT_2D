@@ -154,9 +154,9 @@ class Sprites_Animation{
      */
     constructor(min_x,max_x,min_y,max_y){
         /** @type {Stepper} X方向的步进器 */
-        this.stepperx=new Stepper(min_x,max_x);
+        this.stepper_x=new Stepper(min_x,max_x);
         /** @type {Stepper} Y方向的步进器 */
-        this.steppery=new Stepper(min_y,max_y);
+        this.stepper_y=new Stepper(min_y,max_y);
         /**@type {Function[]} 结束回调队列  this.callbackList\[0\](x,y,this)*/
         this.callbackList=[];
         /** @type {Funciton} 帧回调函数 如果返回true将会停止动画 this.frameCallback(x,y,this)*/
@@ -196,8 +196,8 @@ class Sprites_Animation{
         var v={
             opx:opx,
             opy:opy,
-            edx:this.stepperx.set(edx),
-            edy:this.steppery.set(edy)
+            edx:this.stepper_x.set(edx),
+            edy:this.stepper_y.set(edy)
         },
         orderOBJ=[],
         that=this;
@@ -218,32 +218,32 @@ class Sprites_Animation{
         });
         
         // 初始化步进器
-        this.stepperx.set(opx);
-        this.steppery.set(opy);
-        this["stepper"+orderOBJ[1].k].regressionlinListener=[function (){
+        this.stepper_x.set(opx);
+        this.stepper_y.set(opy);
+        this["stepper_"+orderOBJ[1].k].regression_listener=[function (){
             that._keepGo=false;
         }];
-        this["stepper"+orderOBJ[0].k].regressionlinListener=[function(){
-            that["stepper"+orderOBJ[1].k].next(orderOBJ[1].v);
+        this["stepper_"+orderOBJ[0].k].regression_listener=[function(){
+            that["stepper_"+orderOBJ[1].k].next(orderOBJ[1].v);
         }];
 
         var interval= setInterval(function (){
             if(
                 that._keepGo&&
                 (
-                    (v["ed"+orderOBJ[1].k]===that["stepper"+orderOBJ[1].k].valueOf())&&
-                    (v["ed"+orderOBJ[0].k]*orderOBJ[0].v)>=(that["stepper"+orderOBJ[0].k].valueOf()*(orderOBJ[0].v>=0?1:-1))||
-                    (v["ed"+orderOBJ[1].k]>that["stepper"+orderOBJ[1].k].valueOf()*(orderOBJ[1].v>=0?1:-1))
+                    (v["ed"+orderOBJ[1].k]===that["stepper_"+orderOBJ[1].k].valueOf())&&
+                    (v["ed"+orderOBJ[0].k]*orderOBJ[0].v)>=(that["stepper_"+orderOBJ[0].k].valueOf()*(orderOBJ[0].v>=0?1:-1))||
+                    (v["ed"+orderOBJ[1].k]>that["stepper_"+orderOBJ[1].k].valueOf()*(orderOBJ[1].v>=0?1:-1))
                 )
             ){
-                that._keepGo=!that.frameCallback(that.stepperx.valueOf(),that.steppery.valueOf(),that)
-                that["stepper"+orderOBJ[0].k].next(orderOBJ[0].v);
+                that._keepGo=!that.frameCallback(that.stepper_x.valueOf(),that.stepper_y.valueOf(),that)
+                that["stepper_"+orderOBJ[0].k].next(orderOBJ[0].v);
                 // 继续
             }else{
                 // 结束
                 that._keepGo=false;
                 clearInterval(interval);
-                that.callbackList[0].call(that,that.stepperx.valueOf(),that.steppery.valueOf(),that);
+                that.callbackList[0].call(that,that.stepper_x.valueOf(),that.stepper_y.valueOf(),that);
                 that.callbackList.shift();
             }
         },fs);
