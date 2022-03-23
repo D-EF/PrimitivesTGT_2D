@@ -1,0 +1,11 @@
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"
+    width="1000" height="400"
+    style="top: 50%;background-color: #000;position: absolute;left: 50%;transform: translate(-50%,-50%);" fill="#fff"
+    stroke="#fff">
+    <svg stroke-width="0">
+        <path d="M10 80 C 40 10, 65 10, 95 80 S 150 150, 180 80 q 25 -80, 80 0 t 80 0 l 40 180 a 240 180 45 0 0 -320 40z">
+        </path>
+    </svg>
+
+</svg>

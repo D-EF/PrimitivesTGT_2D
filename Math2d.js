@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-23 14:59:59
+ * @LastEditTime: 2022-03-23 21:39:40
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1715,9 +1715,13 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @param {Boolean} rotate_angle       旋转弧度(用圆心进行旋转)
      * @param {Boolean} large_arc_flag     使用更长或更短的边   和 sweep_flag 联动来确定弧线
      * @param {Boolean} sweep_flag         弧形绘制方向        和 large_arc_flag 联动来确定弧线
+     * @return {Data_Arc__Ellipse}
      * 除了起点和终点, 参数可以参考 https://developer.mozilla.org/zh-CN/docs/Web/SVG/Tutorial/Paths#arcs
      */
     static create_byEndPointRadiusRotate(op,ed,rx,ry,rotate_angle,large_arc_flag,sweep_flag){
+
+// todo 旋转时会出错
+
         var arc=new Data_Arc__Ellipse(0,0,rx,ry,0,0,rotate_angle),
             _ed=arc.worldToLoc(Vector2.dif(ed,op)),
             wi=Math2D.get_intersectionOfCircleCircle_V(Vector2.ZERO_POINT,rx,_ed,rx),
@@ -1726,7 +1730,9 @@ class Data_Arc__Ellipse extends Data_Arc {
             temp,
             c_op,c_ed,
             op_a,ed_a;
-        
+        console.log(Math2D.rotateVector2(rotate_angle))
+        console.log(Vector2.copy(wi.length?wi[i]:_ed.np(0.5)).linearMapping(Matrix2x2T.create.scale(1,arc.ry_ratio_rx).rotate(-rotate_angle)))
+            console.log(_ed,wi,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
         var c=Vector2.sum(op,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
         arc.cx=c.x;
         arc.cy=c.y;
