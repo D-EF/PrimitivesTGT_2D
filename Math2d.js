@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-22 21:15:33
+ * @LastEditTime: 2022-03-23 14:59:59
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -4849,7 +4849,6 @@ class Path{
     }
 }
 
-// todo Path 的 aabb(get_max / get_min) 待测试
 export{
     Math2D,
     Data_Rect,
