@@ -160,8 +160,7 @@ cnm.style.left="30px";
 cnm.style.position="absolute";
 
 cnm.onclick=function(e){
-    // console.log(e);
-    var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
+        var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
     CtrlCanvas2d.dot(ctx,v);
     for(var i = renderer.tgtList.length-1;i>=0;--i){
         if(renderer.tgtList[i].is_inside(v)){

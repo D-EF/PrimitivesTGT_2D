@@ -358,8 +358,7 @@ class Math2D{
             dx=x4-x3,
             dy=y4-y3;
         var t=binaryLinearEquation(x1,bx,x3,dx,y1,by,y3,dy);
-        // console.log(t);
-        if(isNaN(t.x)||isNaN(t.x)){
+                if(isNaN(t.x)||isNaN(t.x)){
             // 共线时为 NaN, 未相交时为 Infinity
             // 暂不处理共线，视作未相交
             return {x:Infinity,y:Infinity};
@@ -697,8 +696,7 @@ class Math2D{
         if(n===2){
             tk=t*t;
             tdk=td*td;
-            // console.log(tdk/(tk+tdk));
-            return tdk/(tk+tdk);
+                        return tdk/(tk+tdk);
         }
         if(n===3){
             tk=t*t*t;
@@ -1422,8 +1420,7 @@ class Data_Rect{
         
         rtn=new Polygon(temp);
         rtn.translate(this.c);
-        // console.log(t_lut,temp)
-        return {
+                return {
             polygon:rtn,
             t_lut:t_lut
         };
@@ -1450,8 +1447,7 @@ class Data_Rect{
             k=BEZIER_TO_CYCLES_K__1D4;
 
         var p1,p2,p3,p4;
-        // console.log(true_ed);
-
+        
         while(f){
             if(t_ed>true_ed){
                 t_ed=true_ed;
@@ -1472,8 +1468,7 @@ class Data_Rect{
             p2=Vector2.sum(p1,this.get_tangent__byAngle(t_op).np(+k));
             p3=Vector2.sum(p4,this.get_tangent__byAngle(t_ed).np(-k));
 
-            // console.log([p1,p2,p3,p4]);
-            bcs.unshift(new BezierCurve([p1,p2,p3,p4]));
+                        bcs.unshift(new BezierCurve([p1,p2,p3,p4]));
         }
         
 
@@ -1501,8 +1496,7 @@ class Data_Arc__Ellipse extends Data_Arc {
         this._transform_matrix.scale(1,this.ry_ratio_rx);
         if(rotate){
             this._transform_matrix.rotate(rotate);
-            // console.log(this._transform_matrix)
-        }
+                    }
         if(flip_horizontal_flag){
             this._transform_matrix.multiplication(Matrix2x2.FLIP_HORIZONTAL);
         }
@@ -1625,8 +1619,7 @@ class Data_Arc__Ellipse extends Data_Arc {
         return this.locToWorld__untransform(super.get_tangent__byAngle(angle));
     }
     get_normal(t){
-        // console.log(this.locToWorld__untransform(super.get_normal(t)));
-        return this.locToWorld__untransform(super.get_normal(t)).normalize();
+                return this.locToWorld__untransform(super.get_normal(t)).normalize();
     }
     sample(t){
         return this.sample__byLengthLong(t);
@@ -1687,9 +1680,7 @@ class Data_Arc__Ellipse extends Data_Arc {
     }
     is_inside(x,y,f){
         var tempv=this.worldToLoc({x:x,y:y});
-        // console.log(x,y,tempv);
-        // console.log(this.locToWorld(tempv));
-        return super.is_inside(tempv.x,tempv.y,f);
+                        return super.is_inside(tempv.x,tempv.y,f);
     }
     get_minAmax(){
         var temp=this.bezier_curve_proxy,
@@ -1734,8 +1725,7 @@ class Data_Arc__Ellipse extends Data_Arc {
             temp,
             c_op,c_ed,
             op_a,ed_a;
-            // console.log(_ed,wi,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
-        var c=Vector2.sum(op,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
+                    var c=Vector2.sum(op,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
         arc.cx=c.x;
         arc.cy=c.y;
 
@@ -1754,14 +1744,12 @@ class Data_Arc__Ellipse extends Data_Arc {
             op_a=Math2D.angleFlipHorizontal(op_a);
             ed_a=Math2D.angleFlipHorizontal(ed_a);
         }
-        // console.log(op_a,ed_a);
-
+        
         arc.setAngle_AB(
             op_a,
             ed_a,
         );
-        // console.log(arc.startAngle,arc.endAngle);
-        return arc;
+                return arc;
     }
 
     /** 使用起点, 终点, 半径 等参数创建弧形
@@ -1782,13 +1770,11 @@ class Data_Arc__Ellipse extends Data_Arc {
             rotate_Matrix_i=Matrix2x2.create.rotate(_rotate_angle),
             _op=Vector2.copy(op).linearMapping(rotate_Matrix),
             _ed=Vector2.copy(ed).linearMapping(rotate_Matrix);
-        // console.log(_op,_ed);
-        var arc=Data_Arc__Ellipse.create_byEndPointRadiusRotate__unRotate(_op,_ed,rx,ry,large_arc_flag,sweep_flag),
+                var arc=Data_Arc__Ellipse.create_byEndPointRadiusRotate__unRotate(_op,_ed,rx,ry,large_arc_flag,sweep_flag),
             c=new Vector2(arc.cx,arc.cy).linearMapping(rotate_Matrix_i);
             arc.cx=c.x;
             arc.cy=c.y;
-            // console.log(_rotate_angle,rotate_angle);
-            arc.rotate=_rotate_angle;
+                        arc.rotate=_rotate_angle;
         return arc;
     }
 }
@@ -4050,8 +4036,7 @@ class Bezier_Polygon{
                 hand_after:newPoints[1][1],
             }
         );
-        // console.log(newPoints)
-        this.nodes[index].hand_after.x=newPoints[0][1].x;
+                this.nodes[index].hand_after.x=newPoints[0][1].x;
         this.nodes[index].hand_after.y=newPoints[0][1].y;
         this.nodes[i_next].hand_before.x=newPoints[1][2].x;
         this.nodes[i_next].hand_before.y=newPoints[1][2].y;
@@ -4546,8 +4531,7 @@ class Path{
                 last_mathData=this.get_mathData(index-1);
                 l=last_mathData.points.length-1;
                 proxy_v=Math2D.sample_line(last_mathData.points[l-1],last_mathData.points[l],2);
-                // console.log(proxy_v);
-            }else{
+                            }else{
                 proxy_v=last_lp;
             }
             temp_arr.push(proxy_v);
