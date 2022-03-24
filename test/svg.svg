@@ -4,8 +4,8 @@
     style="top: 50%;background-color: #000;position: absolute;left: 50%;transform: translate(-50%,-50%);" fill="#fff"
     stroke="#fff">
     <svg stroke-width="0">
-        <path d="M10 80 C 40 10, 65 10, 95 80 S 150 150, 180 80 q 25 -80, 80 0 t 80 0 l 40 180 a 240 180 45 0 0 -320 40z">
-        </path>
+        <path d="M10 80 C 40 10, 65 10, 95 80 S 150 150, 180 80 q 25 -80, 80 0 t 80 0 l 40 180 a 240 180 45 0 0 -320 -40z"></path>
+        <!-- <path d="M150 150 a 90 180 60 0 0 120 120z"></path> -->
     </svg>
 
 </svg>

@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-23 21:39:40
+ * @LastEditTime: 2022-03-24 14:30:41
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1508,9 +1508,13 @@ class Data_Arc__Ellipse extends Data_Arc {
         }
         this._cx=cx;
         this._cy=cy;
+        /** @type {Matrix2x2T} 变换矩阵 */
         this._transform_matrix.translate(cx,cy);
+        /** @type {Number} 存储旋转值 */
         this._rotate=rotate||0;
+        /** @type {Matrix2x2T} 世界坐标系 to 局部坐标系 变换矩阵, 由transform矩阵的逆运算得到 */
         this._world_to_local_matrix=null;
+        /** @type {Boolean} 是否镜像 */
         this._flip_horizontal_flag=flip_horizontal_flag;
     }
     set cx(val){
@@ -1538,10 +1542,14 @@ class Data_Arc__Ellipse extends Data_Arc {
             this._endAngle,
         );
     }
+    /** @type {Number} 设置基础半径 */
+    set basics_r(r){
+        this.r=r;
+        return r;
+    }
     set rx(r){
-        this.r=r
         this.ry_ratio_rx=this.ry/r;
-
+        this.r=r;
         this.reset_transformMatrix();
         return r;
     }
@@ -1712,17 +1720,13 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @param {Vector2} ed                 终点
      * @param {Number}  rx                 水平方向半径
      * @param {Number}  ry                 垂直方向半径
-     * @param {Boolean} rotate_angle       旋转弧度(用圆心进行旋转)
      * @param {Boolean} large_arc_flag     使用更长或更短的边   和 sweep_flag 联动来确定弧线
      * @param {Boolean} sweep_flag         弧形绘制方向        和 large_arc_flag 联动来确定弧线
      * @return {Data_Arc__Ellipse}
      * 除了起点和终点, 参数可以参考 https://developer.mozilla.org/zh-CN/docs/Web/SVG/Tutorial/Paths#arcs
      */
-    static create_byEndPointRadiusRotate(op,ed,rx,ry,rotate_angle,large_arc_flag,sweep_flag){
-
-// todo 旋转时会出错
-
-        var arc=new Data_Arc__Ellipse(0,0,rx,ry,0,0,rotate_angle),
+    static create_byEndPointRadiusRotate__unRotate(op,ed,rx,ry,large_arc_flag,sweep_flag){
+        var arc=new Data_Arc__Ellipse(0,0,rx,ry,0,0),
             _ed=arc.worldToLoc(Vector2.dif(ed,op)),
             wi=Math2D.get_intersectionOfCircleCircle_V(Vector2.ZERO_POINT,rx,_ed,rx),
             cf=(large_arc_flag===sweep_flag),
@@ -1730,9 +1734,7 @@ class Data_Arc__Ellipse extends Data_Arc {
             temp,
             c_op,c_ed,
             op_a,ed_a;
-        console.log(Math2D.rotateVector2(rotate_angle))
-        console.log(Vector2.copy(wi.length?wi[i]:_ed.np(0.5)).linearMapping(Matrix2x2T.create.scale(1,arc.ry_ratio_rx).rotate(-rotate_angle)))
-            console.log(_ed,wi,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
+            // console.log(_ed,wi,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
         var c=Vector2.sum(op,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
         arc.cx=c.x;
         arc.cy=c.y;
@@ -1759,6 +1761,34 @@ class Data_Arc__Ellipse extends Data_Arc {
             ed_a,
         );
         // console.log(arc.startAngle,arc.endAngle);
+        return arc;
+    }
+
+    /** 使用起点, 终点, 半径 等参数创建弧形
+     * @param {Vector2} op                 起点
+     * @param {Vector2} ed                 终点
+     * @param {Number}  rx                 水平方向半径
+     * @param {Number}  ry                 垂直方向半径
+     * @param {Boolean} rotate_angle       旋转弧度(用圆心进行旋转)
+     * @param {Boolean} large_arc_flag     使用更长或更短的边   和 sweep_flag 联动来确定弧线
+     * @param {Boolean} sweep_flag         弧形绘制方向        和 large_arc_flag 联动来确定弧线
+     * @return {Data_Arc__Ellipse}
+     * 除了起点和终点, 参数可以参考 https://developer.mozilla.org/zh-CN/docs/Web/SVG/Tutorial/Paths#arcs
+     */
+    static create_byEndPointRadiusRotate(op,ed,rx,ry,rotate_angle,large_arc_flag,sweep_flag){
+        
+        var _rotate_angle=rotate_angle,
+            rotate_Matrix=Matrix2x2.create.rotate(-_rotate_angle),
+            rotate_Matrix_i=Matrix2x2.create.rotate(_rotate_angle),
+            _op=Vector2.copy(op).linearMapping(rotate_Matrix),
+            _ed=Vector2.copy(ed).linearMapping(rotate_Matrix);
+        // console.log(_op,_ed);
+        var arc=Data_Arc__Ellipse.create_byEndPointRadiusRotate__unRotate(_op,_ed,rx,ry,large_arc_flag,sweep_flag),
+            c=new Vector2(arc.cx,arc.cy).linearMapping(rotate_Matrix_i);
+            arc.cx=c.x;
+            arc.cy=c.y;
+            // console.log(_rotate_angle,rotate_angle);
+            arc.rotate=_rotate_angle;
         return arc;
     }
 }
@@ -4483,7 +4513,7 @@ class Path{
         if(!((low_FN=Path._arc_c.indexOf(c))===-1)){
             var rx=d[0],
                 ry=d[1],
-                rotate_angle=d[2]*deg,
+                rotate_angle=-d[2]*deg,
                 large_arc_flag=d[3],
                 sweep_flag=d[4];
             return Data_Arc__Ellipse.create_byEndPointRadiusRotate(last_lp,now_lp,rx,ry,rotate_angle,large_arc_flag,sweep_flag);
