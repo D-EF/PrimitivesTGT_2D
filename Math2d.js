@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-24 14:30:41
+ * @LastEditTime: 2022-03-24 21:15:22
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1500,8 +1500,8 @@ class Data_Arc__Ellipse extends Data_Arc {
         if(flip_horizontal_flag){
             this._transform_matrix.multiplication(Matrix2x2.FLIP_HORIZONTAL);
         }
-        this._cx=cx;
-        this._cy=cy;
+        this._tc=new Vector2(cx,cy);
+        
         /** @type {Matrix2x2T} 变换矩阵 */
         this._transform_matrix.translate(cx,cy);
         /** @type {Number} 存储旋转值 */
@@ -1511,21 +1511,28 @@ class Data_Arc__Ellipse extends Data_Arc {
         /** @type {Boolean} 是否镜像 */
         this._flip_horizontal_flag=flip_horizontal_flag;
     }
+    get tc(){
+        return this._tc;
+    }
+    set tc(val){
+        this.tc.x=val.x;
+        this.tc.y=val.y;
+        this.reset_transformMatrix();
+        return this._tc;
+    }
     set cx(val){
-        this._cx=val;
+        this._tc.x=val;
         this.reset_transformMatrix();
         return val;
     }
     set cy(val){
-        this._cy=val;
+        this._tc.y=val;
         this.reset_transformMatrix();
         return val;
     }
-    get cy(){return this._cy}
-    get cx(){return this._cx}
-    get_c_ABS(){
-        return new Vector2(this._cx,this._cy);
-    }
+    get cy(){return this._tc.y}
+    get cx(){return this._tc.x}
+
     static copy(d){
         return new Data_Arc__Ellipse(
             this.c.x,
@@ -1619,7 +1626,11 @@ class Data_Arc__Ellipse extends Data_Arc {
         return this.locToWorld__untransform(super.get_tangent__byAngle(angle));
     }
     get_normal(t){
-                return this.locToWorld__untransform(super.get_normal(t)).normalize();
+        var rtn=this.locToWorld__untransform(super.get_normal(t)).normalize();
+        if(this.flip_horizontal_flag){
+            return rtn.np(-1);
+        }
+        return rtn;
     }
     sample(t){
         return this.sample__byLengthLong(t);
@@ -1706,11 +1717,13 @@ class Data_Arc__Ellipse extends Data_Arc {
         };
     }
 
-    /** 使用起点, 终点, 半径 等参数创建弧形
+    /** 别乱用! 这个是给 create_byEndPointRadiusRotate 用的!
+     * 使用起点, 终点, 半径 等参数创建弧形 
      * @param {Vector2} op                 起点
      * @param {Vector2} ed                 终点
      * @param {Number}  rx                 水平方向半径
      * @param {Number}  ry                 垂直方向半径
+     * @param {Boolean} rotate_angle       旋转弧度(用圆心进行旋转) 
      * @param {Boolean} large_arc_flag     使用更长或更短的边   和 sweep_flag 联动来确定弧线
      * @param {Boolean} sweep_flag         弧形绘制方向        和 large_arc_flag 联动来确定弧线
      * @return {Data_Arc__Ellipse}
@@ -1718,16 +1731,23 @@ class Data_Arc__Ellipse extends Data_Arc {
      */
     static create_byEndPointRadiusRotate__unRotate(op,ed,rx,ry,large_arc_flag,sweep_flag){
         var arc=new Data_Arc__Ellipse(0,0,rx,ry,0,0),
-            _ed=arc.worldToLoc(Vector2.dif(ed,op)),
+            d_ed=Vector2.dif(ed,op),
+            _ed=arc.worldToLoc(d_ed),
             wi=Math2D.get_intersectionOfCircleCircle_V(Vector2.ZERO_POINT,rx,_ed,rx),
             cf=(large_arc_flag===sweep_flag),
             i=cf?1:0,
+            loc_c,
             temp,
             c_op,c_ed,
             op_a,ed_a;
-                    var c=Vector2.sum(op,arc.locToWorld(wi.length?wi[i]:_ed.np(0.5)));
-        arc.cx=c.x;
-        arc.cy=c.y;
+           
+        loc_c=arc.locToWorld(wi[i]||
+            _ed.np(0.5)    // 半径不足补全缺口的备选方案 todo:等比缩放椭圆
+        );
+        
+        var c=Vector2.sum(op,loc_c);
+        arc.tc=c;
+        console.log(arc.tc)
 
         c_op=arc.worldToLoc(op);
         c_ed=arc.worldToLoc(ed);
@@ -1749,7 +1769,8 @@ class Data_Arc__Ellipse extends Data_Arc {
             op_a,
             ed_a,
         );
-                return arc;
+        
+        return arc;
     }
 
     /** 使用起点, 终点, 半径 等参数创建弧形
@@ -1764,7 +1785,6 @@ class Data_Arc__Ellipse extends Data_Arc {
      * 除了起点和终点, 参数可以参考 https://developer.mozilla.org/zh-CN/docs/Web/SVG/Tutorial/Paths#arcs
      */
     static create_byEndPointRadiusRotate(op,ed,rx,ry,rotate_angle,large_arc_flag,sweep_flag){
-        
         var _rotate_angle=rotate_angle,
             rotate_Matrix=Matrix2x2.create.rotate(-_rotate_angle),
             rotate_Matrix_i=Matrix2x2.create.rotate(_rotate_angle),
@@ -1774,7 +1794,7 @@ class Data_Arc__Ellipse extends Data_Arc {
             c=new Vector2(arc.cx,arc.cy).linearMapping(rotate_Matrix_i);
             arc.cx=c.x;
             arc.cy=c.y;
-                        arc.rotate=_rotate_angle;
+            arc.rotate=sweep_flag?-_rotate_angle:_rotate_angle;
         return arc;
     }
 }
@@ -2302,6 +2322,7 @@ Vector2.INFINITY=new Vector2(Infinity,Infinity);
 Matrix2x2.create={
     /** 旋转
      * @param {Number} theta 顺时针 旋转角弧度
+     * @return {Matrix2x2}
      */
     rotate:function(theta){
         var s=Math.sin(theta),
@@ -2311,14 +2332,26 @@ Matrix2x2.create={
     /** 缩放
      * @param {Number} x x 轴方向上的缩放系数
      * @param {Number} y y 轴方向上的缩放系数
+     * @return {Matrix2x2}
      */
     scale:function(x,y){
         return new Matrix2x2(x,0,0,y);
     },
-    
+    /** 镜像(对称)
+     * @param {Number} x 对称轴的向量表示 x 坐标
+     * @param {Number} y 对称轴的向量表示 y 坐标
+     * @return {Matrix2x2}
+     */
+    horizontal:function (x,y){
+        return new Matrix2x2(
+            1-2*x*x ,   -2*x*y,
+            -2*x*y  ,   1-2*y*y
+        )
+    },
     /** 切变
      * @param {Number} axis 方向轴 0:x 非零:y
      * @param {Number} k 切变系数
+     * @return {Matrix2x2}
      */
     shear:function(axis,k){
         if(axis){
@@ -2331,12 +2364,14 @@ Matrix2x2.create={
         }
     },
     /** 单位矩阵
+     * @return {Matrix2x2}
      */
     identity:function(){
         return new Matrix2x2(1,0,0,1);
     },
     /** 使用向量方向设置旋转矩阵
      * @param {Vector2} _v 向量
+     * @return {Matrix2x2}
      */
     rotate_v(_v){
         var v=Vector2.copy(_v).normalize();
@@ -4201,7 +4236,8 @@ class Line{
     }
     get_normal(t){
         if(!this._normal){
-            this._normal=Vector2.linearMapping(this.get_tangent(),Matrix2x2.ROTATE_90).normalize();
+            this._normal=this.get_tangent().copy().linearMapping(Matrix2x2.ROTATE_90).normalize();
+            console.log(this,this._normal);
         }
         return this._normal;
     }
@@ -4760,7 +4796,7 @@ class Path{
     }
     /** 当前点的法线
      * @param {Number} 时间参数 t
-     * @param {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
+     * @returns {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
      */
     get_normal(t){
         var l=t*this.get_lengthLong(),
@@ -4770,7 +4806,7 @@ class Path{
     }
     /** 当前点的方向
      * @param {Number} 时间参数 t
-     * @param {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
+     * @returns {Vector2} 返回一个 pt 的相对坐标 请自行修改模长或进行标准化
      */
     get_tangent(t){
         var l=t*this.get_lengthLong(),
