@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-24 21:15:22
+ * @LastEditTime: 2022-03-25 19:13:50
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1790,11 +1790,11 @@ class Data_Arc__Ellipse extends Data_Arc {
             rotate_Matrix_i=Matrix2x2.create.rotate(_rotate_angle),
             _op=Vector2.copy(op).linearMapping(rotate_Matrix),
             _ed=Vector2.copy(ed).linearMapping(rotate_Matrix);
-                var arc=Data_Arc__Ellipse.create_byEndPointRadiusRotate__unRotate(_op,_ed,rx,ry,large_arc_flag,sweep_flag),
+        var arc=Data_Arc__Ellipse.create_byEndPointRadiusRotate__unRotate(_op,_ed,rx,ry,large_arc_flag,sweep_flag),
             c=new Vector2(arc.cx,arc.cy).linearMapping(rotate_Matrix_i);
-            arc.cx=c.x;
-            arc.cy=c.y;
-            arc.rotate=sweep_flag?-_rotate_angle:_rotate_angle;
+        arc.cx=c.x;
+        arc.cy=c.y;
+        arc.rotate=sweep_flag?-_rotate_angle:_rotate_angle;
         return arc;
     }
 }
