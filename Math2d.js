@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-25 19:13:50
+ * @LastEditTime: 2022-03-26 17:04:53
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1988,7 +1988,7 @@ class Data_Sector extends Data_Arc{
     cross(v2){return this.x*v2.y-this.y*v2.x;}
     /** 进行线性变换
      * @param {Matrix2x2T}  m   变换矩阵
-     * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为true) 
+     * @param {Boolean}     fln 向量前乘还是前后乘矩阵  默认是前乘 (默认为false) 
      * @param {Boolean}     f   先平移还是先变换 默认先变换再平移 (默认为false) 
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回this
@@ -2427,7 +2427,6 @@ class Matrix2x2T extends Matrix2x2{
         this.d=m.d===undefined?this.d:m.d;
         this.e=m.e===undefined?this.e:m.e;
         this.f=m.f===undefined?this.f:m.f;
-
         return this;
     }
     create_inverse(){
