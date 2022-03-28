@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-26 17:04:53
+ * @LastEditTime: 2022-03-28 15:02:06
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -2909,7 +2909,7 @@ class Polygon{
     }
     /** 创建矩形
      */
-    static rect(x,y,width,height){
+    static create_rect(x,y,width,height){
         var ret=new Polygon();
         ret.add_Node(new Vector2(x,y));
         ret.add_Node(new Vector2(x+width,y));
