@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-19 18:18:43
+ * @LastEditTime: 2022-03-28 21:05:19
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -515,7 +515,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
  */
  class PrimitiveTGT__Group extends PrimitiveTGT{
     /** 
-     * @param {PrimitiveTGT[],PrimitiveTGT__Group[]} tgts 
+     * @param {(PrimitiveTGT|PrimitiveTGT__Group)[]} tgts 
      */
     constructor(tgts){
         super()
