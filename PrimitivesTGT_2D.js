@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-28 21:05:19
+ * @LastEditTime: 2022-03-29 21:14:18
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -657,6 +657,36 @@ PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
 });
 PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT__worldToLocal
 );
+
+
+
+class CQRS_command__PrimitiveTGT{
+
+    constructor(group_path,attr_path,){
+
+    }
+}
+// todo
+class CQRS__PrimitiveTGT{
+    /** 
+     * @param {PrimitiveTGT__Group} root_tgt_group 
+     */
+    constructor(root_tgt_group){
+        /** @type {PrimitiveTGT__Group} 当前图元的根 */
+        this._now=root_tgt_group;
+        /** @type {{index:Number,cache:PrimitiveTGT__Group}[]} 缓存 lut 表 */
+        this.lut_cache=[];
+        /** @type {CQRS_command__PrimitiveTGT[]} 记录的历史指令 */
+        this.command=[];
+        /** lut查找表的缓存步长 */
+        this._lut_cache_step_length=20;
+
+        root_tgt_group&&root_tgt_group.copy&&this.lut_cache.push({index:0,cache:root_tgt_group.copy()});
+    }
+    add_command(){
+
+    }
+}
 
 export{
     
