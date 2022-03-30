@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-29 21:14:18
+ * @LastEditTime: 2022-03-30 14:58:02
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -13,7 +13,8 @@
  */
 import {
     OlFunction,
-    Delegate
+    Delegate,
+    CQRS_Command,
 } from "../basics/basics.js";
 import {
     Math2D,
@@ -293,7 +294,7 @@ class PrimitiveTGT{
         },
         "Group":function (data){
             var rtn=new PrimitiveTGT__Group();
-            for(var i=tgt.data.length-1;i>=0;--i){
+            for(var i=data.length-1;i>=0;--i){
                 rtn.data.push(PrimitiveTGT__Group.copy(tgt.data[i]));
             }
             return rtn;
@@ -660,36 +661,37 @@ PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT__worldTo
 
 
 
-class CQRS_command__PrimitiveTGT{
-
-    constructor(group_path,attr_path,){
-
+class CQRS_Command__PrimitiveTGT extends CQRS_Command{
+    /**
+     * 
+     * @param {Boolean} type       执行什么操作 false 赋值, true 运行成员函数
+     * @param {Number[]} tgtpath   子对象路径
+     * @param {String[]} path      执行路径
+     * @param {*[]} _arguments     执行参数
+     */
+    constructor(type,tgtpath,path,_arguments){
+        super(type,path,_arguments);
+        this.tgtpath=tgtpath;
+    }
+    /** 执行动作
+     * @param {PrimitiveTGT__Group} root_tgt 
+     */
+    do(root_tgt){
+        var temp=root_tgt;
+        
+        var temp=tgt,
+            i=0,
+            l=this.tgtpath.length;
+        while(i<l){
+            temp=temp.data[this.path[i]];
+            ++i;
+        }
+        super.do(temp);
     }
 }
 // todo
-class CQRS__PrimitiveTGT{
-    /** 
-     * @param {PrimitiveTGT__Group} root_tgt_group 
-     */
-    constructor(root_tgt_group){
-        /** @type {PrimitiveTGT__Group} 当前图元的根 */
-        this._now=root_tgt_group;
-        /** @type {{index:Number,cache:PrimitiveTGT__Group}[]} 缓存 lut 表 */
-        this.lut_cache=[];
-        /** @type {CQRS_command__PrimitiveTGT[]} 记录的历史指令 */
-        this.command=[];
-        /** lut查找表的缓存步长 */
-        this._lut_cache_step_length=20;
-
-        root_tgt_group&&root_tgt_group.copy&&this.lut_cache.push({index:0,cache:root_tgt_group.copy()});
-    }
-    add_command(){
-
-    }
-}
 
 export{
-    
     Material,
     Renderer_PrimitiveTGT,
     PrimitiveTGT,
@@ -699,5 +701,6 @@ export{
     PrimitiveTGT__Polygon,
     PrimitiveTGT__Bezier,
     PrimitiveTGT__Group,
-    PrimitiveTGT__Path
+    PrimitiveTGT__Path,
+    CQRS_Command__PrimitiveTGT
 };
