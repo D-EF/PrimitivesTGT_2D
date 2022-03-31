@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-30 14:58:02
+ * @LastEditTime: 2022-03-31 15:02:44
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -620,6 +620,17 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
         for(i=rtn.length-1;i>=0;--i){
             rtn[i].transform_matrix=this.transform_matrix;
             rtn[i].nodesToWorld();
+        }
+        return rtn;
+    }
+    /** 获取后代的tgt对象
+     * @param {Number[]} path 
+     */
+    get_offspringByPath(path){
+        var i=0,
+            rtn=this;
+        while(path[i]!==undefined){
+            rtn=rtn.data[i];
         }
         return rtn;
     }

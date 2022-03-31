@@ -76,8 +76,8 @@ function colorToRGBA(str) {
 
 class AnimationCtrl{
     /** 动画控制器
-     * @param {Function} frameCallback 每次进行动作的回调 frameCallback(t,this)
-     * @param {Function} stopCallback 结束时的回调 stopCallback(this)
+     * @param {function(Number,AnimationCtrl)} frameCallback 每次进行动作的回调 frameCallback(t,this)
+     * @param {function(AnimationCtrl)} stopCallback 结束时的回调 stopCallback(this)
      */
     constructor(frameCallback,stopCallback){
         /**@type {Boolean}表示是否正在进行动作 设置为false可以急停动画*/
@@ -86,11 +86,11 @@ class AnimationCtrl{
         this._startTime=0;
         /**@type {Number} 用于表示时间长度, 值为 1/时间长度 */
         this.time_reciprocal;
-        /**@type {Function} 每次进行动作的回调 frameCallback(t,this)*/
+        /**@type {function(Number,AnimationCtrl)} 每次进行动作的回调 frameCallback(t,this)*/
         this.frameCallback=frameCallback;
-        /**@type {Function} 结束时的回调 stopCallback(this)*/
+        /**@type {function(AnimationCtrl):Boolean} 结束时的回调 stopCallback(this)*/
         this.stopCallback=stopCallback;
-        /**@type {Function} 控制结束函数 返回true时会停下动画*/
+        /**@type {function():Boolean} 控制结束函数 返回true时会停下动画*/
         this.discontinueFunction=nullfnc
     }
     /**

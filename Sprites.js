@@ -157,7 +157,7 @@ class Sprites_Animation{
         this.stepper_x=new Stepper(min_x,max_x);
         /** @type {Stepper} Y方向的步进器 */
         this.stepper_y=new Stepper(min_y,max_y);
-        /**@type {Function[]} 结束回调队列  this.callbackList\[0\](x,y,this)*/
+        /**@type {function(Number,Number,Sprites_Animation)[]} 结束回调队列  this.callbackList\[0\](x,y,this)*/
         this.callbackList=[];
         /** @type {Funciton} 帧回调函数 如果返回true将会停止动画 this.frameCallback(x,y,this)*/
         this.frameCallback=nullfnc;
@@ -166,7 +166,7 @@ class Sprites_Animation{
     }
     /**
      * 添加一个回调
-     * @param {Function} callback 下一个动作
+     * @param {function(Number,Number,Sprites_Animation)} callback 下一个动作
      * @returns {Sprites_Animation} this
      */
     then(callback){
@@ -175,7 +175,7 @@ class Sprites_Animation{
     }
     /**
      * 移除一个回调
-     * @param {Function} callback 
+     * @param {function(Number,Number,Sprites_Animation)} callback 
      * @returns {Sprites_Animation} this
      */
     removeCallback(callback){
