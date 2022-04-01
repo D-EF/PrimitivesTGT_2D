@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-31 19:49:03
+ * @LastEditTime: 2022-04-01 17:46:38
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -534,6 +534,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
         else{
             this.data=[]
         }
+        this.name="group";
         this.dataType="Group";
         /** 用于控制绘制 精灵图 贴图的 属性 */
         this.sp_min=new Vector2(0,0);
@@ -635,8 +636,9 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     get_offspringByPath(path){
         var i=0,
             rtn=this;
-        while(path[i]!==undefined){
-            rtn=rtn.data[i];
+        while(path[i]!==undefined&&path[i]>=0){
+            rtn=rtn.data[path[i]];
+            ++i;
         }
         return rtn;
     }
@@ -695,7 +697,6 @@ class CQRS_Command__PrimitiveTGT extends CQRS_Command{
      */
     do(root_tgt){
         var temp=root_tgt;
-        
         var temp=tgt,
             i=0,
             l=this.tgtpath.length;
