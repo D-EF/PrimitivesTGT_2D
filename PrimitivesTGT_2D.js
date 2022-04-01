@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-31 15:02:44
+ * @LastEditTime: 2022-03-31 19:49:03
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -41,6 +41,7 @@ class Material{
         this.texture=texture;
     }
     /** 获取2d材质
+     * @virtual
      * @param {PrimitiveTGT} tgt 图元对象
      * @param {*} ctx 渲染上下文
      * @param {String} type 类型 (用于选择使用哪个 uv)
@@ -82,7 +83,9 @@ class Renderer_PrimitiveTGT{
     copy(){
         return this.constructor.copy(this);
     }
-    /** @param {PrimitiveTGT} tgt 
+    /** 
+     * @virtual
+     * @param {PrimitiveTGT} tgt 
      */
     render(tgt){}
     render_all(){
@@ -105,7 +108,10 @@ class PrimitiveTGT{
     constructor(){
         /**@type {Object} 对象名字 没啥用的属性*/
         this.name="PrimitiveTGT";
-        /**@type {Object} 数据*/
+        /**
+         * @virtual
+         * @type {Object} 数据
+         */
         this.data;
         /**@type {Boolean} 自动闭合路径 开关*/
         this.want_to_closePath=false;
