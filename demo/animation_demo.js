@@ -176,7 +176,7 @@ var textPolygonD=new Polygon([
 ]);
 var textTGT_D=new CanvasPolygonTGT();
 textTGT_D.data=textPolygonD;
-text_group.addChildren(textTGT_D);
+text_group.add_children(textTGT_D);
 
 var textPolygonE1=new Polygon([
     new Vector2(), //0
@@ -187,7 +187,7 @@ var textPolygonE1=new Polygon([
 ]);
 var textTGT_E1=new CanvasPolygonTGT();
 textTGT_E1.data=textPolygonE1;
-text_group.addChildren(textTGT_E1);
+text_group.add_children(textTGT_E1);
 textTGT_E1.transform_matrix=new Matrix2x2T().translate(100,0)
 
 var textPolygonE2=new Polygon([
@@ -196,7 +196,7 @@ var textPolygonE2=new Polygon([
 ]);
 var textTGT_E2=new CanvasPolygonTGT();
 textTGT_E2.data=textPolygonE2;
-text_group.addChildren(textTGT_E2);
+text_group.add_children(textTGT_E2);
 textTGT_E2.transform_matrix=new Matrix2x2T().translate(100,0)
 
 var textPolygonF1=new Polygon([
@@ -207,12 +207,12 @@ var textPolygonF1=new Polygon([
 ]);
 var textTGT_F1=new CanvasPolygonTGT();
 textTGT_F1.data=textPolygonF1;
-text_group.addChildren(textTGT_F1);
+text_group.add_children(textTGT_F1);
 textTGT_F1.transform_matrix=new Matrix2x2T().translate(200,0)
 
 var textTGT_F2=textTGT_E2.copy();
 textTGT_F2.transform_matrix=new Matrix2x2T().translate(200,0)
-text_group.addChildren(textTGT_F2);
+text_group.add_children(textTGT_F2);
 
 var animation2=new AnimationCtrl();
 function animation_D1f(t){

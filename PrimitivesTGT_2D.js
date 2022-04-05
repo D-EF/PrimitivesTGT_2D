@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-01 17:46:38
+ * @LastEditTime: 2022-04-04 01:26:06
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -146,7 +146,6 @@ class PrimitiveTGT{
 
         /** @type {String} tgt的 data的类型 用于将json实例化为 PrimitiveTGT*/
         this.dataType="Object";
-
     }
     /** 拷贝函数 注:json互相转化时,无法正常转换成json的类型 fillStyle strokeStyle 会丢失
      * @param {PrimitiveTGT} tgt
@@ -553,29 +552,32 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     get_max(){
         return this.max;
     }
+    insert(index,tgt){
+        this.data.splice(index,0,tgt);
+    }
     /** 添加子项
      * @param {PrimitiveTGT} tgt Primitive对象
      */
-    addChildren(tgt){
+    add_children(tgt){
         this.data.push(tgt);
     }
     /** 添加子项
      * @param {PrimitiveTGT[]} tgt Primitive对象
      */
-    addChildrens(tgts){
+    add_childrens(tgts){
         this.data=this.data.concat(tgts);
     }
     /** 移除一个子项
      * @param {Number} index 下标
      */
-    removeChildrenByIndex(index){
+    remove_childrenByIndex(index){
         this.data.splice(index,1);
     }
     /** 移除一个子项
      * @param {PrimitiveTGT} tgt 必须是同一个子项
      */
-    removeChildren(tgt){
-        this.data.splice(this.data.indexOf,1);
+    remove_children(tgt){
+        this.data.splice(this.data.indexOf(tgt),1);
     }
     /** 获取点在某子项内部
      * @param {Number} _x    重载1的参数 世界坐标x
@@ -642,6 +644,20 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
         }
         return rtn;
     }
+    
+    /** 获取后代的tgt对象的父级
+     * @param {Number[]} path 
+     */
+     get_parentByPath(path){
+        var i=0,
+            rtn=this;
+        if(path)
+        while(path[i+1]!==undefined&&path[i+1]>=0){
+            rtn=rtn.data[path[i]];
+            ++i;
+        }
+        return rtn;
+    }
 }
 
 // PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
@@ -696,8 +712,7 @@ class CQRS_Command__PrimitiveTGT extends CQRS_Command{
      * @param {PrimitiveTGT__Group} root_tgt 
      */
     do(root_tgt){
-        var temp=root_tgt;
-        var temp=tgt,
+        var temp=root_tgt,
             i=0,
             l=this.tgtpath.length;
         while(i<l){
