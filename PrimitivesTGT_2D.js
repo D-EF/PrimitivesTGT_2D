@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-04 01:26:06
+ * @LastEditTime: 2022-04-06 15:18:07
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -557,9 +557,10 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     }
     /** 添加子项
      * @param {PrimitiveTGT} tgt Primitive对象
+     * @returns {Numer} 返回长度
      */
     add_children(tgt){
-        this.data.push(tgt);
+        return this.data.push(tgt);
     }
     /** 添加子项
      * @param {PrimitiveTGT[]} tgt Primitive对象
@@ -567,11 +568,24 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     add_childrens(tgts){
         this.data=this.data.concat(tgts);
     }
+    /** 使用路径增加一个后代元素
+     * @param {Number[]} path 下标形式的路径 倒数第二项应为 group
+     */
+    remove_descendantByPath(path,tgt){
+        var pg=this.get_parentByPath(path);
+        pg.insert(path[path.length-1],tgt);
+    }
     /** 移除一个子项
      * @param {Number} index 下标
      */
     remove_childrenByIndex(index){
         this.data.splice(index,1);
+    }
+    /** 使用路径移除一个后代元素
+     * @param {Number[]} path 下标形式的路径 倒数第二项应为 group
+     */
+    remove_descendantByPath(path){
+        this.get_parentByPath(path).remove_childrenByIndex(path[path.length-1]);
     }
     /** 移除一个子项
      * @param {PrimitiveTGT} tgt 必须是同一个子项
@@ -635,7 +649,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     /** 获取后代的tgt对象
      * @param {Number[]} path 
      */
-    get_offspringByPath(path){
+    get_descendantByPath(path){
         var i=0,
             rtn=this;
         while(path[i]!==undefined&&path[i]>=0){
