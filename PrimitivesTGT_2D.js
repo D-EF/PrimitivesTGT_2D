@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-06 15:18:07
+ * @LastEditTime: 2022-04-08 21:04:35
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -662,7 +662,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     /** 获取后代的tgt对象的父级
      * @param {Number[]} path 
      */
-     get_parentByPath(path){
+    get_parentByPath(path){
         var i=0,
             rtn=this;
         if(path)
@@ -671,6 +671,30 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
             ++i;
         }
         return rtn;
+    }
+    /** 计算获取后代的局部坐标系相对世界坐标系的变换矩阵
+     * @param {Number[]} path 以下标形式的路径
+     * @param {Matrix2x2T} [m] 初始化矩阵 返回值将先使用这个矩阵然后再乘
+     * @return {Matrix2x2T} 返回一个新的矩阵
+     */
+    get_descendantTransformMatrix(path){
+        var rtn=Matrix2x2T.copy(this.transform_matrix);
+        var i=0,
+            temp=this;
+        while(path[i]!==undefined&&path[i]>=0){
+            temp=temp.data[path[i]];
+            rtn.multiplication(temp.transform_matrix);
+            ++i;
+        }
+        return rtn;
+    }
+    
+    /** 计算获取后代的世界坐标系相对局部坐标系的变换矩阵
+     * @param {Number[]} path 以下标形式的路径
+     * @return {Matrix2x2T} 返回一个新的矩阵
+     */
+    get_descendantTransformMatrix__i(path){
+        return this.get_descendantTransformMatrix(path).create_inverse();
     }
 }
 
