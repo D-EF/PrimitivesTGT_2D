@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-08 21:04:35
+ * @LastEditTime: 2022-04-09 17:20:02
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -688,13 +688,30 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
         }
         return rtn;
     }
-    
     /** 计算获取后代的世界坐标系相对局部坐标系的变换矩阵
      * @param {Number[]} path 以下标形式的路径
      * @return {Matrix2x2T} 返回一个新的矩阵
      */
     get_descendantTransformMatrix__i(path){
         return this.get_descendantTransformMatrix(path).create_inverse();
+    }
+}
+
+class PrimitiveTGT__RootGroup extends PrimitiveTGT__Group{
+    /** 用于绘图使用的根图元组. 如果使用这个,请不要再直接进入子元素操作
+     * @param {(PrimitiveTGT|PrimitiveTGT__Group)[]} tgts 
+     */
+     constructor(tgts){
+        super(tgts)
+        this.name="root";
+        this.delegates_transformMatrixChange
+    }
+    /** 使用路径插入新后代
+     * @param {Number[]} path 
+     * @param {PrimitiveTGT} tgt
+     */
+    insert(path,tgt){
+        tgt.delegate_transformMatrixChange
     }
 }
 
