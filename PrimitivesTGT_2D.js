@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-09 17:20:02
+ * @LastEditTime: 2022-04-11 20:07:39
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -15,6 +15,7 @@ import {
     OlFunction,
     Delegate,
     CQRS_Command,
+    dependencyMapping,
 } from "../basics/basics.js";
 import {
     Math2D,
@@ -695,23 +696,49 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     get_descendantTransformMatrix__i(path){
         return this.get_descendantTransformMatrix(path).create_inverse();
     }
-}
-
-class PrimitiveTGT__RootGroup extends PrimitiveTGT__Group{
-    /** 用于绘图使用的根图元组. 如果使用这个,请不要再直接进入子元素操作
-     * @param {(PrimitiveTGT|PrimitiveTGT__Group)[]} tgts 
-     */
-     constructor(tgts){
-        super(tgts)
-        this.name="root";
-        this.delegates_transformMatrixChange
-    }
+    
     /** 使用路径插入新后代
-     * @param {Number[]} path 
+     * @param {Number[]} path 路径, 如果最后指向 group 将会 addend 到当前group,否则会插入到当前位置后
      * @param {PrimitiveTGT} tgt
+     * @return {Number[]} 返回指向新加入的对象的path
      */
-    insert(path,tgt){
-        tgt.delegate_transformMatrixChange
+    insert_byPath(path,tgt){
+        var i=0,j;
+        var a,b;
+        var 
+        b=this;
+        var newpath=Array.from(path);
+        j=path[i];
+        while(b.data[j]){
+            a=b;
+            b=b.data[j];
+            ++i;
+            j=path[i];
+        }
+        if(i<path.length){
+            throw new Error ("Can not find this path!");
+        }
+        if(b.dataType==="Group"){
+            newpath[i]=b.add_children(tgt)-1;
+        }else{
+            --i;
+            newpath[i]=newpath[i]+1;
+            
+            a.insert(newpath[i],tgt);
+        }
+        return newpath;
+    }
+    /** 世界坐标to后代的局部坐标, 没用缓存
+     * @param {Number[]} path   路径
+     * @param {Vector2} v       世界坐标系的点
+     */
+    worldToDescendant(path,v){
+        var m=this.get_descendantTransformMatrix__i(path);
+        return Vector2.linearMapping_beforeTranslate(v,m);
+    }
+    descendantToWorld(path,v){
+        var m=this.get_descendantTransformMatrix(path);
+        return Vector2.linearMapping_afterTranslate(v,m);
     }
 }
 
@@ -748,8 +775,6 @@ PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
 });
 PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT__worldToLocal
 );
-
-
 
 class CQRS_Command__PrimitiveTGT extends CQRS_Command{
     /**
