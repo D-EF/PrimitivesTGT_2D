@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-28 15:02:06
+ * @LastEditTime: 2022-04-12 18:13:18
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -21,7 +21,7 @@ import {
     deg,
     deg_90,
     cycles,
-    calc_k_bezierToCyles,
+    calc_k__BezierToCyles,
     BEZIER_TO_CYCLES_K__1D4,
 } from "../basics/math_ex.js";
 
@@ -30,7 +30,7 @@ import {
     DEF_Caller,
     Delegate,
     OlFunction,
-    select_lut__binary,
+    select_Lut__Binary,
 } from "../basics/Basics.js";
 /** 放了一点2d静态函数
  */
@@ -962,9 +962,9 @@ class Data_Rect{
      */
     get_Tangent(t){
         var angle=this._startAngle*(1-t)+this._endAngle*t+deg_90;
-        return this.get_tangent__ByAngle(angle);
+        return this.get_Tangent__ByAngle(angle);
     }
-    get_tangent__ByAngle(angle){
+    get_Tangent__ByAngle(angle){
         return Math2D.rotateVector2(angle).np(this.r);
     }
     /** 法线
@@ -1362,11 +1362,11 @@ class Data_Rect{
         return false;
     }
     /** @type {Number} 每个点相差的弧度 */
-    get polygon_proxy_want_Sp(){
+    get polygon_proxy_want_sp(){
         return this._polygon_proxy_want_sp;
     }
     /** @type {Number} 每个点相差的弧度 */
-    set polygon_proxy_want_Sp(val){
+    set polygon_proxy_want_sp(val){
         if(val===this._polygon_proxy_want_sp){
             return val;
         }
@@ -1374,7 +1374,7 @@ class Data_Rect{
         return this._polygon_proxy_want_sp=val;
     }
     /** @type {{t:Number,l:Number}[]} 弧长显式查找表 */
-    get length_long_Lut(){
+    get length_long_lut(){
         var polygon=this.polygon_proxy;
         if(this._length_long_lut[0].l===null){
             var temp;
@@ -1387,7 +1387,7 @@ class Data_Rect{
         return this._length_long_lut;
     }
     /**@type {Polygon} 拟合曲线的多边形 */
-    get polygon_Proxy(){
+    get polygon_proxy(){
         if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
             var temp=this.create_PolygonProxy(this.polygon_proxy_want_sp);
             this._polygon_proxy_sp=this.polygon_proxy_want_sp;
@@ -1436,7 +1436,7 @@ class Data_Rect{
     }
 
     /**@type {BezierCurve[]} 代理用的 */
-    get bezier_curve_Proxy(){
+    get bezier_curve_proxy(){
         if(this._bezier_curve_proxy.length){
             return this._bezier_curve_proxy;
         }
@@ -1465,8 +1465,8 @@ class Data_Rect{
 
             t_op+=deg_90;
             t_ed+=deg_90;
-            p2=Vector2.sum(p1,this.get_tangent__ByAngle(t_op).np(+k));
-            p3=Vector2.sum(p4,this.get_tangent__ByAngle(t_ed).np(-k));
+            p2=Vector2.sum(p1,this.get_Tangent__ByAngle(t_op).np(+k));
+            p3=Vector2.sum(p4,this.get_Tangent__ByAngle(t_ed).np(-k));
 
                         bcs.unshift(new BezierCurve([p1,p2,p3,p4]));
         }
@@ -1573,18 +1573,18 @@ class Data_Arc__Ellipse extends Data_Arc {
     get rotate(){
         return this._rotate;
     }
-    set flip_horizontal_Flag(val){
+    set flip_horizontal_flag(val){
         this._flip_horizontal_flag=val
         this.reset_TransformMatrix();
         return this._flip_horizontal_flag;
     }
-    get flip_horizontal_Flag(){
+    get flip_horizontal_flag(){
         return this._flip_horizontal_flag;
     }
-    get transform_Matrix(){
+    get transform_matrix(){
         return this._transform_matrix;
     }
-    get world_to_local_Matrix(){
+    get world_to_local_matrix(){
         if(!this._world_to_local_matrix){
             this._world_to_local_matrix=this.transform_matrix.create_Inverse();
         }
@@ -1607,23 +1607,23 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @param {Vector2} v 局部坐标
      */
     locToWorld(v){
-        return Vector2.linearMapping_AfterTranslate(v,this.transform_matrix)
+        return Vector2.linearMapping__AfterTranslate(v,this.transform_matrix)
     }
     /** 局部to世界 不使用平移量
      * @param {Vector2} v 
      */
     locToWorld__Untransform(v){
-        return Vector2.linearMapping_Base(v,this.transform_matrix);
+        return Vector2.linearMapping__Base(v,this.transform_matrix);
     }
     /** 世界 to 局部
      * @param {Vector2} v 
      */
     worldToLoc(v){
         var tm=this.world_to_local_matrix;
-        return Vector2.linearMapping_BeforeTranslate(v,tm);
+        return Vector2.linearMapping__BeforeTranslate(v,tm);
     }
-    get_tangent__ByAngle(angle){
-        return this.locToWorld__Untransform(super.get_tangent__ByAngle(angle));
+    get_Tangent__ByAngle(angle){
+        return this.locToWorld__Untransform(super.get_Tangent__ByAngle(angle));
     }
     get_Normal(t){
         var rtn=this.locToWorld__Untransform(super.get_Normal(t)).normalize();
@@ -1648,10 +1648,10 @@ class Data_Arc__Ellipse extends Data_Arc {
     sample_ByAngle(angle){
         return this.locToWorld(super.sample_ByAngle(angle));
     }
-    get_opv__World(){
+    get_Opv__World(){
         return this.locToWorld(super.get_Opv());
     }
-    get_edv__World(){
+    get_Edv__World(){
         return this.locToWorld(super.get_Edv());
     }
     create_PolygonProxy(step_size){
@@ -1729,7 +1729,7 @@ class Data_Arc__Ellipse extends Data_Arc {
      * @return {Data_Arc__Ellipse}
      * 除了起点和终点, 参数可以参考 https://developer.mozilla.org/zh-CN/docs/Web/SVG/Tutorial/Paths#arcs
      */
-    static create_byEndPointRadiusRotate__UnRotate(op,ed,rx,ry,large_arc_flag,sweep_flag){
+    static create_ByEndPointRadiusRotate__UnRotate(op,ed,rx,ry,large_arc_flag,sweep_flag){
         var arc=new Data_Arc__Ellipse(0,0,rx,ry,0,0),
             d_ed=Vector2.dif(ed,op),
             _ed=arc.worldToLoc(d_ed),
@@ -1790,7 +1790,7 @@ class Data_Arc__Ellipse extends Data_Arc {
             rotate_Matrix_i=Matrix2x2.create.rotate(_rotate_angle),
             _op=Vector2.copy(op).linearMapping(rotate_Matrix),
             _ed=Vector2.copy(ed).linearMapping(rotate_Matrix);
-        var arc=Data_Arc__Ellipse.create_byEndPointRadiusRotate__UnRotate(_op,_ed,rx,ry,large_arc_flag,sweep_flag),
+        var arc=Data_Arc__Ellipse.create_ByEndPointRadiusRotate__UnRotate(_op,_ed,rx,ry,large_arc_flag,sweep_flag),
             c=new Vector2(arc.cx,arc.cy).linearMapping(rotate_Matrix_i);
         arc.cx=c.x;
         arc.cy=c.y;
@@ -2071,7 +2071,7 @@ class Data_Sector extends Data_Arc{
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static linearMapping_Base(v,m,anchorPoint){
+    static linearMapping__Base(v,m,anchorPoint){
     }
     /** 先进行2x2变换 再平移
      * @param {Vector2} v 
@@ -2079,8 +2079,8 @@ class Data_Sector extends Data_Arc{
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static linearMapping_AfterTranslate(v,m,anchorPoint){
-        var rtnv=Vector2.linearMapping_Base(Vector2.copy(v),m,anchorPoint),
+    static linearMapping__AfterTranslate(v,m,anchorPoint){
+        var rtnv=Vector2.linearMapping__Base(Vector2.copy(v),m,anchorPoint),
             tm=(v.a===undefined)?arguments[1]:arguments[0];
         rtnv.x+=tm.e;
         rtnv.y+=tm.f;
@@ -2092,7 +2092,7 @@ class Data_Sector extends Data_Arc{
      * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static linearMapping_BeforeTranslate(v,m,anchorPoint){
+    static linearMapping__BeforeTranslate(v,m,anchorPoint){
         var tv,tm,rtn;
         if(v.a===undefined){
             tv=Vector2.copy(arguments[0]);
@@ -2101,7 +2101,7 @@ class Data_Sector extends Data_Arc{
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            rtn=Vector2.linearMapping_Base(tv,tm,anchorPoint);
+            rtn=Vector2.linearMapping__Base(tv,tm,anchorPoint);
         }
         else{
             tm=arguments[0];
@@ -2110,7 +2110,7 @@ class Data_Sector extends Data_Arc{
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            rtn=Vector2.linearMapping_Base(tm,tv,anchorPoint);
+            rtn=Vector2.linearMapping__Base(tm,tv,anchorPoint);
         }
         
         return rtn;
@@ -2126,9 +2126,9 @@ class Data_Sector extends Data_Arc{
      */
     static linearMapping(v,m,translate_befroeOrAfter=false,anchorPoint){
         if(translate_befroeOrAfter){
-            return Vector2.linearMapping_BeforeTranslate(v,m,anchorPoint);
+            return Vector2.linearMapping__BeforeTranslate(v,m,anchorPoint);
         }else{
-            return Vector2.linearMapping_AfterTranslate(v,m,anchorPoint);
+            return Vector2.linearMapping__AfterTranslate(v,m,anchorPoint);
         }
     }
     /** 判断向量是否相等
@@ -2430,7 +2430,7 @@ class Matrix2x2T extends Matrix2x2{
         return this;
     }
     create_Inverse(){
-        var temp=Matrix2x2.prototype.create_inverse.call(this);
+        var temp=super.create_Inverse();
         if(temp){
             temp=Matrix2x2T.prototype.copy.call(temp);
             temp.e=-1*this.e;
@@ -3120,34 +3120,34 @@ class BezierCurve{
         }
         return this._points;
     }
-    set coefficient_Y(coefficient_Y){
+    set coefficient_Y(coefficient_y){
         this._coefficient_Y=coefficient_Y;
         this.clearPoints();
     }
-    set coefficient_X(coefficient_X){
+    set coefficient_X(coefficient_x){
         this._coefficient_X=coefficient_X;
         this.clearPoints();
     }
-    get coefficient_Y(){
+    get coefficient_y(){
         return this._coefficient_Y;
     }
-    get coefficient_X(){
+    get coefficient_x(){
         return this._coefficient_X;
     }
     /** @returns {BezierCurve} 返回一条对齐到x轴后的曲线
      */
-    get align_Proxy(){
+    get align_proxy(){
         if(this._align_proxy===null){
             this.refresh_Align();
         }
         return this._align_proxy;
     }
     /** @type {Number} 拟合多边形 t 步长 */
-    get polygon_proxy_want_Sp(){
+    get polygon_proxy_want_sp(){
         return this._polygon_proxy_want_sp;
     }
     /** @type {Number} 拟合多边形 t 步长 */
-    set polygon_proxy_want_Sp(step_size){
+    set polygon_proxy_want_sp(step_size){
         var sp=Math.abs(step_size);
         this._polygon_proxy_want_sp=sp>1?1:sp;
     }
@@ -3471,7 +3471,7 @@ class BezierCurve{
         return 0;
     }
     /** 弧长显式查找表 */
-    get length_long_Lut(){
+    get length_long_lut(){
         var polygon=this.polygon_proxy;
         if(this._length_long_lut[0].l===null){
             var temp;
@@ -3484,7 +3484,7 @@ class BezierCurve{
         return this._length_long_lut;
     }
     /**@type {Polygon} 拟合曲线的多边形 */
-    get polygon_Proxy(){
+    get polygon_proxy(){
         if(this._polygon_proxy===null||this._polygon_proxy_sp!==this.polygon_proxy_want_sp){
             var temp=this.create_PolygonProxy(this.polygon_proxy_want_sp);
             this._polygon_proxy_sp=this.polygon_proxy_want_sp;
@@ -3816,15 +3816,15 @@ class Unilateral_Bezier_Box{
 }
 // 函数重载 -------------------------------------------------------------------------------------------
 do{
-    Vector2.linearMapping_base=OlFunction.create();
-    Vector2.linearMapping_base.addOverload([Vector2,Matrix2x2],function(v,m){
+    Vector2.linearMapping__Base=OlFunction.create();
+    Vector2.linearMapping__Base.addOverload([Vector2,Matrix2x2],function(v,m){
         var rtn = new Vector2(
             v.x*m.a+v.y*m.c,
             v.x*m.b+v.y*m.d
         )
         return rtn;
     },"行向量后乘矩阵");
-    Vector2.linearMapping_base.addOverload([Matrix2x2,Vector2,],function(m,v){
+    Vector2.linearMapping__Base.addOverload([Matrix2x2,Vector2,],function(m,v){
         var rtn = new Vector2(
             v.x*m.a+v.y*m.b,
             v.x*m.c+v.y*m.d
@@ -4411,7 +4411,7 @@ class Path{
         return Path.copy(this);
     }
     /** 指令集合 */
-    set command_Set(val){
+    set command_set(val){
         if((val.constructor===String)||(val instanceof String)){
             this._command_set.length=0;
             PathCommand.load_SvgString(val,this._command_set);
@@ -4425,11 +4425,11 @@ class Path{
         return this.command_set;
     }
     /** 指令集合 */
-    get command_Set(){
+    get command_set(){
         return this._command_set;
     }
     /** 指令的长度(个数) */
-    get command_Length(){
+    get command_length(){
         return this._command_set.length;
     }
     /** 获取落点
@@ -4601,7 +4601,7 @@ class Path{
     insert_Command(index,command){
         var temp=Path.bePathCommandSet(command);
         this._command_set.insertList(index,temp);
-        this._callback_cmdInsert__ToMathAndPoint(index,1);
+        this._callback_CmdInsert__ToMathAndPoint(index,1);
     }
     /** 修改一条指令
      * @param {Number} index 要修改的下标
@@ -4609,7 +4609,7 @@ class Path{
      */
     set_Command(index,command){
         this._command_set[index].set(command);
-        this._callback_cmdUpdate__ToMathAndPoint(index);
+        this._callback_CmdUpdate__ToMathAndPoint(index);
     }
     /** 追加一条指令
      * @param {pathCommand} command 
@@ -4623,7 +4623,7 @@ class Path{
      */
     remove_Command(index){
         this._command_set.splice(index,1);
-        this._callback_cmdremove__ToMathAndPoint(index);
+        this._callback_Cmdremove__ToMathAndPoint(index);
     }
     /** 读取一段指令
      * @param {Number} index 下标
@@ -4651,7 +4651,7 @@ class Path{
     /** 使用index清除缓存的落点和数学对象 如果是后继是相对坐标, 将会继续清理
      * @param {Number}} index 开始计算的下标
      */
-    clear_pointMath__ByIndex(index,m_flag){
+    clear_PointMath__ByIndex(index,m_flag){
         var cmds=this.command_set,
             i=index,
             d=cmds[i],
@@ -4677,7 +4677,7 @@ class Path{
             if((d.command==='Z')||(d.command==='z')){
                 this._math_data[i]=null;
                 this._math_data[i+1]=null;
-                i=this.clear_pointMath__ByIndex(i);
+                i=this.clear_PointMath__ByIndex(i);
                 
             }
             ++i;
@@ -4691,27 +4691,27 @@ class Path{
     /** 指令修改后的回调 清理需要相对坐标的缓存内容 
      * @param {Number} index  修改的下标
      */
-    _callback_cmdUpdate__ToMathAndPoint(index){
-        this.clear_pointMath__ByIndex(index);
+    _callback_CmdUpdate__ToMathAndPoint(index){
+        this.clear_PointMath__ByIndex(index);
     }
     /** 移除指令后的回调 清理需要相对坐标的缓存内容 
      * @param {Number} index  修改的下标
      * @param {Boolean} 移除的指令是否是m指令
      */
-    _callback_cmdremove__ToMathAndPoint(index,m_flag){
+    _callback_Cmdremove__ToMathAndPoint(index,m_flag){
         var cmds=this.command_set,
             i=index,
             d=cmds[i];
         this._landing_points.splice(index,1);
         this._math_data.splice(index,1);
-        this.clear_pointMath__ByIndex(index,m_flag);
+        this.clear_PointMath__ByIndex(index,m_flag);
         this._math_data[i]=null;
     }
     /** 插入指令后的回调 清理需要相对坐标的缓存内容 
      * @param {Number} index  修改的下标
      * @param {Number} length 插入的长度
      */
-    _callback_cmdInsert__ToMathAndPoint(index,length){
+    _callback_CmdInsert__ToMathAndPoint(index,length){
         var cmds=this.command_set,
             l=length,
             i=index,
@@ -4726,7 +4726,7 @@ class Path{
             }
             ++i;
         }
-        this.clear_pointMath__ByIndex(i,mf);
+        this.clear_PointMath__ByIndex(i,mf);
     }
 
     /** 刷新/清理 缓存
@@ -4745,7 +4745,7 @@ class Path{
         return this.length_long_lut[this.command_length-1];
     }
     /** @type {Number[]} 长度显式查找表*/
-    get length_long_Lut(){
+    get length_long_lut(){
         if(this._length_long_lut.length!==this.command_length){
             this._length_long_lut.length=0;
             var i,temp,
@@ -4784,7 +4784,7 @@ class Path{
         if(l<0){
             l+=this.get_LengthLong();
         }
-        var i=select_lut__Binary(this.length_long_lut,l);
+        var i=select_Lut__Binary(this.length_long_lut,l);
         temp=this.get_MathData(i);
         _t=temp.get_t_ByLengthLong(l-this.length_long_lut[i-1]);
         

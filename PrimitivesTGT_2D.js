@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-12 12:25:18
+ * @LastEditTime: 2022-04-12 17:57:58
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -187,13 +187,13 @@ class PrimitiveTGT{
     /** 变换矩阵 不要直接修改矩阵的参数 
      * @param {Matrix2x2T} m 
      */
-    set transform_Matrix(m){
+    set transform_matrix(m){
         this._transform_matrix=m.copy();
         this._worldToLocalM=undefined;
         return this._transform_matrix;
     }
     /**@type {Matrix2x2T} 变换矩阵 不要直接修改矩阵的参数 */
-    get transform_Matrix(){
+    get transform_matrix(){
         return this._transform_matrix;
     }
     /** 世界坐标变成局部坐标的矩阵 */
@@ -408,17 +408,17 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
         /**@type {Bezier_Polygon} */
         this._world_bezier=null;
     }
-    set transform_Matrix(m){
+    set transform_matrix(m){
         super.transform_matrix=m;
         this._world_bezier=null;
     }
-    get transform_Matrix(){
+    get transform_matrix(){
         return this._transform_matrix;
     }
-    get want_to_ClosePath(){
+    get want_to_closePath(){
         return this._want_to_closePath;
     }
-    set want_to_ClosePath(val){
+    set want_to_closePath(val){
         this._want_to_closePath=val;
         if(this.data)this.data.closed_Flag=val;
     }
@@ -433,7 +433,7 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
     get data(){
         return this._data;
     }
-    get world_Bezier(){
+    get world_bezier(){
         if(!this._world_bezier)this.refresh_WorldBezier();
         return this._world_bezier;
     }
@@ -693,7 +693,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @param {Number[]} path 以下标形式的路径
      * @return {Matrix2x2T} 返回一个新的矩阵
      */
-    get_descendantTransformMatrix__i(path){
+    get_DescendantTransformMatrix__I(path){
         return this.get_DescendantTransformMatrix(path).create_Inverse();
     }
     
@@ -733,48 +733,47 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @param {Vector2} v       世界坐标系的点
      */
     worldToDescendant(path,v){
-        var m=this.get_descendantTransformMatrix__i(path);
-        return Vector2.linearMapping_BeforeTranslate(v,m);
+        var m=this.get_DescendantTransformMatrix__I(path);
+        return Vector2.linearMapping__BeforeTranslate(v,m);
     }
     descendantToWorld(path,v){
         var m=this.get_DescendantTransformMatrix(path);
-        return Vector2.linearMapping_AfterTranslate(v,m);
+        return Vector2.linearMapping__AfterTranslate(v,m);
     }
 }
 
 // PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
 
-function _PrimitiveTGT__is_Inside(_x,_y){
+function _PrimitiveTGT__Is_Inside(_x,_y){
     var v=this.worldToLocal(_x,_y);
     return this.data.is_Inside(v.x,v.y,this.want_to_closePath);
 }
 PrimitiveTGT.prototype.is_inside=OlFunction.create();
-PrimitiveTGT.prototype.is_inside.addOverload([Number,Number],_PrimitiveTGT__is_inside);
+PrimitiveTGT.prototype.is_inside.addOverload([Number,Number],_PrimitiveTGT__Is_Inside);
 PrimitiveTGT.prototype.is_inside.addOverload([Vector2],function(_v){
-    return _PrimitiveTGT__is_inside.call(this,_v.x,_v.y)
+    return _PrimitiveTGT__Is_Inside.call(this,_v.x,_v.y)
 });
 
 // 局部坐标 to 世界坐标
-function _PrimitiveTGT__LocalToWorld(v){
-    return Vector2.linearMapping_AfterTranslate(v,this.transform_matrix);
+function _localToWorld__PrimitiveTGT(v){
+    return Vector2.linearMapping__AfterTranslate(v,this.transform_matrix);
 }
 PrimitiveTGT.prototype.localToWorld=OlFunction.create();
 PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
-    return _PrimitiveTGT__localToWorld.call(this,new Vector2(x,y));
+    return _localToWorld__PrimitiveTGT.call(this,new Vector2(x,y));
 });
-PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_PrimitiveTGT__localToWorld);
+PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_localToWorld__PrimitiveTGT);
 
 // 世界坐标 to 局部坐标
-function _PrimitiveTGT__WorldToLocal(v){
+function _worldToLocal__PrimitiveTGT(v){
     var tm=this.worldToLocalM;
-    return Vector2.linearMapping_BeforeTranslate(v,tm);
+    return Vector2.linearMapping__BeforeTranslate(v,tm);
 }
 PrimitiveTGT.prototype.worldToLocal=OlFunction.create();
 PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
-    return _PrimitiveTGT__worldToLocal.call(this,new Vector2(x,y));
+    return _worldToLocal__PrimitiveTGT.call(this,new Vector2(x,y));
 });
-PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_PrimitiveTGT__worldToLocal
-);
+PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_worldToLocal__PrimitiveTGT);
 
 class CQRS_Command__PrimitiveTGT extends CQRS_Command{
     /**
