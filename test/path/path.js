@@ -57,7 +57,7 @@ var pathData=new Polygon([
 var path=new PrimitiveTGT__Polygon(pathData);
 path.fill_Material=new Canvas2d__Material("#0000");
 var renderer=new Renderer_PrimitiveTGT__Canvas2D([path],ctx);
-renderer.render_all();
+renderer.render_All();
 CtrlCanvas2d.dot(ctx,pathData.sample(0.9999).v,4);
 
 
@@ -126,7 +126,7 @@ d.transform_matrix=new Matrix2x2T().translate(0,200).scale(2,2);
 var i=1;
 var a=new AnimationCtrl(function(t){
     ctx.clearRect(0,0,500,500)
-    renderer.render_all();
+    renderer.render_All();
     var temp=pathData.sample(t);
     CtrlCanvas2d.dot(ctx,temp.v,4);
     CtrlCanvas2d.dot(ctx,temp.v.sum(temp.n.np(-20)),4);

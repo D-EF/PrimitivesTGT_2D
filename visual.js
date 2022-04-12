@@ -103,7 +103,7 @@ class AnimationCtrl{
         this.time_reciprocal=1/time;
         this._keepGo=true;
         this._startTime=performance.now();
-        this.r_frame();
+        this.r_Frame();
     }
     /**
      * 停下动作
@@ -116,7 +116,7 @@ class AnimationCtrl{
     /**
      * 申请动作在 requestAnimationFrame
      */
-     r_frame(){
+     r_Frame(){
         var that=this;
         if(this._keepGo&&!that.discontinueFunction())
         this.animationID=requestAnimationFrame(
@@ -125,12 +125,12 @@ class AnimationCtrl{
                 if(t>=1){
                     t=1;
                     if(that.frameCallback instanceof Function) that.frameCallback(t,this);
-                    that.r_frame();
+                    that.r_Frame();
                     that.stop();
                     return;
                 }
                 if(that.frameCallback instanceof Function) that.frameCallback(t,this);
-                that.r_frame();
+                that.r_Frame();
             }
         )
     }

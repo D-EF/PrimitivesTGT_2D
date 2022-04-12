@@ -113,8 +113,8 @@ var animation_curve=new BezierCurve([
 ]);
 /** 把看上去是矩形的东西变成一块logo
  */
-function rect_to_logoItem(t){
-    var t=animation_curve.sample_y(animation_curve.get_t_byX(t));
+function rect_to_LogoItem(t){
+    var t=animation_curve.sample_y(animation_curve.get_t_ByX(t));
     var d1=v2Animation(d1start,d1end,t);
     var d2=v2Animation(d2start,d2end,t);
     itemPolygonNodes[1].x=d1.x;
@@ -131,14 +131,14 @@ function rect_to_logoItem(t){
 /** 把logo缩小
  */
 function logoScale(t){
-    var t=animation_curve.sample_y(animation_curve.get_t_byX(t));
+    var t=animation_curve.sample_y(animation_curve.get_t_ByX(t));
     tgt_group._transform_matrix=m2tAnimation(gm,gm_end,t);
     ctxRender();
 }
 /** 把logo从item变成完整的一块
  */
 function logoItemShow(t){
-    var t=animation_curve.sample_y(animation_curve.get_t_byX(t));
+    var t=animation_curve.sample_y(animation_curve.get_t_ByX(t));
     tgt_group0._transform_matrix=new Matrix2x2T().rotate(valueAnimation(0, 45,t)*Math.DEG);
     tgt_group1._transform_matrix=new Matrix2x2T().rotate(valueAnimation(0,165,t)*Math.DEG);
     tgt_group2._transform_matrix=new Matrix2x2T().rotate(valueAnimation(0,285,t)*Math.DEG);
@@ -176,7 +176,7 @@ var textPolygonD=new Polygon([
 ]);
 var textTGT_D=new CanvasPolygonTGT();
 textTGT_D.data=textPolygonD;
-text_group.add_children(textTGT_D);
+text_group.add_Children(textTGT_D);
 
 var textPolygonE1=new Polygon([
     new Vector2(), //0
@@ -187,7 +187,7 @@ var textPolygonE1=new Polygon([
 ]);
 var textTGT_E1=new CanvasPolygonTGT();
 textTGT_E1.data=textPolygonE1;
-text_group.add_children(textTGT_E1);
+text_group.add_Children(textTGT_E1);
 textTGT_E1.transform_matrix=new Matrix2x2T().translate(100,0)
 
 var textPolygonE2=new Polygon([
@@ -196,7 +196,7 @@ var textPolygonE2=new Polygon([
 ]);
 var textTGT_E2=new CanvasPolygonTGT();
 textTGT_E2.data=textPolygonE2;
-text_group.add_children(textTGT_E2);
+text_group.add_Children(textTGT_E2);
 textTGT_E2.transform_matrix=new Matrix2x2T().translate(100,0)
 
 var textPolygonF1=new Polygon([
@@ -207,12 +207,12 @@ var textPolygonF1=new Polygon([
 ]);
 var textTGT_F1=new CanvasPolygonTGT();
 textTGT_F1.data=textPolygonF1;
-text_group.add_children(textTGT_F1);
+text_group.add_Children(textTGT_F1);
 textTGT_F1.transform_matrix=new Matrix2x2T().translate(200,0)
 
 var textTGT_F2=textTGT_E2.copy();
 textTGT_F2.transform_matrix=new Matrix2x2T().translate(200,0)
-text_group.add_children(textTGT_F2);
+text_group.add_Children(textTGT_F2);
 
 var animation2=new AnimationCtrl();
 function animation_D1f(t){

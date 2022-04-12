@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-11 20:07:39
+ * @LastEditTime: 2022-04-12 12:25:18
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -67,7 +67,7 @@ class Renderer_PrimitiveTGT{
     /** 将渲染器从静态渲染器列表中移除
      * @param {Renderer_PrimitiveTGT} renderer 渲染器实例
      */
-    static remove_in_rendererList(renderer){
+    static remove_in_RendererList(renderer){
         Renderer_PrimitiveTGT.rendererList.splice(
             Renderer_PrimitiveTGT.rendererList.indexOf(renderer),1
         )
@@ -89,7 +89,7 @@ class Renderer_PrimitiveTGT{
      * @param {PrimitiveTGT} tgt 
      */
     render(tgt){}
-    render_all(){
+    render_All(){
         for(var i=0;i<this.tgtList.length;++i){
             this.render(this.tgtList[i]);
         }
@@ -175,30 +175,30 @@ class PrimitiveTGT{
     /** 获取最小的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-    get_min(){
-        return this.data.get_min();
+    get_Min(){
+        return this.data.get_Min();
     }
     /** 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-    get_max(){
-        return this.data.get_max();
+    get_Max(){
+        return this.data.get_Max();
     }
     /** 变换矩阵 不要直接修改矩阵的参数 
      * @param {Matrix2x2T} m 
      */
-    set transform_matrix(m){
+    set transform_Matrix(m){
         this._transform_matrix=m.copy();
         this._worldToLocalM=undefined;
         return this._transform_matrix;
     }
     /**@type {Matrix2x2T} 变换矩阵 不要直接修改矩阵的参数 */
-    get transform_matrix(){
+    get transform_Matrix(){
         return this._transform_matrix;
     }
     /** 世界坐标变成局部坐标的矩阵 */
     get worldToLocalM(){
-        this.refresh_worldToLocalM();
+        this.refresh_WorldToLocalM();
         return this._worldToLocalM;
     }
     // 这是个有多个重载的函数 , 在class定义的外面实现
@@ -224,9 +224,9 @@ class PrimitiveTGT{
     }
     /** 刷新逆变换矩阵
      */
-    refresh_worldToLocalM(){
+    refresh_WorldToLocalM(){
         if(this._worldToLocalM===undefined){
-            this._worldToLocalM=this.transform_matrix.create_inverse();
+            this._worldToLocalM=this.transform_matrix.create_Inverse();
         }
     }
     /** 判断某一点是否在目标内部
@@ -235,7 +235,7 @@ class PrimitiveTGT{
      * @param {Vector2} _v   重载2的参数 世界坐标向量
      * @returns {Boolean} 
     */
-    is_inside(_x,_y){
+    is_Inside(_x,_y){
         // 2个重载
     }
     /** 转换成多边形
@@ -243,7 +243,7 @@ class PrimitiveTGT{
      * @returns {PrimitiveTGT__Polygon}
      */
     toPolygon(_accuracy=def_accuracy){
-        var rtn = new PrimitiveTGT__Polygon(this.data.create_polygonProxy(...arguments));
+        var rtn = new PrimitiveTGT__Polygon(this.data.create_PolygonProxy(...arguments));
         rtn.fillStyle   =this.fillStyle;
         rtn.strokeStyle =this.strokeStyle;
         rtn.lineWidth   =this.lineWidth;
@@ -256,7 +256,7 @@ class PrimitiveTGT{
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
      * @returns {PrimitiveTGT__Polygon[]} 因为只有一个tgt所以是 length 为 1 的数组
      */
-    create_worldPolygons(f,_accuracy=def_accuracy){
+    create_WorldPolygons(f,_accuracy=def_accuracy){
         /** @type {PrimitiveTGT__Polygon} */
         var rtn;
         if((!f)&&(rtn instanceof PrimitiveTGT__Polygon)){
@@ -408,17 +408,17 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
         /**@type {Bezier_Polygon} */
         this._world_bezier=null;
     }
-    set transform_matrix(m){
+    set transform_Matrix(m){
         super.transform_matrix=m;
         this._world_bezier=null;
     }
-    get transform_matrix(){
+    get transform_Matrix(){
         return this._transform_matrix;
     }
-    get want_to_closePath(){
+    get want_to_ClosePath(){
         return this._want_to_closePath;
     }
-    set want_to_closePath(val){
+    set want_to_ClosePath(val){
         this._want_to_closePath=val;
         if(this.data)this.data.closed_Flag=val;
     }
@@ -433,55 +433,55 @@ class PrimitiveTGT__Bezier extends PrimitiveTGT{
     get data(){
         return this._data;
     }
-    get world_bezier(){
-        if(!this._world_bezier)this.refresh_worldBezier();
+    get world_Bezier(){
+        if(!this._world_bezier)this.refresh_WorldBezier();
         return this._world_bezier;
     }
     /** data顶点修改时的回调委托
      * @param {Number} i 被修改的点的下标
      */
-    in_data_nodeChange(i){
+    in_data_NodeChange(i){
         if(this._world_bezier)
-        this.world_bezier.setNode(i,this.calc_worldNode(i));
+        this.world_bezier.setNode(i,this.calc_WorldNode(i));
     }
     /** data顶点被增加或删除的回调委托
      * @param {Number} i 被修改的点的下标
      * @param {Boolean} f 插入或删除
      */
-    in_data_nodesChange(i,f){
+    in_data_NodesChange(i,f){
         if(this._world_bezier)
         if(f){
-            this.world_bezier.insert_node(i,this.calc_worldNode(i));
+            this.world_bezier.insert_Node(i,this.calc_WorldNode(i));
         }
         else{
-            this.world_bezier.remove_node(i);
+            this.world_bezier.remove_Node(i);
         }
     }
     /** 重新加载世界坐标系的所有节点 在变换矩阵或data被修改后使用
      * @returns {Bezier_Polygon}
      */
-    refresh_worldBezier(){
+    refresh_WorldBezier(){
         return this._world_bezier=Bezier_Polygon.linearMapping(this.data,this.transform_matrix);
     }
     /** 获取世界坐标的节点
      * @param {Number} i 节点下标
      * @returns 世界坐标的节点
      */
-    get_worldNode(i){
+    get_WorldNode(i){
         return this.world_bezier.nodes[i];
     }
     /** 获取世界坐标下的节点的数学曲线对象
      * @param {Number} i 前驱节点下标
      * @return {BezierCurve}
      */
-    get_worldBezierCurve(i){
-        return this.world_bezier.get_bezierCurve(i);
+    get_WorldBezierCurve(i){
+        return this.world_bezier.get_BezierCurve(i);
     }
     /** 计算世界坐标的节点
      * @param {Number} i 节点下标
      * @returns 世界坐标的节点
      */
-    calc_worldNode(i){
+    calc_WorldNode(i){
         return new Bezier_Node(
             this.localToWorld(this.data.nodes[i].node),
             this.localToWorld(this.data.nodes[i].hand_before),
@@ -522,11 +522,11 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
  */
  class PrimitiveTGT__Group extends PrimitiveTGT{
     /** 
-     * @param {(PrimitiveTGT|PrimitiveTGT__Group)[]} tgts 
+     * @param {PrimitiveTGT[]} tgts 子节点数组
      */
     constructor(tgts){
         super()
-        /**@type {PrimitiveTGT[]} */
+        /**@type {PrimitiveTGT[]} 子节点集合*/
         this.data;
         if(tgts!==undefined){
             this.data=[].concat(tgts);
@@ -544,13 +544,13 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     /** 获取最小的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-     get_min(){
+     get_Min(){
         return this.min;
     }
     /** 获取最大的(局部)坐标
      * @returns {Vector2} 返回一个向量
      */
-    get_max(){
+    get_Max(){
         return this.max;
     }
     insert(index,tgt){
@@ -560,38 +560,38 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @param {PrimitiveTGT} tgt Primitive对象
      * @returns {Numer} 返回长度
      */
-    add_children(tgt){
+    add_Children(tgt){
         return this.data.push(tgt);
     }
     /** 添加子项
      * @param {PrimitiveTGT[]} tgt Primitive对象
      */
-    add_childrens(tgts){
+    add_Childrens(tgts){
         this.data=this.data.concat(tgts);
     }
     /** 使用路径增加一个后代元素
      * @param {Number[]} path 下标形式的路径 倒数第二项应为 group
      */
-    remove_descendantByPath(path,tgt){
-        var pg=this.get_parentByPath(path);
+    remove_DescendantByPath(path,tgt){
+        var pg=this.get_ParentByPath(path);
         pg.insert(path[path.length-1],tgt);
     }
     /** 移除一个子项
      * @param {Number} index 下标
      */
-    remove_childrenByIndex(index){
+    remove_ChildrenByIndex(index){
         this.data.splice(index,1);
     }
     /** 使用路径移除一个后代元素
      * @param {Number[]} path 下标形式的路径 倒数第二项应为 group
      */
-    remove_descendantByPath(path){
-        this.get_parentByPath(path).remove_childrenByIndex(path[path.length-1]);
+    remove_DescendantByPath(path){
+        this.get_ParentByPath(path).remove_ChildrenByIndex(path[path.length-1]);
     }
     /** 移除一个子项
      * @param {PrimitiveTGT} tgt 必须是同一个子项
      */
-    remove_children(tgt){
+    remove_Children(tgt){
         this.data.splice(this.data.indexOf(tgt),1);
     }
     /** 获取点在某子项内部
@@ -611,7 +611,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
         }
         var v=this.worldToLocal(x,y);
         for(var i=this.data.length-1;i>=0;--i){
-            if(this.data[i].is_inside(v)){
+            if(this.data[i].is_Inside(v)){
                 console.log(i)
                 return i;
             }
@@ -625,7 +625,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @param {Vector2} _v   重载2的参数 世界坐标向量
      * @returns {Boolean} 返回是否在子项内
      */
-    is_inside(_x,_y){
+    is_Inside(_x,_y){
         return this.inside_i(_x,_y)!==-1;
     }
     /** 生成世界坐标的多边形集合
@@ -633,12 +633,12 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @param {Number} _accuracy 转换精度 用于圆弧或曲线转换
      * @returns {PrimitiveTGT__Polygon[]}
      */
-    create_worldPolygons(f,_accuracy=def_accuracy){
+    create_WorldPolygons(f,_accuracy=def_accuracy){
         /**@type {PrimitiveTGT__Polygon[]}  */
         var rtn=[];
         var i = this.data.length-1;
         for(;i>=0;--i){
-            rtn=rtn.concat(this.data[i].create_worldPolygons(true,_accuracy));
+            rtn=rtn.concat(this.data[i].create_WorldPolygons(true,_accuracy));
         }
         console.log('rtn :>> ', rtn);
         for(i=rtn.length-1;i>=0;--i){
@@ -650,7 +650,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     /** 获取后代的tgt对象
      * @param {Number[]} path 
      */
-    get_descendantByPath(path){
+    get_DescendantByPath(path){
         var i=0,
             rtn=this;
         while(path[i]!==undefined&&path[i]>=0){
@@ -663,7 +663,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
     /** 获取后代的tgt对象的父级
      * @param {Number[]} path 
      */
-    get_parentByPath(path){
+    get_ParentByPath(path){
         var i=0,
             rtn=this;
         if(path)
@@ -678,7 +678,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @param {Matrix2x2T} [m] 初始化矩阵 返回值将先使用这个矩阵然后再乘
      * @return {Matrix2x2T} 返回一个新的矩阵
      */
-    get_descendantTransformMatrix(path){
+    get_DescendantTransformMatrix(path){
         var rtn=Matrix2x2T.copy(this.transform_matrix);
         var i=0,
             temp=this;
@@ -694,7 +694,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @return {Matrix2x2T} 返回一个新的矩阵
      */
     get_descendantTransformMatrix__i(path){
-        return this.get_descendantTransformMatrix(path).create_inverse();
+        return this.get_DescendantTransformMatrix(path).create_Inverse();
     }
     
     /** 使用路径插入新后代
@@ -702,7 +702,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      * @param {PrimitiveTGT} tgt
      * @return {Number[]} 返回指向新加入的对象的path
      */
-    insert_byPath(path,tgt){
+    insert_ByPath(path,tgt){
         var i=0,j;
         var a,b;
         var 
@@ -719,7 +719,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
             throw new Error ("Can not find this path!");
         }
         if(b.dataType==="Group"){
-            newpath[i]=b.add_children(tgt)-1;
+            newpath[i]=b.add_Children(tgt)-1;
         }else{
             --i;
             newpath[i]=newpath[i]+1;
@@ -734,19 +734,19 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
      */
     worldToDescendant(path,v){
         var m=this.get_descendantTransformMatrix__i(path);
-        return Vector2.linearMapping_beforeTranslate(v,m);
+        return Vector2.linearMapping_BeforeTranslate(v,m);
     }
     descendantToWorld(path,v){
-        var m=this.get_descendantTransformMatrix(path);
-        return Vector2.linearMapping_afterTranslate(v,m);
+        var m=this.get_DescendantTransformMatrix(path);
+        return Vector2.linearMapping_AfterTranslate(v,m);
     }
 }
 
 // PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
 
-function _PrimitiveTGT__is_inside(_x,_y){
+function _PrimitiveTGT__is_Inside(_x,_y){
     var v=this.worldToLocal(_x,_y);
-    return this.data.is_inside(v.x,v.y,this.want_to_closePath);
+    return this.data.is_Inside(v.x,v.y,this.want_to_closePath);
 }
 PrimitiveTGT.prototype.is_inside=OlFunction.create();
 PrimitiveTGT.prototype.is_inside.addOverload([Number,Number],_PrimitiveTGT__is_inside);
@@ -755,8 +755,8 @@ PrimitiveTGT.prototype.is_inside.addOverload([Vector2],function(_v){
 });
 
 // 局部坐标 to 世界坐标
-function _PrimitiveTGT__localToWorld(v){
-    return Vector2.linearMapping_afterTranslate(v,this.transform_matrix);
+function _PrimitiveTGT__LocalToWorld(v){
+    return Vector2.linearMapping_AfterTranslate(v,this.transform_matrix);
 }
 PrimitiveTGT.prototype.localToWorld=OlFunction.create();
 PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
@@ -765,9 +765,9 @@ PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
 PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_PrimitiveTGT__localToWorld);
 
 // 世界坐标 to 局部坐标
-function _PrimitiveTGT__worldToLocal(v){
+function _PrimitiveTGT__WorldToLocal(v){
     var tm=this.worldToLocalM;
-    return Vector2.linearMapping_beforeTranslate(v,tm);
+    return Vector2.linearMapping_BeforeTranslate(v,tm);
 }
 PrimitiveTGT.prototype.worldToLocal=OlFunction.create();
 PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){

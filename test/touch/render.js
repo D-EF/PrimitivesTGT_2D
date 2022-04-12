@@ -53,7 +53,7 @@ t2.fill_uvwh={x:0.5,y:1};
 t2.lineWidth=2;
 t2.want_to_closePath=true;
 t2.stroke_Material=new Canvas2d__Material("#0f0");
-t2.transform_matrix=new Matrix2x2T().set_translate(120,200).rotate(45*deg);
+t2.transform_matrix=new Matrix2x2T().set_Translate(120,200).rotate(45*deg);
 t2.globalAlpha=0.5;
 
 var t3=new PrimitiveTGT__Polygon(new Polygon([
@@ -68,12 +68,12 @@ t3.fill_Material=spritesMap_Material;
 t3.fill_uv={x:2,y:2};
 t3.lineWidth=2;
 t3.stroke_Material=new Canvas2d__Material("#f00");
-t3.transform_matrix=new Matrix2x2T().set_translate(150,150).rotate(-45*deg);
+t3.transform_matrix=new Matrix2x2T().set_Translate(150,150).rotate(-45*deg);
 
 
 var renderer=new Renderer_PrimitiveTGT__Canvas2D([t1,t2,t3],ctx);
 sp.img.onload=function (){
-    renderer.render_all();
+    renderer.render_All();
 }
 
 
@@ -152,8 +152,8 @@ d.fill_Material=spritesMap_Material;
 d.fill_uv={x:4,y:6};
 d.fill_uvwh={x:0.5,y:0.5};
 renderer.tgtList.push(d);
-// var ka=window.ka=d.data.get_bezierCurve(0);
-// var l=ka.get_arcLength(),spl=l/15;
+// var ka=window.ka=d.data.get_BezierCurve(0);
+// var l=ka.get_ArcLength(),spl=l/15;
 
 var cnm=document.getElementById("cnm");
 cnm.style.left="30px";
@@ -163,7 +163,7 @@ cnm.onclick=function(e){
         var v=Vector2.copy({x:e.offsetX,y:e.offsetY});
     CtrlCanvas2d.dot(ctx,v);
     for(var i = renderer.tgtList.length-1;i>=0;--i){
-        if(renderer.tgtList[i].is_inside(v)){
+        if(renderer.tgtList[i].is_Inside(v)){
             console.log("is clicking",renderer.tgtList[i]);
         }
     }
@@ -171,9 +171,9 @@ cnm.onclick=function(e){
 cnm.onmousemove=function(e){
     d.transform_matrix=new Matrix2x2T().translate(e.offsetX,e.offsetY).rotate(90*deg);
     ctx.clearRect(0,0,1000,1000)
-    renderer.render_all();
+    renderer.render_All();
     var v=t4.worldToLocal(Vector2.copy({x:e.offsetX,y:e.offsetY}));
-    // CtrlCanvas2d.dot(ctx,t4.localToWorld(ka.create_projectionPoint(v,"t").v),3,"#0f0");
+    // CtrlCanvas2d.dot(ctx,t4.localToWorld(ka.create_ProjectionPoint(v,"t").v),3,"#0f0");
     
     if(PrimitiveTGT.isTouch(d,t1))console.log("is touching t1");
     if(PrimitiveTGT.isTouch(d,t2))console.log("is touching t2");

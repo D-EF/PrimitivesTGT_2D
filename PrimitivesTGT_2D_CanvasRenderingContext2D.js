@@ -144,8 +144,8 @@ class Canvas2d__Material extends Material{
         }else{
             var uv=tgt[((type.toString()+'_')||'')+"uv"],
                 uvwh=tgt[((type.toString()+'_')||'')+"uvwh"],
-                vMin=tgt.get_min(),
-                vMax=tgt.get_max();
+                vMin=tgt.get_Min(),
+                vMax=tgt.get_Max();
             return this.texture.createPattern(ctx,uv.x,uv.y,vMin.x,vMin.y,(vMax.x-vMin.x)*uvwh.x,(vMax.y-vMin.y)*uvwh.y);
         }
     }
@@ -279,7 +279,7 @@ Renderer_PrimitiveTGT__Canvas2D.createCanvasPath={
 
         while(i<cmds.length){
             t_c=cmds[i].command;
-            temp= path.get_mathData(i);
+            temp= path.get_MathData(i);
             if((lufn=Path._vector2_c.indexOf(t_c))!==-1){
                 ctx.moveTo(temp.x,temp.y);
             }

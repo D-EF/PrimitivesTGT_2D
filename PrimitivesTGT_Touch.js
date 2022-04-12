@@ -45,7 +45,7 @@ PrimitiveTGT.isTouch=OlFunction.create(isTouch_base);
  * @param {PrimitiveTGT} primitive1
  * @param {PrimitiveTGT} primitive2
  */
-function isTouch_base(primitiveTGT1,primitiveTGT2){
+function isTouch_Base(primitiveTGT1,primitiveTGT2){
     var tgt1 = primitiveTGT1.toPolygon(PrimitiveTGT.accuracy,primitive1.want_to_closePath);
     var tgt2 = primitiveTGT2.toPolygon(PrimitiveTGT.accuracy,primitive2.want_to_closePath);
     var i;
@@ -61,7 +61,7 @@ function isTouch_base(primitiveTGT1,primitiveTGT2){
     if(Polygon.getImpactFlag(tgt1.data,tgt2.data)){
         return true;                                         
     }
-    return primitiveTGT1.is_inside(primitiveTGT2.localToWorld(primitiveTGT2.data.nodes[0]))||primitiveTGT2.is_inside(primitiveTGT1.localToWorld(primitiveTGT1.data.nodes[0]));
+    return primitiveTGT1.is_Inside(primitiveTGT2.localToWorld(primitiveTGT2.data.nodes[0]))||primitiveTGT2.is_Inside(primitiveTGT1.localToWorld(primitiveTGT1.data.nodes[0]));
 }
 
 /** 碰撞检测函数 矩形 弧形(圆形)
@@ -88,17 +88,17 @@ function isTouch_Rect_Polygon(tgt1,tgt2){
 
     var i =nodes.length-1;
     for(;i>=0;--i){
-        if(tgt1.is_inside(nodes[i].x,nodes[i].y)){
+        if(tgt1.is_Inside(nodes[i].x,nodes[i].y)){
             return true;
         }
     }
     if(tgt2.want_to_closePath||t2d.isClosed()){
-        var min=tgt1.localToWorld(tgt1.get_min());
-            max=tgt1.localToWorld(tgt1.get_max());
-        return tgt2.is_inside(min.x,min.y)||
-            tgt2.is_inside(max.x,max.y)||
-            tgt2.is_inside(max.x,min.y)||
-            tgt2.is_inside(min.x,max.y);
+        var min=tgt1.localToWorld(tgt1.get_Min());
+            max=tgt1.localToWorld(tgt1.get_Max());
+        return tgt2.is_Inside(min.x,min.y)||
+            tgt2.is_Inside(max.x,max.y)||
+            tgt2.is_Inside(max.x,min.y)||
+            tgt2.is_Inside(min.x,max.y);
     }
     else{
         return false;
@@ -150,7 +150,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Polygon,PrimitiveTGT__Rect],func
         }
     }
     if(tgt2.want_to_closePath||tgt2.data.isClosed()){
-        return t2d.is_inside(tgt1.data.c.x+tgt1.data.opv.x,tgt1.data.c.y+tgt1.data.opv.y,true);
+        return t2d.is_Inside(tgt1.data.c.x+tgt1.data.opv.x,tgt1.data.c.y+tgt1.data.opv.y,true);
     }
     return false;
 }
@@ -210,7 +210,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Rect],funct
         }
     }
     if(tgt2.want_to_closePath||tgt2.data.isClosed()){
-        return t2d.is_inside(tgt1.data.c.x,tgt1.data.c.y,true);
+        return t2d.is_Inside(tgt1.data.c.x,tgt1.data.c.y,true);
     }
     return false;
 }
@@ -252,7 +252,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Sector],isT
 function isTouch_Bezier_Polygon(tgt1,tgt2){
     var t1d_w=tgt1.world_bezier;
     var t2d1=Polygon.linearMapping(tgt2.data,tgt2.transform_matrix,false);
-    if(t2d1.is_inside(t1d_w.nodes[0].node)||t1d_w.is_inside(t2d1.nodes[0])){
+    if(t2d1.is_Inside(t1d_w.nodes[0].node)||t1d_w.is_Inside(t2d1.nodes[0])){
         return true;
     }
     var i=0,j=0;
@@ -271,7 +271,7 @@ function isTouch_Bezier_Polygon(tgt1,tgt2){
     }
     if(tgt1._want_to_closePath!==1)--i;
     for(;i>=0;--i){
-        tempBezierCurve=t1d_w.get_bezierCurve(i);
+        tempBezierCurve=t1d_w.get_BezierCurve(i);
 
         j=t2d1.nodes.length-1;
         if(tgt2.want_to_closePath){
@@ -310,7 +310,7 @@ function isTouch_Bezier_Arc(tgt1,tgt2){
 
     var i=t1d_l2.nodes.length-1;
     var temp;
-    if(t1d_l2.is_inside(t2d.opv)||t1d_l2.is_inside(t2d.edv)||t2d.is_inside(t1d_l2.nodes[0].node)){
+    if(t1d_l2.is_Inside(t2d.opv)||t1d_l2.is_Inside(t2d.edv)||t2d.is_Inside(t1d_l2.nodes[0].node)){
         return true;
     }
     if(tgt1._want_to_closePath===-1){
@@ -327,7 +327,7 @@ function isTouch_Bezier_Arc(tgt1,tgt2){
     }
     if(tgt1._want_to_closePath!==1)--i;
     for(;i>=0;--i){
-        temp=t1d_l2.get_bezierCurve(i);
+        temp=t1d_l2.get_BezierCurve(i);
         if(tgt2.want_to_closePath){
             // 弧形自闭合,多计算一个直线段(弦)
             if(Math2D.get_intersectionOfLineBezier_v(t2d.opv,t2d.edv,temp).length){
@@ -354,7 +354,7 @@ function isTouch_Bezier_Sector(tgt1,tgt2){
 
     var i=t1d_l2.nodes.length-1;
     var temp;
-    if(t1d_l2.is_inside(t2d.opv)||t1d_l2.is_inside(t2d.edv)||t2d.is_inside(t1d_l2.nodes[0].node)){
+    if(t1d_l2.is_Inside(t2d.opv)||t1d_l2.is_Inside(t2d.edv)||t2d.is_Inside(t1d_l2.nodes[0].node)){
         return true;
     }
     if(tgt1._want_to_closePath===-1){
@@ -372,7 +372,7 @@ function isTouch_Bezier_Sector(tgt1,tgt2){
     }
     if(tgt1._want_to_closePath!==1)--i;
     for(;i>=0;--i){
-        temp=t1d_l2.get_bezierCurve(i);
+        temp=t1d_l2.get_BezierCurve(i);
         // 弧形自闭合,多计算一个直线段(弦)
         if( Math2D.get_intersectionOfLineBezier_v(t2d.c,t2d.edv,temp).length||
             Math2D.get_intersectionOfLineBezier_v(t2d.c,t2d.opv,temp).length){
@@ -395,7 +395,7 @@ PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Sector,PrimitiveTGT__Bezier],fun
 function isTouch_Bezier_Bezier(tgt1,tgt2){
     var t1d_w=tgt1.world_bezier;
     var t2d_w=tgt2.world_bezier;
-    if(t2d_w.is_inside(t1d_w.nodes[0].node)||t1d_w.is_inside(t2d_w.nodes[0].node)){
+    if(t2d_w.is_Inside(t1d_w.nodes[0].node)||t1d_w.is_Inside(t2d_w.nodes[0].node)){
         return true;
     }
     var i=0,j=0;
@@ -410,17 +410,17 @@ function isTouch_Bezier_Bezier(tgt1,tgt2){
         }
         if(tgt2._want_to_closePath!==1)--j;
         for(;j>=0;--j){
-            tempBezierCurve=t2d_w.get_bezierCurve(j);
+            tempBezierCurve=t2d_w.get_BezierCurve(j);
             if(Math2D.get_intersectionOfLineBezier_v(t1d_w.nodes[i].node,t1d_w.nodes[0].node,tempBezierCurve).length>0)return true;
         }
     }
     if(tgt1._want_to_closePath!==1)--i;
     for(;i>=0;--i){
-        tempBezierCurve=t1d_w.get_bezierCurve(i);
+        tempBezierCurve=t1d_w.get_BezierCurve(i);
         j=t2d_w.nodes.length-1;
         if(tgt2._want_to_closePath!==1)--j;
         for(;j>=0;--j){
-            tempBezierCurve2=t2d_w.get_bezierCurve(j);
+            tempBezierCurve2=t2d_w.get_BezierCurve(j);
             if(Math2D.get_intersectionOfBezierBezier_f(tempBezierCurve,tempBezierCurve2,0.01,true).length){
                 return true;
             }
@@ -469,7 +469,7 @@ function isTouch_noTransformPolygons_Group(_tgts,g,pg){
  * @param {PrimitiveTGT__Group} group2
  */
 function isTouch_Group_Group(group1,group2){
-    var g1_Polygons=group1.create_worldPolygons();
+    var g1_Polygons=group1.create_WorldPolygons();
     return isTouch_noTransformPolygons_Group(g1_Polygons,group2);
 }
 PrimitiveTGT.isTouch.addOverload([PrimitiveTGT__Group,PrimitiveTGT__Group],isTouch_Group_Group);

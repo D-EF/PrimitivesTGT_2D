@@ -22,16 +22,16 @@
 #### copy()   拷贝函数   
     @returns {Data_Rect} 返回当前图形的拷贝
   
-#### get_min()  
+#### get_Min()  
     @returns {Vector2} 返回图形最靠近 {-Infinity,-Infinity} 的顶点
 
-#### get_max()  
+#### get_Max()  
     @returns {Vector2} 返回图形最远离 {-Infinity,-Infinity} 的顶点
-#### is_inside(x,y) 判断点是否在内部   
+#### is_Inside(x,y) 判断点是否在内部   
     @param {Number} x 点的x坐标   
     @param {Number} y 点的y坐标   
     @returns {Boolean} 返回 点是否在内部   
-#### create_polygonProxy()获取代理用的多边形    
+#### create_PolygonProxy()获取代理用的多边形    
     @returns {Polygon} 返回一个多边形
 ---
 ## Data_Arc
