@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-12 17:57:58
+ * @LastEditTime: 2022-04-19 15:54:49
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -775,33 +775,6 @@ PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
 });
 PrimitiveTGT.prototype.worldToLocal.addOverload([Vector2],_worldToLocal__PrimitiveTGT);
 
-class CQRS_Command__PrimitiveTGT extends CQRS_Command{
-    /**
-     * 
-     * @param {Boolean} type       执行什么操作 false 赋值, true 运行成员函数
-     * @param {Number[]} tgtpath   子对象路径
-     * @param {String[]} path      执行路径
-     * @param {*[]} _arguments     执行参数
-     */
-    constructor(type,tgtpath,path,_arguments){
-        super(type,path,_arguments);
-        this.tgtpath=tgtpath;
-    }
-    /** 执行动作
-     * @param {PrimitiveTGT__Group} root_tgt 
-     */
-    do(root_tgt){
-        var temp=root_tgt,
-            i=0,
-            l=this.tgtpath.length;
-        while(i<l){
-            temp=temp.data[this.path[i]];
-            ++i;
-        }
-        super.do(temp);
-    }
-}
-// todo
 
 export{
     Material,
@@ -814,5 +787,4 @@ export{
     PrimitiveTGT__Bezier,
     PrimitiveTGT__Group,
     PrimitiveTGT__Path,
-    CQRS_Command__PrimitiveTGT
 };
