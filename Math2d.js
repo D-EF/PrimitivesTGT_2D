@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-19 17:13:28
+ * @LastEditTime: 2022-04-20 16:57:08
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -2275,13 +2275,13 @@ Vector2.INFINITY=new Vector2(Infinity,Infinity);
         return rtn;
     }
     /** 缩放
-     * @param {Number} x x 轴方向上的缩放系
-     * @param {Number} y y 轴方向上的缩放系
+     * @param {Number} x x 轴方向上的缩放系数
+     * @param {Number} y y 轴方向上的缩放系数
      */
     scale(x,y){
         return this.multiplication(
             Matrix2x2.create.scale(x,y)
-        )
+        );
     }
     /** 旋转
      * @param {Number} theta 顺时针 旋转角弧度
@@ -2289,7 +2289,7 @@ Vector2.INFINITY=new Vector2(Infinity,Infinity);
     rotate(theta){
         return this.multiplication(
             Matrix2x2.create.rotate(theta)
-        )
+        );
     }
     /** 切变
      * @param {Number} axis 方向轴 0:x 非零:y
@@ -2298,7 +2298,16 @@ Vector2.INFINITY=new Vector2(Infinity,Infinity);
     shear(axis,k){
         return this.multiplication(
             Matrix2x2.create.shear(axis,k)
-        )
+        );
+    }
+    /** 镜像(对称)
+     * @param {Number} x 对称轴的法向 x 坐标
+     * @param {Number} y 对称轴的法向 y 坐标
+     */
+    horizontal(x,y){
+        return this.multiplication(
+            Matrix2x2.create.horizontal(x,y)
+        );
     }
     /** 根据向量生成 等比缩放&旋转 矩阵
      * @param {Vector2} v 
