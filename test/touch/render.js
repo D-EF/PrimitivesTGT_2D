@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-02-12 11:15:04
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-21 16:41:46
+ * @LastEditTime: 2022-04-21 19:14:28
  * @FilePath: \def-web\js\visual\test\touch\render.js
  */
 import {
@@ -95,4 +95,6 @@ cnm.onclick=function(e){
             console.log("is clicking",renderer.tgtList[i]);
         }
     }
+    console.log(v);
+    console.log(renderer.tgtList[2].worldToLocal(v));
 }

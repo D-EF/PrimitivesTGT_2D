@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-21 16:37:18
+ * @LastEditTime: 2022-04-21 19:45:43
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -2068,10 +2068,9 @@ class Data_Sector extends Data_Arc{
      * (m,v)矩阵后乘列向量
      * @param {Vector2} v 向量
      * @param {Matrix2x2} m 矩阵
-     * @param {Vector2}     anchorPoint   锚点的坐标 变换会以锚点为中心
      * @returns {Vector2} 返回一个向量
      */
-    static linearMapping__Base(v,m,anchorPoint){
+    static linearMapping__Base(v,m){
     }
     /** 先进行2x2变换 再平移
      * @param {Vector2} v 
@@ -2080,10 +2079,29 @@ class Data_Sector extends Data_Arc{
      * @returns {Vector2} 返回一个向量
      */
     static linearMapping__AfterTranslate(v,m,anchorPoint){
-        var rtnv=Vector2.linearMapping__Base(Vector2.copy(v),m,anchorPoint),
-            tm=(v.a===undefined)?arguments[1]:arguments[0];
+        var tv,tm;
+        if(v.a===undefined){
+            tv=Vector2.copy(v);
+            tm=m;
+        }else{
+            tv=Vector2.copy(m);
+            tm=v;
+        }
+        if(anchorPoint){
+            tv.x-=anchorPoint.x;
+            tv.y-=anchorPoint.y;
+        }
+
+        var rtnv;
+        
+        if(v.a===undefined){
+            rtnv=Vector2.linearMapping__Base(tv,tm);
+        }else{
+            rtnv=Vector2.linearMapping__Base(tm,tv);
+        }
         rtnv.x+=tm.e;
         rtnv.y+=tm.f;
+        rtn.translate(anchorPoint)
         return rtnv;
     }
     /** 先平移 再 进行2x2变换, 根据实参的顺序重载后乘对象
@@ -2097,21 +2115,30 @@ class Data_Sector extends Data_Arc{
         if(v.a===undefined){
             tv=Vector2.copy(arguments[0]);
             tm=arguments[1];
+            if(anchorPoint){
+                tv.x-=anchorPoint.x;
+                tv.y-=anchorPoint.y;
+            }
             if(tm.constructor==Matrix2x2T){
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            rtn=Vector2.linearMapping__Base(tv,tm,anchorPoint);
+            rtn=Vector2.linearMapping__Base(tv,tm);
         }
         else{
             tm=arguments[0];
             tv=Vector2.copy(arguments[1]);
+            if(anchorPoint){
+                tv.x-=anchorPoint.x;
+                tv.y-=anchorPoint.y;
+            }
             if(tm.constructor==Matrix2x2T){
                 tv.x+=tm.e;
                 tv.y+=tm.f;
             }
-            rtn=Vector2.linearMapping__Base(tm,tv,anchorPoint);
+            rtn=Vector2.linearMapping__Base(tm,tv);
         }
+        rtn.translate(anchorPoint)
         
         return rtn;
     }
