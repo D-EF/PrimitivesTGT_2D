@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-20 16:57:08
+ * @LastEditTime: 2022-04-21 16:37:18
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -3348,7 +3348,7 @@ class BezierCurve{
     /** 轴对齐包围框 (边界框) axis aligned bounding box
      * @returns {Data_Rect} 轴对齐包围框 (边界框) axis aligned bounding box
      */
-    get_Aabb(){
+    get_AABB(){
         if(this._aabb===null){
             var pts=this.get_root_v().concat([this.sample(0),this.sample(1)]),
                 max=new Vector2(),
@@ -3371,13 +3371,13 @@ class BezierCurve{
      * @returns {Vector2}
      */
     get_Min(){
-        return this.get_Aabb().get_Min();
+        return this.get_AABB().get_Min();
     }
     /** aabb的最大坐标
      * @returns {Vector2}
      */
     get_Max(){
-        return this.get_Aabb().get_Max();
+        return this.get_AABB().get_Max();
     }
     /** 获取紧包围框
      * @returns {Polygon}
@@ -3833,13 +3833,29 @@ do{
         )
         return rtn;
     },"行向量后乘矩阵");
-    Vector2.linearMapping__Base.addOverload([Matrix2x2,Vector2,],function(m,v){
+    Vector2.linearMapping__Base.addOverload([Vector2,Matrix2x2,Vector2],function(v,m,a){
+        var rtn = new Vector2(v.x-a.x,v.y-a.y);
+        rtn.x=rtn.x*m.a+rtn.y*m.c;
+        rtn.y=rtn.x*m.b+rtn.y*m.d;
+        rtn.x+=a.x;
+        rtn.y+=a.y;
+        return rtn;
+    },"行向量后乘矩阵+锚点");
+    Vector2.linearMapping__Base.addOverload([Matrix2x2,Vector2],function(m,v){
         var rtn = new Vector2(
             v.x*m.a+v.y*m.b,
             v.x*m.c+v.y*m.d
         );
         return rtn;
     },"矩阵后乘列向量");
+    Vector2.linearMapping__Base.addOverload([Matrix2x2,Vector2,Vector2],function(m,v,a){
+        var rtn = new Vector2(v.x-a.x,v.y-a.y);
+        rtn.x=rtn.x*m.a+rtn.y*m.b;
+        rtn.y=rtn.x*m.c+rtn.y*m.d;
+        rtn.x+=a.x;
+        rtn.y+=a.y;
+        return rtn;
+    },"矩阵后乘列向量+锚点");
     Polygon.EX_linearMapping=OlFunction.create();
     Polygon.EX_linearMapping.addOverload([Polygon,Matrix2x2,Boolean],function(p,m,f){
         var i=0,
@@ -3875,343 +3891,6 @@ do{
 // 贝塞尔曲线部分 大部分数学支持来自于 https://pomax.github.io/bezierinfo/zh-CN/index.html
 // 真是强而有力的资料
 
-/** 三阶贝塞尔曲线组(多边形)的节点 */
-class Bezier_Node{
-    /** @param {Vector2} node
-     * @param {Vector2} hand_before
-     * @param {Vector2} hand_after
-     */
-    constructor(node,hand_before,hand_after) {
-        /** @type {Vector2} 顶点 p1 兼 p4
-         */
-        this.node=node;
-        /** @type {Vector2} 前驱控制点 p2
-         */
-        this.hand_before=hand_before;
-        /** @type {Vector2} 后置控制点 p3
-         */
-        this.hand_after=hand_after;
-    }
-    static copy(tgt){
-        return new Bezier_Node(
-            Vector2.copy(tgt.node),
-            Vector2.copy(tgt.hand_before),
-            Vector2.copy(tgt.hand_after)
-        )
-    }
-    copy(){
-        return Bezier_Node.copy(this);
-    }
-}
-class Bezier_Polygon{
-    /** 贝塞尔曲线组(多边形)
-     * @param {Vector2[]} nodes  
-     * @param {Vector2[]} hand_befores 
-     * @param {Vector2[]} hand_afters 
-     */
-    constructor(nodes,hand_befores,hand_afters){
-        this._nodes=[];
-        if(nodes)
-        for(var i=0;i<nodes.length;i++){
-            this.nodes.push(new Bezier_Node(nodes[i],hand_befores[i],hand_afters[i]));
-        }
-        /**@type {BezierCurves[]} Bezier曲线实例 */
-        this._bezierCurves=[];
-        this._aabb=null;
-        /**@type {Number} 计算时使用的路径闭合情况: -1是使用直线闭合, 0是不闭合, 1是使用贝塞尔曲线闭合 */
-        this.closed_Flag=0;
-        /**@type {Delegate} 在修改节点数据后执行的委托 this.unins_bezierCurve_Delegate(i); 参数i为修改的下标, 当执行清除所有顶点时i为-1,  */
-        this.unins_bezierCurve_Delegate = Delegate.create();
-        /**@type {Delegate} 在插入/删除节点后执行的委托 this.emptied_bezierCurve_Delegate(i); 参数i为修改的下标 */
-        this.emptied_bezierCurve_Delegate = Delegate.create();
-        
-    }
-    /** 线性变换 切换前两个参数的顺序以控制前乘矩阵还是后乘矩阵 arg1*arg2
-     * @param {Bezier_Polygon} bezier_Polygon 变换的多边形
-     * @param {Matrix2x2T} transform_matrix 变换矩阵
-     * @param {Boolean} f 先平移或后平移
-     * @param {Vector2} anchorPoint 变换使用的基准点
-     */
-    static linearMapping(bezier_Polygon,transform_matrix,f,anchorPoint){
-        var rtn=new Bezier_Polygon();
-        var tf=bezier_Polygon instanceof Bezier_Polygon;
-        var m,p=tf?(m=transform_matrix,bezier_Polygon):(m=bezier_Polygon,transform_matrix);
-        for(var i=0;i<p._nodes.length;++i){
-            rtn.add_Node(tf?{
-                node:Vector2.linearMapping(p.nodes[i].node,m,f,anchorPoint),
-                hand_before:Vector2.linearMapping(p.nodes[i].hand_before,m,f,anchorPoint),
-                hand_after:Vector2.linearMapping(p.nodes[i].hand_after,m,f,anchorPoint)
-            }:{
-                node:Vector2.linearMapping(m,p.nodes[i].node,f,anchorPoint),
-                hand_before:Vector2.linearMapping(m,p.nodes[i].hand_before,f,anchorPoint),
-                hand_after:Vector2.linearMapping(m,p.nodes[i].hand_after,f,anchorPoint)
-            });
-        }
-        return rtn;
-    }
-    static copy(tgt){
-        var rtn=new Bezier_Polygon();
-        rtn.nodes.length=tgt.nodes.length;
-        for(var i=tgt.nodes.length-1;i>=0;--i){
-            rtn.nodes[i]=Bezier_Node.copy(tgt.nodes[i]);
-        }
-        return rtn;
-    }
-    copy(){
-        return Bezier_Polygon.copy(this);
-    }
-    /**@type {Bezier_Node[]} 只读属性, 应该使用 Bezier_Polygon 类的成员函数修改内容 */ 
-    get nodes(){
-        return this._nodes;
-    }
-    /** 设置node
-     * @param {Number} index 
-     * @param {Bezier_Node} node 
-     */
-    setNode(index,node){
-        this.nodes[index]=node;
-        this.unins_BezierCurve(index);
-    }
-    /** 修改节点数据
-     * @param {Number} index 要修改的下标
-     * @param {Bezier_Node} source 新的节点数据
-     */
-    change_Node(index,source){ 
-        Object.assign(this._nodes[index],source);
-        this.unins_BezierCurve();
-    }
-    /** 清空代理
-     */
-    refresh_Cache(){
-        this._aabb=null;
-    }
-    /** 清空所有数学曲线
-     */
-    clear_BezierCurves(){
-        this._bezierCurves.length=0;
-    }
-    /** 卸载数学曲线 在顶点被编辑时使用
-     * @param {Number} index 修改顶点的下标
-     */
-    unins_BezierCurve(i){
-        var j=i?i-1:this.nodes.length-1;
-        this._bezierCurves[i]=null;
-        this._bezierCurves[j]=null;
-        this.unins_bezierCurve_Delegate(i);
-    }
-    /** 腾出数学曲线 在插入/删除顶点时使用
-     * @param {Number} index 插入顶点的下标
-     * @param {Number} f    插入或删除
-     */
-    emptied_BezierCurve(i,f){
-        var j=i?i-1:this.nodes.length-1;
-        this._bezierCurves[j]=null;
-        if(f){
-            this._bezierCurves.splice(i,0,null);
-        }
-        else{
-            this._bezierCurves.splice(i,1);
-        }
-        this.emptied_bezierCurve_Delegate(i,f);
-    }
-    /** 追加顶点
-     * @param {Bezier_Node} bezierNode  要追加的顶点
-     */
-    add_Node(bezierNode){
-        this.nodes.push(Bezier_Node.copy(bezierNode));
-        this.emptied_BezierCurve(this.nodes.length-1,true)
-        this.refresh_Cache();
-    }
-    /** 追加顶点数组
-     * @param {Bezier_Node[]} bezierNodes  装着顶点的数组
-     */
-    add_Nodes(bezierNodes){
-        for(var i=0;i<bezierNodes.length;++i){
-            this.add_Node(bezierNodes[i]);
-        }
-        this.refresh_Cache();
-    }
-    /** 插入顶点
-     * @param {Number} index    要插入的顶点的下标
-     * @param {Bezier_Node[]} bezierNodes 要插入的顶点
-     */
-    insert_Node(index,bezierNode){
-        this.nodes.splice(index,0,Bezier_Node.copy(bezierNode));
-        this.emptied_BezierCurve(index,true);
-        this.refresh_Cache();
-    }
-    /** 移除顶点
-     * @param {Number} index 要删除的顶点的下标
-     */
-    remove_Node(index){
-        this.nodes.splice(index,1);
-        this.refresh_Cache();
-        this.emptied_BezierCurve(index,false);
-    }
-    /** 清除所有顶点
-     */
-    clear_Nodes(){
-        this._nodes.length=0;
-        this._bezierCurves.length=0;
-        this.unins_bezierCurve_Delegate(-1);
-        this.refresh_Cache();
-    }
-    /** 分割贝塞尔曲线
-     * @param {Number} index 前驱端点下标
-     * @param {Number} z     t参数 
-     * @return {Bezier_Node} 新加入的端点
-     */
-    cut(index,z){
-        var i_next=index+1===this.node.length?index+1:0;
-        if(this.nodes[index]===undefined||this.nodes[i_next]===undefined)return;
-        var points=[
-            this.nodes[index].node,
-            this.nodes[index].hand_after,
-            this.nodes[i_next].hand_before,
-            this.nodes[i_next].node
-        ];
-        var newPoints=Math2D.get_CutOffBezierCurve(points,z);
-
-        var newNode=Bezier_Node.copy(
-            {
-                node: newPoints[0][3],
-                hand_before:newPoints[0][2],
-                hand_after:newPoints[1][1],
-            }
-        );
-                this.nodes[index].hand_after.x=newPoints[0][1].x;
-        this.nodes[index].hand_after.y=newPoints[0][1].y;
-        this.nodes[i_next].hand_before.x=newPoints[1][2].x;
-        this.nodes[i_next].hand_before.y=newPoints[1][2].y;
-        
-        i_next?this.nodes.splice(i_next,0,newNode):this.nodes.push(newNode);
-        this.emptied_BezierCurve(index,true);
-        return newNode;
-    }
-    isClosed(){
-        return  (this.nodes[0].node.x===this.nodes[this.nodes.length-1].node.x)&&
-        (this.nodes[0].node.y===this.nodes[this.nodes.length-1].node.y);
-
-    }
-    /** 使用局部坐标系判断某点是否在内部
-     * @param {Number} x 局部坐标系中的坐标
-     * @param {Number} y 局部坐标系中的坐标
-     * @return {Boolean} 返回是否在内部
-     */
-    is_Inside(x,y){
-        var f=this.closed_Flag;
-        var i,rtn=0;
-        if(!f){
-            // 没闭合的图形, 直接返回否
-            return false;
-        }
-        i=this.nodes.length-1;
-        if(f===-1){
-            // 线段
-            rtn+=Math2D.get_intersectionOfXRadialLine_Fn(x,y,this.nodes[i].node,this.nodes[0].node)
-        }
-        // 射线穿过曲线
-        for(f==1?1:--i;i>=0;--i){
-            rtn+=Math2D.get_intersectionOfXRadialBezier_n(x,y,this.get_BezierCurve(i));
-        }
-        return !!(rtn%2);
-    }
-    /** 获取曲线实例
-     * @param {Number} index 前驱顶点的下标
-     * @returns {BezierCurve} 返回贝塞尔曲线实例
-     */
-    get_BezierCurve(index){
-        if(!this._bezierCurves[index]){
-            if(this.nodes[index]){
-                var i=0;
-                if(this.nodes[index+1]){
-                    i=index+1;   
-                }
-            }
-        }
-        return this._bezierCurves[index];
-    }
-    /**@type {Data_Rect}  */
-    get aabb(){
-        if(this._aabb===null){
-            var i=this.nodes.length;
-            if(!this.want_to_close){
-                --i;
-            }
-            var max=new Vector2(-Infinity,-Infinity),
-                min=new Vector2( Infinity, Infinity);
-            var temp,tempMin,tempMax;
-            for(;i>=0;--i){
-                temp=this.get_BezierCurve(i).get_Aabb();
-                tempMin=temp.get_Min();
-                tempMax=temp.get_Max();
-                if(min.x>tempMin.x)min.x=tempMin.x;
-                if(min.y>tempMin.y)min.y=tempMin.y;
-                if(max.x<tempMax.x)max.x=tempMax.x;
-                if(max.y<tempMax.y)max.y=tempMax.y;
-            }
-            this._aabb=Data_Rect.create_ByVector2(min,max);
-        }
-        return  this._aabb;
-    }
-    get_Min(){
-        return this.aabb.get_Min();
-    }
-    get_Max(){
-        return this.aabb.get_Max();
-    }
-    /** 获取子线的长度
-     * @param {Number} index 前驱顶点做为起点 如果是最后一个顶点则会视作 第一个和最后一个顶点 的线
-     * @param {Boolean} closeFlag 如何闭合多边形 1为曲线闭合 -1为直线闭合 0为不闭合
-     * @returns {Number} 返回线段的长度
-     */
-    get_curve_Length(index,closeFlag){
-        if(index===this.nodes.length&&closeFlag===-1){
-            return Math2D.get_LineLength(this.nodes[index].node,this.nodes[0].node);
-        }
-        var d=this.get_BezierCurve(index).length_long_lut;
-        return d[d.length-1].l;
-    }
-    /** 多边形所有边的长度和
-     * @param {Boolean} closeFlag 如何闭合多边形 1为曲线闭合 -1为直线闭合 0为不闭合
-     * @returns {Number}
-     */
-    get_all_curve_Length(closeFlag){
-        if(this._all_lines_length<0||this._all_lines_length===undefined){
-            var cf=closeFlag===undefined?this.closed_Flag:closeFlag;
-            var rtn=0;
-            var i=this.nodes.length-1;
-            if(cf!==1){
-                --i;
-            }
-            for(;i>=0;--i){
-                rtn+=this.get_curve_Length(i,cf);
-            }
-            this._all_lines_length=rtn;
-        }
-        return this._all_lines_length;
-    }
-    /** 使用权值参数t获取多边形上的点的坐标和法向
-     * @param {Number} t 全多边形的时间参数t
-     * @param {Boolean} closeFlag 如何否闭合图形
-     * @returns {v:Vector2,n:Vector2} v: 点的坐标, n: 当前点的法向(一个相对于v的标准化向量)
-     */
-    sample(t,closeFlag){
-        var l=t*this.get_all_curve_Length(closeFlag),temp,temp_bezier,
-            i=0,
-            lt,
-            v,n;
-        while(l>(temp=this.get_curve_Length(i))){
-            l-=temp;
-            ++i;
-        }
-        lt=l/this.get_curve_Length(i);
-        temp_bezier=this.get_BezierCurve(i)
-        v=temp_bezier.sample(lt);
-        n=temp_bezier.get_Normal(lt);
-        return {v:v,n:n};
-    }
-}
 
 class Line{
     constructor(op,ed){
@@ -4923,8 +4602,6 @@ export{
     Matrix2x2,
     Matrix2x2T,
     Polygon,
-    Bezier_Node,
-    Bezier_Polygon,
     BezierCurve,
     PathCommand,
     Line,

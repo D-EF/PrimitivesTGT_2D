@@ -2,10 +2,13 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-15 00:41:42
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-15 00:59:12
+ * @LastEditTime: 2022-04-21 16:15:47
  * @FilePath: \def-web\js\visual\PrimitivesTGT_Touch.js
  * 碰撞检测函数
  */
+
+// 2022-04-21 :  因为图元增加了 origin，所以现在的碰撞检测已经不适用了！
+// 2022-04-21 :  删除了垃圾 3阶贝塞尔曲线组 和它的图元, 现在也不能用了！
 
 import {
     OlFunction,
@@ -20,8 +23,6 @@ import {
     Matrix2x2,
     Matrix2x2T,
     Polygon,
-    Bezier_Node,
-    Bezier_Polygon,
     BezierCurve,
         }from "./Math2d.js";
 import {
@@ -33,7 +34,6 @@ import {
     PrimitiveTGT__Arc,
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
-    PrimitiveTGT__Bezier,
     PrimitiveTGT__Group,
     PrimitiveTGT__Path
 } from './PrimitivesTGT_2D.js';
@@ -55,8 +55,8 @@ function isTouch_Base(primitiveTGT1,primitiveTGT2){
     for(i=tgt2.data.nodes.length-1;i>=0;--i){
         tgt2.data.nodes[i]=tgt2.localToWorld(tgt2.data.nodes[i]);
     }
-    tgt1.data.reMinMax();
-    tgt2.data.reMinMax();
+    tgt1.data.refresh_MinMax();
+    tgt2.data.refresh_MinMax();
     
     if(Polygon.getImpactFlag(tgt1.data,tgt2.data)){
         return true;                                         

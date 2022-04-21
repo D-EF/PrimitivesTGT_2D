@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-03-19 18:55:01
+ * @LastEditTime: 2022-04-21 16:42:19
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -19,8 +19,6 @@ import {
     Matrix2x2,
     Matrix2x2T,
     Polygon,
-    Bezier_Node,
-    Bezier_Polygon,
     BezierCurve,
     Path,
     Line,
@@ -36,7 +34,6 @@ import {
     PrimitiveTGT__Arc,
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
-    PrimitiveTGT__Bezier,
     PrimitiveTGT__Group,
     PrimitiveTGT__Path
 }from "./PrimitivesTGT_2D.js"
@@ -174,7 +171,10 @@ class Renderer_PrimitiveTGT__Canvas2D extends Renderer_PrimitiveTGT{
         ctx.globalAlpha=tgt.globalAlpha;
         ctx.setLineDash(tgt.lineDash);
         ctx.lineDashOffset=tgt.lineDashOffset;
+        ctx.translate(tgt.origin.x,tgt.origin.y);
         ctx.transform(tgt.transform_matrix.a,tgt.transform_matrix.b,tgt.transform_matrix.c,tgt.transform_matrix.d,tgt.transform_matrix.e||0,tgt.transform_matrix.f||0);
+        ctx.translate(-tgt.origin.x,-tgt.origin.y);
+
         if(tgt.fill_Material){
             ctx.fillStyle=tgt.fill_Material.get(tgt,this.ctx,"fill");
         }
@@ -247,24 +247,7 @@ Renderer_PrimitiveTGT__Canvas2D.createCanvasPath={
             ctx.closePath();
         }
     },
-    "Bezier_Polygon": function(that,tgt){
-        var ctx=that.ctx;
-        var nodes=tgt.data.nodes,i=0;
-        ctx.moveTo(nodes[i].node.x,nodes[i].node.y);
-        for(i=1;i<tgt.data.nodes.length;++i){
-            ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[i].hand_before.x,nodes[i].hand_before.y,nodes[i].node.x,nodes[i].node.y);
-        }
-        if(tgt.want_to_closePath&&!tgt.data.isClosed()){
-            if(tgt.want_to_closePath===-1){
-                ctx.closePath();
-            }
-            else{
-                ctx.bezierCurveTo(nodes[i-1].hand_after.x,nodes[i-1].hand_after.y,nodes[0].hand_before.x,nodes[0].hand_before.y,nodes[0].node.x,nodes[0].node.y);
-            }
-        }
-    },
     /**
-     * 
      * @param {Renderer_PrimitiveTGT__Canvas2D} that 
      * @param {PrimitiveTGT__Path} tgt 
      */
@@ -322,7 +305,6 @@ export{
     PrimitiveTGT__Arc,
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
-    PrimitiveTGT__Bezier,
     PrimitiveTGT__Group,
     CtrlCanvas2d,
     Canvas2d__Material,

@@ -15,7 +15,6 @@ import {
     PrimitiveTGT__Sector as CanvasSectorTGT,
     PrimitiveTGT__Polygon as CanvasPolygonTGT,
     PrimitiveTGT__Group as CanvasTGT_Group,
-    PrimitiveTGT__Bezier as CanvasBezierTGT
 } from "../PrimitivesTGT_2D.js";
 import {
     Math2D,
@@ -26,8 +25,6 @@ import {
     Matrix2x2,
     Matrix2x2T,
     Polygon,
-    Bezier_Node,
-    Bezier_Polygon,
     BezierCurve,
         }from "../Math2d.js";
 

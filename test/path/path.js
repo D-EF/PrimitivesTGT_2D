@@ -9,7 +9,6 @@ import {
     PrimitiveTGT__Arc,
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
-    PrimitiveTGT__Bezier,
     PrimitiveTGT__Group,
     CtrlCanvas2d,
     Canvas2d__Material,
@@ -21,7 +20,6 @@ import {
     Vector2,
     Matrix2x2T,
     Polygon,
-    Bezier_Polygon,  
     BezierCurve,
     Math2D
 }  from "../../Math2d.js";
@@ -59,69 +57,6 @@ path.fill_Material=new Canvas2d__Material("#0000");
 var renderer=new Renderer_PrimitiveTGT__Canvas2D([path],ctx);
 renderer.render_All();
 CtrlCanvas2d.dot(ctx,pathData.sample(0.9999).v,4);
-
-
-var d=new PrimitiveTGT__Bezier();
-d.fill_Material=new Canvas2d__Material("#0000");
-d.data=new Bezier_Polygon();
-d.data.add_Node({
-    node:{
-        x:100-100,
-        y:100-100
-    },
-    hand_before:{
-        x:100-100,
-        y:200-100
-    },
-    hand_after:{
-        x:200-100,
-        y:100-100
-    },
-});
-d.data.add_Node({
-    node:{
-        x:200-100,
-        y:200-100
-    },
-    hand_before:{
-        x:100-100,
-        y:200-100
-    },
-    hand_after:{
-        x:200-100,
-        y:100-100
-    },
-});
-d.data.add_Node({
-    node:{
-        x:300-100,
-        y:100-100
-    },
-    hand_before:{
-        x:300-100,
-        y:200-100
-    },
-    hand_after:{
-        x:300-100,
-        y:0-100
-    },
-});
-d.data.add_Node({
-    node:{
-        x:200-100,
-        y:100-100
-    },
-    hand_before:{
-        x:300-100,
-        y:100-100
-    },
-    hand_after:{
-        x:200-100,
-        y:100-100
-    },
-});
-renderer.tgtList.push(d);
-d.transform_matrix=new Matrix2x2T().translate(0,200).scale(2,2);
 
 var i=1;
 var a=new AnimationCtrl(function(t){

@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-19 15:54:49
+ * @LastEditTime: 2022-04-21 16:24:31
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -26,8 +26,6 @@ import {
     Matrix2x2,
     Matrix2x2T,
     Polygon,
-    Bezier_Node,
-    Bezier_Polygon,
     BezierCurve,
     Path,
         }from "./Math2d.js";
@@ -38,8 +36,10 @@ var def_accuracy=20;
 /**材质抽象类 */
 class Material{
     constructor(texture){
-        /**@type {Sprites} */
+        /**@type {String|Sprites} */
         this.texture=texture;
+        this.ID=Material.index++;
+        this.name="Material"+this.Material_ID;
     }
     /** 获取2d材质
      * @virtual
@@ -50,10 +50,12 @@ class Material{
     get(tgt,ctx,type){
         // 虚函数
     }
+    static index=0;
 }
 /**渲染器抽象类 */
 class Renderer_PrimitiveTGT{
-    /** @param {PrimitiveTGT[]} tgtList 等待渲染的对象列表
+    /** 
+     * @param {PrimitiveTGT[]} tgtList 等待渲染的对象列表
      */
     constructor(tgtList){
         this.tgtList=tgtList instanceof  Array ? Array.from(tgtList):[];
@@ -122,6 +124,8 @@ class PrimitiveTGT{
         this._worldToLocalM;
         /**@type {Boolean} 是否渲染*/
         this.visibility=true;
+        /** @type {Vector2} 锚点 */
+        this.origin=new Vector2();
 
         /**@type {Material} 填充 材质*/
         this.fill_Material;
@@ -158,12 +162,13 @@ class PrimitiveTGT{
         rtn.transform_matrix   = Matrix2x2T.copy(tgt._transform_matrix);
         rtn._worldToLocalM    = Matrix2x2T.copy(tgt._worldToLocalM);
         rtn.want_to_closePath = tgt.want_to_closePath;
-        rtn.fill_Material     = this.fill_Material;
-        rtn.stroke_Material   = this.stroke_Material;
-        rtn.fill_uv           = Vector2.copy(this.fill_uv);
-        rtn.fill_uvwh         = Vector2.copy(this.fill_uvwh);
-        rtn.uv                = Vector2.copy(this.uv);
-        rtn.uvwh              = Vector2.copy(this.uvwh);
+        rtn.fill_Material     = tgt.fill_Material;
+        rtn.stroke_Material   = tgt.stroke_Material;
+        rtn.fill_uv           = Vector2.copy(tgt.fill_uv);
+        rtn.fill_uvwh         = Vector2.copy(tgt.fill_uvwh);
+        rtn.uv                = Vector2.copy(tgt.uv);
+        rtn.uvwh              = Vector2.copy(tgt.uvwh);
+        rtn.origin            = Vector2.copy(tgt.origin);
         return rtn;
     }
     /** 拷贝函数
@@ -230,9 +235,9 @@ class PrimitiveTGT{
         }
     }
     /** 判断某一点是否在目标内部
-     * @param {Number} _x    重载1的参数 世界坐标x
-     * @param {Number} _y    重载1的参数 世界坐标y
-     * @param {Vector2} _v   重载2的参数 世界坐标向量
+     * @param {Number} _x    重载1的参数1 世界坐标x
+     * @param {Number} _y    重载1的参数2 世界坐标y
+     * @param {Vector2} _v   重载2的参数1 世界坐标向量
      * @returns {Boolean} 
     */
     is_Inside(_x,_y){
@@ -294,9 +299,6 @@ class PrimitiveTGT{
          */
         "Polygon":function(data){
             return new PrimitiveTGT__Polygon(data);
-        },
-        "Bezier_Polygon":function(data){
-            return new PrimitiveTGT__Bezier(data);
         },
         "Group":function (data){
             var rtn=new PrimitiveTGT__Group();
@@ -371,7 +373,7 @@ class PrimitiveTGT__Polygon extends PrimitiveTGT{
         /** @type {Polygon}
          */
         this.data=Polygon.copy(_polygon);
-        if(this.data)this.data.reMinMax();
+        if(this.data)this.data.refresh_MinMax();
         this.dataType="Polygon"
     }
 
@@ -390,117 +392,6 @@ class PrimitiveTGT__Polygon extends PrimitiveTGT{
     
     getPolygonProxy(){
         return this.data.copy();
-    }
-}
-
-/** 贝塞尔曲线多边形
- */
-class PrimitiveTGT__Bezier extends PrimitiveTGT{
-    /** @param {Bezier_Polygon} bezier_polygon 
-     */
-    constructor(bezier_polygon){
-        super();
-        if(bezier_polygon)
-        /**@type {Bezier_Polygon} */
-        this.data=Bezier_Polygon.copy(bezier_polygon);
-        this.dataType="Bezier_Polygon";
-        this._want_to_closePath=false;
-        /**@type {Bezier_Polygon} */
-        this._world_bezier=null;
-    }
-    set transform_matrix(m){
-        super.transform_matrix=m;
-        this._world_bezier=null;
-    }
-    get transform_matrix(){
-        return this._transform_matrix;
-    }
-    get want_to_closePath(){
-        return this._want_to_closePath;
-    }
-    set want_to_closePath(val){
-        this._want_to_closePath=val;
-        if(this.data)this.data.closed_Flag=val;
-    }
-    set data(val){
-        this._data=val;
-        this.data.closed_Flag=this._want_to_closePath;
-        this.data.unins_bezierCurve_Delegate.addAct(this,   this.in_data_nodeChange);
-        this.data.emptied_bezierCurve_Delegate.addAct(this, this.in_data_nodesChange);
-        this._world_bezier=null;
-    }
-    /**@type {Bezier_Polygon} */
-    get data(){
-        return this._data;
-    }
-    get world_bezier(){
-        if(!this._world_bezier)this.refresh_WorldBezier();
-        return this._world_bezier;
-    }
-    /** data顶点修改时的回调委托
-     * @param {Number} i 被修改的点的下标
-     */
-    in_data_NodeChange(i){
-        if(this._world_bezier)
-        this.world_bezier.setNode(i,this.calc_WorldNode(i));
-    }
-    /** data顶点被增加或删除的回调委托
-     * @param {Number} i 被修改的点的下标
-     * @param {Boolean} f 插入或删除
-     */
-    in_data_NodesChange(i,f){
-        if(this._world_bezier)
-        if(f){
-            this.world_bezier.insert_Node(i,this.calc_WorldNode(i));
-        }
-        else{
-            this.world_bezier.remove_Node(i);
-        }
-    }
-    /** 重新加载世界坐标系的所有节点 在变换矩阵或data被修改后使用
-     * @returns {Bezier_Polygon}
-     */
-    refresh_WorldBezier(){
-        return this._world_bezier=Bezier_Polygon.linearMapping(this.data,this.transform_matrix);
-    }
-    /** 获取世界坐标的节点
-     * @param {Number} i 节点下标
-     * @returns 世界坐标的节点
-     */
-    get_WorldNode(i){
-        return this.world_bezier.nodes[i];
-    }
-    /** 获取世界坐标下的节点的数学曲线对象
-     * @param {Number} i 前驱节点下标
-     * @return {BezierCurve}
-     */
-    get_WorldBezierCurve(i){
-        return this.world_bezier.get_BezierCurve(i);
-    }
-    /** 计算世界坐标的节点
-     * @param {Number} i 节点下标
-     * @returns 世界坐标的节点
-     */
-    calc_WorldNode(i){
-        return new Bezier_Node(
-            this.localToWorld(this.data.nodes[i].node),
-            this.localToWorld(this.data.nodes[i].hand_before),
-            this.localToWorld(this.data.nodes[i].hand_after)
-        );
-    }
-    /** 将局部坐标系的 nodes 转换到世界坐标系
-    * @param {Boolean} clear_tfm_f 是否清理变换矩阵属性 默认清理(true)
-    */
-    nodesToWorld(clear_tfm_f=true){
-        // this.data.linearMapping(this.transform_matrix,true)
-        for(var i=this.data.nodes.length-1;i>=0;--i){
-            this.data.nodes[i].node=this.localToWorld(this.data.nodes[i].node);
-            this.data.nodes[i].hand_before=this.localToWorld(this.data.nodes[i].hand_before);
-            this.data.nodes[i].hand_after=this.localToWorld(this.data.nodes[i].hand_after);
-        }
-        if(clear_tfm_f){
-            this.transform_matrix=new Matrix2x2T();
-        }
     }
 }
 
@@ -745,18 +636,19 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
 // PrimitiveTGT 函数重载 ----------------------------------------------------------------------------------------------------------------------------------
 
 function _PrimitiveTGT__Is_Inside(_x,_y){
+
     var v=this.worldToLocal(_x,_y);
     return this.data.is_Inside(v.x,v.y,this.want_to_closePath);
 }
-PrimitiveTGT.prototype.is_inside=OlFunction.create();
-PrimitiveTGT.prototype.is_inside.addOverload([Number,Number],_PrimitiveTGT__Is_Inside);
-PrimitiveTGT.prototype.is_inside.addOverload([Vector2],function(_v){
+PrimitiveTGT.prototype.is_Inside=OlFunction.create();
+PrimitiveTGT.prototype.is_Inside.addOverload([Number,Number],_PrimitiveTGT__Is_Inside);
+PrimitiveTGT.prototype.is_Inside.addOverload([Vector2],function(_v){
     return _PrimitiveTGT__Is_Inside.call(this,_v.x,_v.y)
 });
 
 // 局部坐标 to 世界坐标
 function _localToWorld__PrimitiveTGT(v){
-    return Vector2.linearMapping__AfterTranslate(v,this.transform_matrix);
+    return Vector2.linearMapping__AfterTranslate(v,this.transform_matrix,this.origin);
 }
 PrimitiveTGT.prototype.localToWorld=OlFunction.create();
 PrimitiveTGT.prototype.localToWorld.addOverload([Number,Number],function (x,y){
@@ -767,7 +659,7 @@ PrimitiveTGT.prototype.localToWorld.addOverload([Vector2],_localToWorld__Primiti
 // 世界坐标 to 局部坐标
 function _worldToLocal__PrimitiveTGT(v){
     var tm=this.worldToLocalM;
-    return Vector2.linearMapping__BeforeTranslate(v,tm);
+    return Vector2.linearMapping__BeforeTranslate(v,tm,this.origin);
 }
 PrimitiveTGT.prototype.worldToLocal=OlFunction.create();
 PrimitiveTGT.prototype.worldToLocal.addOverload([Number,Number],function (x,y){
@@ -784,7 +676,6 @@ export{
     PrimitiveTGT__Arc,
     PrimitiveTGT__Sector,
     PrimitiveTGT__Polygon,
-    PrimitiveTGT__Bezier,
     PrimitiveTGT__Group,
     PrimitiveTGT__Path,
 };

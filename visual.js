@@ -11,8 +11,6 @@ import {
     Matrix2x2,
     Matrix2x2T,
     Polygon,
-    Bezier_Node,
-    Bezier_Polygon,
     BezierCurve,
         }from "./Math2d.js";
 
