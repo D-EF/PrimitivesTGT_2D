@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-02-12 11:15:04
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-21 19:49:47
+ * @LastEditTime: 2022-04-22 16:13:38
  * @FilePath: \def-web\js\visual\test\touch\render.js
  */
 import {
@@ -23,7 +23,7 @@ import {
     BezierCurve,
     Math2D
 }  from "../../Math2d.js";
-import { PrimitiveTGT } from "../../PrimitivesTGT_2D.js";
+import { PrimitiveTGT, PrimitiveTGT__Path } from "../../PrimitivesTGT_2D.js";
 Object.assign(window,{
     Vector2,
     Matrix2x2T,
@@ -77,8 +77,11 @@ t3.origin.y=150;
 t3.stroke_material=new Canvas2d__Material("#f00");
 t3.transform_matrix=new Matrix2x2T().set_Translate(150,150).rotate(-45*deg);
 
+var t4=new PrimitiveTGT__Path("m100 100 l100 0 l0 100 A10 20 0 1 0 100 100  z");
+t4.fill_material=spritesMap_Material;
+t4.fill_uv={x:3,y:4};
 
-var renderer=new Renderer_PrimitiveTGT__Canvas2D([t1,t2,t3],ctx);
+var renderer=new Renderer_PrimitiveTGT__Canvas2D([t1,t2,t3,t4],ctx);
 sp.img.onload=function (){
     renderer.render_All();
 }

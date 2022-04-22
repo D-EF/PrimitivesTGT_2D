@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-22 10:29:51
+ * @LastEditTime: 2022-04-22 16:19:12
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -1453,7 +1453,7 @@ class Data_Rect{
                 t_ed=true_ed;
                 f=false;
                 if((true_ed=t_ed-t_op)<deg_90){
-                    k=calc_k_BezierToCyles(true_ed);
+                    k=calc_k__BezierToCyles(true_ed);
                 }
             }
             if(approximately(t_op,t_ed)){
@@ -1741,9 +1741,13 @@ class Data_Arc__Ellipse extends Data_Arc {
             c_op,c_ed,
             op_a,ed_a;
            
-        loc_c=arc.locToWorld(wi[i]||
-            _ed.np(0.5)    // 半径不足补全缺口的备选方案 todo:等比缩放椭圆
-        );
+        loc_c=arc.locToWorld(wi[i]||_ed.np(0.5));
+        if(!wi.length){
+            var temp_cw=loc_c.copy();
+            temp_cw.y/=arc.ry_ratio_rx;
+            arc.r=temp_cw.get_Mag();
+        }
+        
         
         var c=Vector2.sum(op,loc_c);
         arc.tc=c;
@@ -2101,7 +2105,9 @@ class Data_Sector extends Data_Arc{
         }
         rtnv.x+=tm.e;
         rtnv.y+=tm.f;
-        rtn.translate(anchorPoint)
+        if(anchorPoint){
+            rtn.translate(anchorPoint)
+        }
         return rtnv;
     }
     /** 先平移 再 进行2x2变换, 根据实参的顺序重载后乘对象
@@ -2138,8 +2144,9 @@ class Data_Sector extends Data_Arc{
             }
             rtn=Vector2.linearMapping__Base(tm,tv);
         }
-        rtn.translate(anchorPoint)
-        
+        if(anchorPoint){
+            rtn.translate(anchorPoint)
+        }
         return rtn;
     }
     /** 线性变换(矩阵和向量的乘法), 根据实参的顺序重载后乘对象
