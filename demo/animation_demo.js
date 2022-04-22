@@ -87,6 +87,10 @@ var tgt_group=new CanvasTGT_Group([
 ]);
 
 var text_group=new CanvasTGT_Group();
+text_group.stroke_material=Material_white0;
+text_group.lineWidth=5;
+text_group.lineCap="square";
+text_group.fill_material=Material_white0;
 text_group.transform_matrix=new Matrix2x2T().scale(2,2).translate(400,200);
 var fillScale=100/6;
 tgt_group.transform_matrix=new Matrix2x2T().scale(fillScale,fillScale).translate(0,200);
@@ -283,17 +287,16 @@ function animation_E2F1f(t){
 }
 function animation_F2f(t){
     var end=valueAnimation(50,100,t);
-
     textPolygonF1.nodes[3].x=end;
-
     ctxRender();
 }
 
 function atd1(){
-    textTGT_D.lineWidth=2;
-    textTGT_D.stroke_material=Material_white;
-    textTGT_D.fill_material=Material_white0;
-
+    text_group.stroke_material=Material_white;
+    text_group.data[1].stroke_material=Material_white0;
+    text_group.data[2].stroke_material=Material_white0;
+    text_group.data[3].stroke_material=Material_white0;
+    text_group.data[4].stroke_material=Material_white0;
     animation2.frameCallback=animation_D1f;
     animation2.stopCallback=atd2;
     animation2.start(100);
@@ -309,27 +312,16 @@ function atd3(){
     animation2.start(100);
 }
 function ate1(){
-    textTGT_E1.lineWidth=2;
-    textTGT_E1.stroke_material=Material_white;
-    textTGT_E1.fill_material=Material_white0;
-    
-    textTGT_E2.lineWidth=2;
-    textTGT_E2.stroke_material=Material_white;
-    textTGT_E2.fill_material=Material_white0;
-
+    text_group.data[1].stroke_material=null;
+    text_group.data[2].stroke_material=null;
     animation2.frameCallback=animation_E1f;
     animation2.stopCallback=ate2f1;
     animation2.start(100);
 }
 function ate2f1(){
     
-    textTGT_F1.lineWidth=2;
-    textTGT_F1.stroke_material=Material_white;
-    textTGT_F1.fill_material=Material_white0;
-    textTGT_F2.lineWidth=2;
-    textTGT_F2.stroke_material=Material_white;
-    textTGT_F2.fill_material=Material_white0;
-
+    text_group.data[3].stroke_material=null;
+    text_group.data[4].stroke_material=null;
     animation2.frameCallback=animation_E2F1f;
     animation2.stopCallback=atf2;
     animation2.start(100);

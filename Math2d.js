@@ -2843,7 +2843,7 @@ class Polygon{
     /** 点在顶点上或在多边形线段上 顶点优先
      * @param {Vector2} point 点
      * @param {Number} r 顶点的计算半径 取负数将无法取到顶点
-     * @param {Number} line_width 线段容差宽度 超出距离不计 取负数将无法取到边
+     * @param {Number} lineWidth 线段容差宽度 超出距离不计 取负数将无法取到边
      * @param {Boolean} want_to_close 将没闭合的路径视作闭合路径
      * @returns {{type:Number,i:Number,l:Number,k:Number}}
      * @return {Number} type 在顶点上(0) 或 在边上(1)
@@ -2851,7 +2851,7 @@ class Polygon{
      * @return {Number} l 点到目标的距离
      * @return {Number} k 目标为边时点到边的投影的系数
      */
-    pointInNodeOrLine(point,r,line_width,want_to_close){
+    pointInNodeOrLine(point,r,lineWidth,want_to_close){
         var nodes=this.nodes;
         var i=nodes.length-1,min=Infinity,temp=0,ti=i;
         if(r>0){
@@ -2870,9 +2870,9 @@ class Polygon{
                 }
             }
         }
-        if(line_width>0){
+        if(lineWidth>0){
             var rtn=this.get_PointInLine(point,want_to_close);
-            if(rtn.length<line_width){
+            if(rtn.length<lineWidth){
                 rtn.type=1;
                 return rtn;
             }

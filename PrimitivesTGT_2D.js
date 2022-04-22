@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-22 10:11:59
+ * @LastEditTime: 2022-04-22 10:50:13
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -140,8 +140,12 @@ class PrimitiveTGT{
         this.stroke_uv=new Vector2();
         /**@type {Vector2} 描边 贴图坐标宽高 */
         this.stroke_uvwh=new Vector2(1,1);
-        /**@type {Number} 描边线宽度 */
-        this.lineWidth=1;
+        /**@type {Number|null} 描边线宽度 默认由父级传递(null) */
+        this.lineWidth=null;
+        /**@type {String|null} 线末端类型 默认由父级传递(null) 可用值参考  https://developer.mozilla.org/zh-CN/docs/Web/API/CanvasRenderingContext2D/lineCap */
+        this.lineCap=null;
+        /**@type {String|null} 两线相交拐点的类型 默认由父级传递(null) 可用值参考 https://developer.mozilla.org/zh-CN/docs/Web/API/CanvasRenderingContext2D/lineJoin */
+        this.lineJoin=null;
         /**@type {Number} 图形不透明度 */
         this.globalAlpha=1;
         /**@type {Number[]} 虚线间隔和长度*/

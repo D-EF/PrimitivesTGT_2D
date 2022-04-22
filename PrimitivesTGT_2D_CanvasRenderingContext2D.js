@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-21 16:42:19
+ * @LastEditTime: 2022-04-22 10:49:13
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
@@ -181,7 +181,15 @@ class Renderer_PrimitiveTGT__Canvas2D extends Renderer_PrimitiveTGT{
         if(tgt.stroke_material){
             ctx.strokeStyle=tgt.stroke_material.get(tgt,this.ctx,"stroke");
         }
-        ctx.lineWidth=tgt.lineWidth;
+        if(!(tgt.lineWidth===null)){
+            ctx.lineWidth=tgt.lineWidth;
+        }
+        if(!(tgt.lineCap===null)){
+            ctx.lineCap=tgt.lineCap;
+        }
+        if(!(tgt.lineJoin===null)){
+            ctx.lineJoin=tgt.lineJoin;
+        }
     
         this.createCanvasPath(tgt);
 
