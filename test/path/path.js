@@ -53,7 +53,7 @@ var pathData=new Polygon([
 ]);
 
 var path=new PrimitiveTGT__Polygon(pathData);
-path.fill_Material=new Canvas2d__Material("#0000");
+path.fill_material=new Canvas2d__Material("#0000");
 var renderer=new Renderer_PrimitiveTGT__Canvas2D([path],ctx);
 renderer.render_All();
 CtrlCanvas2d.dot(ctx,pathData.sample(0.9999).v,4);

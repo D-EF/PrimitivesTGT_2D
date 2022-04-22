@@ -175,11 +175,11 @@ class Renderer_PrimitiveTGT__Canvas2D extends Renderer_PrimitiveTGT{
         ctx.transform(tgt.transform_matrix.a,tgt.transform_matrix.b,tgt.transform_matrix.c,tgt.transform_matrix.d,tgt.transform_matrix.e||0,tgt.transform_matrix.f||0);
         ctx.translate(-tgt.origin.x,-tgt.origin.y);
 
-        if(tgt.fill_Material){
-            ctx.fillStyle=tgt.fill_Material.get(tgt,this.ctx,"fill");
+        if(tgt.fill_material){
+            ctx.fillStyle=tgt.fill_material.get(tgt,this.ctx,"fill");
         }
-        if(tgt.stroke_Material){
-            ctx.strokeStyle=tgt.stroke_Material.get(tgt,this.ctx,"stroke");
+        if(tgt.stroke_material){
+            ctx.strokeStyle=tgt.stroke_material.get(tgt,this.ctx,"stroke");
         }
         ctx.lineWidth=tgt.lineWidth;
     

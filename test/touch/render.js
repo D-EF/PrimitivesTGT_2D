@@ -44,20 +44,20 @@ var sp=new Sprites(6,6,"/img/SpritesMap.png",0.2,0.2,0.2,0.2);
 var spritesMap_Material=new Canvas2d__Material(sp);
 
 var t1=new PrimitiveTGT__Rect(50,50,50,50);
-t1.fill_Material=spritesMap_Material;
+t1.fill_material=spritesMap_Material;
 t1.fill_uv={x:0,y:0};
-t1.stroke_Material=new Canvas2d__Material("#00f")
+t1.stroke_material=new Canvas2d__Material("#00f")
 t1.origin.x=50;
 t1.origin.y=50;
 t1.transform_matrix=new Matrix2x2T().rotate(45*deg);
 
 var t2=new PrimitiveTGT__Sector(0,0,50,0,120*deg);
-t2.fill_Material=spritesMap_Material;
+t2.fill_material=spritesMap_Material;
 t2.fill_uv={x:1,y:1};
 t2.fill_uvwh={x:0.5,y:1};
 t2.lineWidth=2;
 t2.want_to_closePath=true;
-t2.stroke_Material=new Canvas2d__Material("#0f0");
+t2.stroke_material=new Canvas2d__Material("#0f0");
 t2.transform_matrix=new Matrix2x2T().set_Translate(120,200).rotate(45*deg);
 t2.globalAlpha=0.5;
 
@@ -69,12 +69,12 @@ var t3=new PrimitiveTGT__Polygon(new Polygon([
     {x:0,y:0},
 ]));
 t3.want_to_closePath=false;
-t3.fill_Material=spritesMap_Material;
+t3.fill_material=spritesMap_Material;
 t3.fill_uv={x:2,y:2};
 t3.lineWidth=2;
 t3.origin.x=150;
 t3.origin.y=150;
-t3.stroke_Material=new Canvas2d__Material("#f00");
+t3.stroke_material=new Canvas2d__Material("#f00");
 t3.transform_matrix=new Matrix2x2T().set_Translate(150,150).rotate(-45*deg);
 
 

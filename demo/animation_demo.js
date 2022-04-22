@@ -15,6 +15,7 @@ import {
     PrimitiveTGT__Sector as CanvasSectorTGT,
     PrimitiveTGT__Polygon as CanvasPolygonTGT,
     PrimitiveTGT__Group as CanvasTGT_Group,
+    PrimitiveTGT__Group,
 } from "../PrimitivesTGT_2D.js";
 import {
     Math2D,
@@ -27,12 +28,20 @@ import {
     Polygon,
     BezierCurve,
         }from "../Math2d.js";
+import { Canvas2d__Material, Renderer_PrimitiveTGT__Canvas2D } from "../PrimitivesTGT_2D_CanvasRenderingContext2D.js";
+
+
 
 var canvas=document.getElementById("canvas");
 var ctx=canvas.getContext('2d');
+var renderer=new Renderer_PrimitiveTGT__Canvas2D([],ctx);
+
+var Material_white=new Canvas2d__Material("#fff");
+var Material_white0=new Canvas2d__Material("#fff0");
+var Material_Block=new Canvas2d__Material("#000");
 
 var bg=new CanvasRectTGT(0,0,1280,720);
-bg.fillStyle="#000";
+bg.fill_material=Material_Block;
 var itemPolygonNodes=[
     new Vector2(0,0),
     new Vector2(12.06794919,0), //1
@@ -55,16 +64,16 @@ var d1start =new Vector2(12.06794919,0),
     d2end   =new Vector2(6.033974595,53.66025405);
 
 var itemTGT0=new CanvasPolygonTGT();
-itemTGT0.strokeStyle="#0000"
+itemTGT0.stroke_material=Material_white0;
 var itemTGT1=itemTGT0.copy(),
     itemTGT2=itemTGT0.copy();
 
 itemTGT0.data=itemPolygon;
 itemTGT1.data=itemPolygon;
 itemTGT2.data=itemPolygon;
-itemTGT0.fillStyle="#fff"
-itemTGT1.fillStyle="#fff"
-itemTGT2.fillStyle="#fff"
+itemTGT0.fill_material=Material_white;
+itemTGT1.fill_material=Material_white;
+itemTGT2.fill_material=Material_white;
 
 
 var tgt_group0=new CanvasTGT_Group([itemTGT0]),
@@ -87,9 +96,9 @@ itemTGT1._transform_matrix=itemTGT0.transform_matrix;
 itemTGT2._transform_matrix=itemTGT0.transform_matrix;
 
 function ctxRender(){
-    bg.render(ctx);
-    tgt_group.render(ctx);
-    text_group.render(ctx);
+    renderer.render(bg);
+    renderer.render(tgt_group);
+    renderer.render(text_group);
 }
 
 ctxRender();
@@ -143,7 +152,7 @@ function logoItemShow(t){
 }
 
 function a1(animation){
-    animation.frameCallback=rect_to_logoItem;
+    animation.frameCallback=rect_to_LogoItem;
     animation.stopCallback=a2;
     animation.start(200);
 }
@@ -282,8 +291,8 @@ function animation_F2f(t){
 
 function atd1(){
     textTGT_D.lineWidth=2;
-    textTGT_D.strokeStyle="#fff";
-    textTGT_D.fillStyle="#fff0";
+    textTGT_D.stroke_material=Material_white;
+    textTGT_D.fill_material=Material_white0;
 
     animation2.frameCallback=animation_D1f;
     animation2.stopCallback=atd2;
@@ -301,12 +310,12 @@ function atd3(){
 }
 function ate1(){
     textTGT_E1.lineWidth=2;
-    textTGT_E1.strokeStyle="#fff";
-    textTGT_E1.fillStyle="#fff0";
+    textTGT_E1.stroke_material=Material_white;
+    textTGT_E1.fill_material=Material_white0;
     
     textTGT_E2.lineWidth=2;
-    textTGT_E2.strokeStyle="#fff";
-    textTGT_E2.fillStyle="#fff0";
+    textTGT_E2.stroke_material=Material_white;
+    textTGT_E2.fill_material=Material_white0;
 
     animation2.frameCallback=animation_E1f;
     animation2.stopCallback=ate2f1;
@@ -315,11 +324,11 @@ function ate1(){
 function ate2f1(){
     
     textTGT_F1.lineWidth=2;
-    textTGT_F1.strokeStyle="#fff";
-    textTGT_F1.fillStyle="#fff0";
+    textTGT_F1.stroke_material=Material_white;
+    textTGT_F1.fill_material=Material_white0;
     textTGT_F2.lineWidth=2;
-    textTGT_F2.strokeStyle="#fff";
-    textTGT_F2.fillStyle="#fff0";
+    textTGT_F2.stroke_material=Material_white;
+    textTGT_F2.fill_material=Material_white0;
 
     animation2.frameCallback=animation_E2F1f;
     animation2.stopCallback=atf2;

@@ -1,6 +1,6 @@
 /*
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-21 19:45:43
+ * @LastEditTime: 2022-04-22 10:29:51
  */
 /** 提供一点点2d数学支持的js文件
  * 如无另外注释，在这个文件下的所有2d坐标系都应为  x轴朝右, y轴朝上 的坐标系
@@ -3060,9 +3060,9 @@ class BezierCurve{
         /**@type {Vector2[]} 曲线控制点*/
         this._points=null;
         /**@type {Number[]} x 坐标的 计算系数*/
-        this._coefficient_X=null;
+        this._coefficient_x=null;
         /**@type {Number[]} y 坐标的 计算系数*/
-        this._coefficient_Y=null;
+        this._coefficient_y=null;
         /**@type {BezierCurve} 导函数*/
         this._derivatives=null;
         /**@type {Data_Rect} 轴对齐边界框*/
@@ -3119,12 +3119,12 @@ class BezierCurve{
         this.clearProxy();
     }
     /** 重新设置系数
-     * @param {Number[]} coefficient_X X系数
-     * @param {Number[]} coefficient_Y Y系数
+     * @param {Number[]} coefficient_x X系数
+     * @param {Number[]} coefficient_y Y系数
      */
-    reset_Coefficient(coefficient_X,coefficient_Y){
-        this._coefficient_X=coefficient_X.concat();
-        this._coefficient_Y=coefficient_Y.concat();
+    reset_Coefficient(coefficient_x,coefficient_y){
+        this._coefficient_x=coefficient_x.concat();
+        this._coefficient_y=coefficient_y.concat();
     }
     /** 拷贝函数
      * @param {BezierCurve} bezierCurve 
@@ -3138,8 +3138,8 @@ class BezierCurve{
                 rtn._points[i]=Vector2.copy(bezierCurve._points[i]);
             }
         }
-        rtn.coefficient_X=bezierCurve.coefficient_X;
-        rtn.coefficient_Y=bezierCurve.coefficient_Y;
+        rtn.coefficient_x=bezierCurve.coefficient_x;
+        rtn.coefficient_y=bezierCurve.coefficient_y;
         return rtn;
     }
     copy(){
@@ -3156,19 +3156,19 @@ class BezierCurve{
         }
         return this._points;
     }
-    set coefficient_Y(coefficient_y){
-        this._coefficient_Y=coefficient_Y;
+    set coefficient_y(coefficient_y){
+        this._coefficient_y=coefficient_y;
         this.clearPoints();
     }
-    set coefficient_X(coefficient_x){
-        this._coefficient_X=coefficient_X;
+    set coefficient_x(coefficient_x){
+        this._coefficient_x=coefficient_x;
         this.clearPoints();
     }
     get coefficient_y(){
-        return this._coefficient_Y;
+        return this._coefficient_y;
     }
     get coefficient_x(){
-        return this._coefficient_X;
+        return this._coefficient_x;
     }
     /** @returns {BezierCurve} 返回一条对齐到x轴后的曲线
      */
@@ -3205,8 +3205,8 @@ class BezierCurve{
         var points=this.points,
             n=points.length-1,
             m=getBezierMatrix(n);
-        this._coefficient_X=new Array(points.length);
-        this._coefficient_Y=new Array(points.length);
+        this._coefficient_x=new Array(points.length);
+        this._coefficient_y=new Array(points.length);
         var i,j,tempx,tempy;
         for(i=n;i>=0;--i){
             tempx=tempy=0;
@@ -3214,16 +3214,16 @@ class BezierCurve{
                 tempx+=m[i][j]*points[j].x;
                 tempy+=m[i][j]*points[j].y;
             }
-            this._coefficient_X[i]=tempx;
-            this._coefficient_Y[i]=tempy;
+            this._coefficient_x[i]=tempx;
+            this._coefficient_y[i]=tempy;
         }
     }
     /** 设置系数后, 重新加载 控制点坐标
      */
     refresh_Points(){
         this._points=Vector2.create_ByArray(
-            coefficientToPoints(this._coefficient_X),
-            coefficientToPoints(this._coefficient_Y)
+            coefficientToPoints(this._coefficient_x),
+            coefficientToPoints(this._coefficient_y)
         );
         this.clearProxy();
     }
@@ -3248,9 +3248,9 @@ class BezierCurve{
      */
     sample_x(t){
         var rtn=0;
-        for(var i = this._coefficient_X.length-1;i>=0;--i){
+        for(var i = this._coefficient_x.length-1;i>=0;--i){
             rtn*=t;
-            rtn+=this._coefficient_X[i];
+            rtn+=this._coefficient_x[i];
         }
         return rtn;
     }
@@ -3260,9 +3260,9 @@ class BezierCurve{
      */
     sample_y(t){
         var rtn=0;
-        for(var i = this._coefficient_Y.length-1;i>=0;--i){
+        for(var i = this._coefficient_y.length-1;i>=0;--i){
             rtn*=t;
-            rtn+=this._coefficient_Y[i];
+            rtn+=this._coefficient_y[i];
         }
         return rtn;
     }
@@ -3292,15 +3292,15 @@ class BezierCurve{
      * @returns {BezierCurve}低一阶的贝塞尔曲线
      */
     get derivatives(){
-        if(!(this._coefficient_X.length||this._coefficient_Y.length)){
+        if(!(this._coefficient_x.length||this._coefficient_y.length)){
             return null;
         }
         if(this._derivatives===null){
             // this._derivatives=new BezierCurve(Math2D.get_BezierDerivativesPoints(this.points));
             this._derivatives=new BezierCurve();
             this._derivatives.reset_Coefficient(
-                derivative(this._coefficient_X),
-                derivative(this._coefficient_Y)
+                derivative(this._coefficient_x),
+                derivative(this._coefficient_y)
             );
         }
         return this._derivatives;
@@ -3352,9 +3352,9 @@ class BezierCurve{
         if(depth<=0){
             return [];
         }
-        var rtn=this.derivatives?rootsOfCubic(this.derivatives.coefficient_X).concat(rootsOfCubic(this.derivatives.coefficient_Y)).concat(this.derivatives.get_root_t(depth-1)):[];
+        var rtn=this.derivatives?rootsOfCubic(this.derivatives.coefficient_x).concat(rootsOfCubic(this.derivatives.coefficient_y)).concat(this.derivatives.get_root_t(depth-1)):[];
         if(!range_flag){
-            rtn=rtn.filter(BezierCurve.is_tRange);
+            rtn=rtn.filter(BezierCurve.is_TRange);
         }
         return rtn;
     }
@@ -3463,18 +3463,18 @@ class BezierCurve{
      * @returns 对应的t值
      */
     get_t_ByX(x){
-        var temp=this.coefficient_X.concat();
+        var temp=this.coefficient_x.concat();
         temp[0]-=x;
-        return rootsOfCubic(temp).filter(BezierCurve.is_tRange);
+        return rootsOfCubic(temp).filter(BezierCurve.is_TRange);
     }
     /** 使用坐标求t值
      * @param {Number} y Y坐标
      * @returns 对应的t值
      */
     get_t_ByY(y){
-        var temp=this.coefficient_Y.concat();
+        var temp=this.coefficient_y.concat();
         temp[0]-=y;
-        return rootsOfCubic(temp).filter(BezierCurve.is_tRange);
+        return rootsOfCubic(temp).filter(BezierCurve.is_TRange);
     }
     /** 求弧长
      * @param {Number} step_size t 时间参数的采样步长, 设置越接近0精度越高; 默认为 0.1 或者保留原有的

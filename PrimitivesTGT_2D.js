@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-21 16:24:31
+ * @LastEditTime: 2022-04-22 10:11:59
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -128,14 +128,14 @@ class PrimitiveTGT{
         this.origin=new Vector2();
 
         /**@type {Material} 填充 材质*/
-        this.fill_Material;
+        this.fill_material;
         /**@type {Vector2} 填充 贴图坐标 */
         this.fill_uv=new Vector2();
         /**@type {Vector2} 填充 贴图坐标宽高 */
         this.fill_uvwh=new Vector2(1,1);
         
         /**@type {Material} 描边 材质*/
-        this.stroke_Material;
+        this.stroke_material;
         /**@type {Vector2} 描边 贴图坐标*/
         this.stroke_uv=new Vector2();
         /**@type {Vector2} 描边 贴图坐标宽高 */
@@ -162,8 +162,8 @@ class PrimitiveTGT{
         rtn.transform_matrix   = Matrix2x2T.copy(tgt._transform_matrix);
         rtn._worldToLocalM    = Matrix2x2T.copy(tgt._worldToLocalM);
         rtn.want_to_closePath = tgt.want_to_closePath;
-        rtn.fill_Material     = tgt.fill_Material;
-        rtn.stroke_Material   = tgt.stroke_Material;
+        rtn.fill_material     = tgt.fill_material;
+        rtn.stroke_material   = tgt.stroke_material;
         rtn.fill_uv           = Vector2.copy(tgt.fill_uv);
         rtn.fill_uvwh         = Vector2.copy(tgt.fill_uvwh);
         rtn.uv                = Vector2.copy(tgt.uv);
@@ -344,6 +344,7 @@ class PrimitiveTGT__Arc extends PrimitiveTGT{
         this.dataType="Data_Arc";
     }
 }
+
 /** 扇形
  */
 class PrimitiveTGT__Sector extends PrimitiveTGT{
@@ -411,7 +412,7 @@ class PrimitiveTGT__Path extends PrimitiveTGT{
 
 /** PrimitiveTGT 组
  */
- class PrimitiveTGT__Group extends PrimitiveTGT{
+class PrimitiveTGT__Group extends PrimitiveTGT{
     /** 
      * @param {PrimitiveTGT[]} tgts 子节点数组
      */
