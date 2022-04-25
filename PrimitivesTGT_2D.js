@@ -2,7 +2,7 @@
  * @Author: Darth_Eternalfaith
  * @Date: 2022-03-14 23:34:06
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-22 10:50:13
+ * @LastEditTime: 2022-04-25 12:50:19
  * @FilePath: \def-web\js\visual\PrimitivesTGT_2D.js
  * 
  */
@@ -592,15 +592,14 @@ class PrimitiveTGT__Group extends PrimitiveTGT{
         return this.get_DescendantTransformMatrix(path).create_Inverse();
     }
     
-    /** 使用路径插入新后代
+    /** 使用路径加入新后代
      * @param {Number[]} path 路径, 如果最后指向 group 将会 addend 到当前group,否则会插入到当前位置后
      * @param {PrimitiveTGT} tgt
      * @return {Number[]} 返回指向新加入的对象的path
      */
-    insert_ByPath(path,tgt){
+    add_ByPath(path,tgt){
         var i=0,j;
         var a,b;
-        var 
         b=this;
         var newpath=Array.from(path);
         j=path[i];
@@ -622,6 +621,35 @@ class PrimitiveTGT__Group extends PrimitiveTGT{
             a.insert(newpath[i],tgt);
         }
         return newpath;
+    }
+    /** 使用路径插入后代
+     * @param {Number[]} path 新加入的对象的路径
+     * @param {PrimitiveTGT} tgt 新对象
+     * @return {Number[]} 返回指向新加入的对象的path
+     */
+    insert_ByPath(path,tgt){
+        var i=0,j;
+        var a,b;
+        a=b=this;
+        var newpath=Array.from(path);
+        j=path[i];
+        while(a.data[j]){
+            a=b;
+            b=b.data[j];
+            ++i;
+            j=path[i];
+        }
+        if(i<path.length){
+            throw new Error ("Can not find this path!");
+        }
+        --i;
+        a.insert(newpath[i],tgt);
+        if(a.data[newpath[i]]){
+            newpath[i]=a.data.length-1;
+        }
+        console.log(i);
+        return newpath;
+
     }
     /** 世界坐标to后代的局部坐标, 没用缓存
      * @param {Number[]} path   路径
