@@ -1,4 +1,0 @@
-[submodule "Editor"]
-	path = Editor
-	url = https://gitee.com/darth_ef/PrimitivesTGT-2D_Editor.git
-	branch = Development
