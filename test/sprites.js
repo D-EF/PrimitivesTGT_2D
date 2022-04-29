@@ -1,10 +1,10 @@
 /*
  * @Date: 2022-01-12 17:51:41
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-01-17 20:04:50
- * @FilePath: \def-web\js\visual\test\sprites.js
+ * @LastEditTime: 2022-04-29 16:21:34
+ * @FilePath: \Editor\PrimitivesTGT-2D_Editor\js\import\PrimitivesTGT_2D\test\sprites.js
  */
-import {Sprites,Sprites_Animation} from "../Sprites.js";
+import {Sprites,Sprites_Animation} from "../visual.js";
 
 /**@type {CanvasRenderingContext2D} */
 var ctx=document.getElementById("canvas").getContext("2d");

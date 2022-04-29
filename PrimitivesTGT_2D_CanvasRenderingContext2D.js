@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-01-11 09:09:00
  * @LastEditors: Darth_Eternalfaith
- * @LastEditTime: 2022-04-22 10:49:13
- * @FilePath: \def-web\js\visual\PrimitivesTGT_2D_CanvasRenderingContext2D.js
+ * @LastEditTime: 2022-04-29 16:21:44
+ * @FilePath: \Editor\PrimitivesTGT-2D_Editor\js\import\PrimitivesTGT_2D\PrimitivesTGT_2D_CanvasRenderingContext2D.js
  * 
  * 材质和渲染器具体类
  */
@@ -41,7 +41,7 @@ import {
 import {
     Sprites,
     Sprites_Animation
-}from "./Sprites.js"
+}from "./visual.js"
 
 /** temp
  */
