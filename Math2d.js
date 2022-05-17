@@ -8,8 +8,8 @@
 
 import {
     getBezierMatrix,
-    createCutBezierMatrixQ,
-    cutBezierByMatrix,
+    create_CutBezierMatrixQ,
+    cut_Bezier__ByMatrix,
     binaryLinearEquation,
     approximately,
     derivative,
@@ -395,7 +395,7 @@ class Math2D{
      */
     static get_CutOffBezierCurve(points,t){
         var l=points.length,
-            q=createCutBezierMatrixQ(l-1,t),
+            q=create_CutBezierMatrixQ(l-1,t),
             points_x=new Array(l),
             points_y=new Array(l);
         for(var i = l-1;i>=0;--i){
@@ -404,12 +404,12 @@ class Math2D{
         }
         return [
             Vector2.create_ByArray(
-                cutBezierByMatrix(points_x,q),
-                cutBezierByMatrix(points_y,q)
+                cut_Bezier__ByMatrix(points_x,q),
+                cut_Bezier__ByMatrix(points_y,q)
             ),
             Vector2.create_ByArray(
-                cutBezierByMatrix(points_x,q,true),
-                cutBezierByMatrix(points_y,q,true)
+                cut_Bezier__ByMatrix(points_x,q,true),
+                cut_Bezier__ByMatrix(points_y,q,true)
             )
         ];
     }
